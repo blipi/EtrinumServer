@@ -45,11 +45,13 @@ Player* Client::onEnterToWorld(Poco::UInt64 GUID, Poco::UInt32 characterID)
     if (!character)
         return NULL;
 
+    _characterId = characterID;
+
     _player = new Player(character->name);
     _player->SetGUID(GUID);
 
     PreparedStatement* stmt = CharactersDatabase.getPreparedStatement(QUERY_CHARACTERS_SELECT_INFORMATION);
-    stmt->bindUInt32(0, GetId());
+    stmt->bindUInt32(0, characterID);
 
     RecordSet rs = stmt->execute();
     if (rs.moveFirst())
@@ -205,7 +207,7 @@ void Client::run()
 
         #if defined(SERVER_FRAMEWORK_TESTING)
             if (_logicFlags & DISCONNECT_ON_EMPTY_QUEUE)
-                printf("Disconnect flags: %d\n", _logicFlags);
+                printf("Disconnect flags: %d\n", _logicFlags & ~DISCONNECT_ON_EMPTY_QUEUE);
         #endif
 		
         if ((_logicFlags & DISCONNECTED_INCORRECT_DATA) || (_logicFlags & DISCONNECTED_TIME_OUT))
@@ -266,7 +268,8 @@ void Client::addWritePacket(Packet* packet)
 * Generates a security byte for the client, it's updated at each
 * packet, and it's used to check if there's been any injected packet
 */
-void Client::generateSecurityByte(){
+void Client::generateSecurityByte()
+{
     Poco::UInt32 result = (0x3F * (~_packetData.securityByte + 0x34));
 	result = result ^ (result >> 4);
 	result = result & 0xFF;

@@ -136,6 +136,7 @@ private:
     Player* _player;
 
     Poco::UInt32 _id;
+    Poco::UInt32 _characterId;
     bool _logged;
     bool _inWorld;
 

@@ -18,34 +18,33 @@ Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
     _objects.set_deleted_key(std::numeric_limits<Poco::UInt64>::max());
 }
 
-struct CenterSearch
+/**
+ * Finds an object in the Grid near to a given position
+ *
+ * @param it dense_hash_map element
+ * @param c Position taken as center
+ */
+static bool findObjectsIf(std::pair<Poco::UInt64, SharedPtr<Object> > it, Vector2D c)
 {
-    CenterSearch(Poco::UInt64 x, Poco::UInt64 y, Poco::UInt16 cx, Poco::UInt16 cy):
-        x(x), y(y), cx(cx), cy(cy)
-    {
-    }
-
-    Poco::UInt64 x;
-    Poco::UInt64 y;
-    Poco::UInt16 cx;
-    Poco::UInt16 cy;
-};
-
-static bool findObjectsIf(std::pair<Poco::UInt64, SharedPtr<Object> > it, CenterSearch c)
-{
-    Poco::UInt32 x = Tools::GetPositionInCell(c.cx, it.second->GetPosition().x);
-    Poco::UInt32 y = Tools::GetPositionInCell(c.cy, it.second->GetPosition().y);
+    Poco::UInt32 x = it.second->GetPosition().x;
+    Poco::UInt32 y = it.second->GetPosition().y;
 
     return !(it.second->GetHighGUID() & HIGH_GUID_PLAYER) && (x - 20 >= c.x && x + 20 <= c.x && y - 20 >= c.y && y + 20 <= c.y);
 }
 
+/**
+ * Updates the Grid and its objects
+ *
+ */
 bool Grid::update()
 {
     // Update only if it's more than 1ms since last tick
     if (clock() - _lastTick > 0)
     {
+        // Delete an object if it's in the move list
         for (ObjectList::const_iterator itr = _moveList.cbegin(); itr != _moveList.cend();)
         {
+            // Get the GUID and increment the iterator, it'd be safe to delete from movelist now, but we rather use clear
             Poco::UInt64 GUID = *itr;
             itr++;
             
@@ -77,20 +76,16 @@ bool Grid::update()
             object->update(clock() - _lastTick);
 
             // Update near mobs
-            CenterSearch c(object->GetPosition().x, object->GetPosition().y, GetPositionX(), GetPositionY());
+            Vector2D c(object->GetPosition().x, object->GetPosition().y);
             ObjectMap::iterator it = std::find_if(_objects.begin(), _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
             while (it != _objects.end())
             {
+                // Update the object
                 SharedPtr<Object> obj = it->second;
-                it++;
-
-                Poco::UInt32 x = Tools::GetPositionInCell(c.cx, object->GetPosition().x);
-                Poco::UInt32 y = Tools::GetPositionInCell(c.cy, object->GetPosition().y);
-
-                if (!(x - 20 >= c.x && x + 20 <= c.x && y - 20 >= c.y && y + 20 <= c.y))
-                    break;
-
                 obj->update(clock() - _lastTick);
+
+                // Find next near object
+                it = std::find_if(++it, _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
             }
         }
 
@@ -101,13 +96,18 @@ bool Grid::update()
     return true;
 }
 
-std::list<Poco::UInt64> Grid::getObjects(Poco::UInt32 highGUID)
+
+Grid::ObjectList Grid::getObjects(Poco::UInt32 highGUID)
 {
     std::list<Poco::UInt64> objects;
         
     _objectsLock.readLock();
     for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); itr++)
-        objects.push_back(itr->first);    
+    {
+        SharedPtr<Object> object = itr->second;
+        if (object->GetHighGUID() & highGUID)
+            objects.push_back(itr->first);
+    }
     _objectsLock.unlock();
 
     return objects;
@@ -146,11 +146,14 @@ bool Grid::addObject(SharedPtr<Object> object)
     return inserted;
 }
 
+/**
+ * Removes an object from the Grid
+ *
+ * @TODO: Most likely won't cause threading issues, but we must keep an eye to this
+ */
 void Grid::removeObject(Poco::UInt64 GUID)
 {
-    _moveListLock.writeLock();
     _moveList.push_back(GUID);
-    _moveListLock.unlock();
 }
 
 GridLoader::GridLoader():

@@ -45,7 +45,7 @@ public:
     Grid(Poco::UInt16 x, Poco::UInt16 y);
     bool update();
 
-    std::list<Poco::UInt64> getObjects(Poco::UInt32 highGUID);
+    ObjectList getObjects(Poco::UInt32 highGUID);
     SharedPtr<Object> getObject(Poco::UInt64 GUID);
 
     bool addObject(SharedPtr<Object> object);
@@ -74,10 +74,7 @@ public:
 private:
     ObjectMap _objects;
     Poco::RWLock _objectsLock;
-
     ObjectList _moveList;
-    Poco::RWLock _moveListLock;
-
     Poco::UInt32 _playersInGrid;
     Poco::UInt16 _x;
     Poco::UInt16 _y;
