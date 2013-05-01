@@ -110,6 +110,7 @@ Server::Server(Poco::UInt16 port):
 
     // Init hash map
     _objectsList.set_empty_key(NULL);
+    _objectsList.set_deleted_key(std::numeric_limits<Poco::UInt64>::max());
 
     // Reset all players online state
     PreparedStatement* stmt = AuthDatabase.getPreparedStatement(QUERY_AUTH_UPDATE_ONLINE_ONSTART);
