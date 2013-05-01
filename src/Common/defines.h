@@ -2,7 +2,7 @@
 #define BASIC_SERVER_DEFINES_H
 
 #define MAKE_GUID(a, b) ( ((Poco::UInt64)a << 32) | b )
-
+#define HIGUID(a) ( a >> 32 )
 enum HIGH_GUID
 {
     HIGH_GUID_PLAYER    = 0x0001,
@@ -29,6 +29,16 @@ struct Vector2D
 
     float x;
     float y;
+};
+
+#include "Poco/Poco.h"
+
+struct equint64
+{
+    bool operator() (const Poco::UInt64 u1, const Poco::UInt64 u2) const
+    {
+        return u1 == u2;
+    }
 };
 
 //@ Testing purpouses macros

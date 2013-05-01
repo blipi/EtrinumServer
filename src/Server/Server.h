@@ -3,6 +3,7 @@
 
 #include <map>
 #include <list>
+#include <unordered_map>
 
 //@ Basic Poco Types and Threading
 #include "Poco/Poco.h"
@@ -14,6 +15,11 @@
 
 //@ Basic Net connections
 #include "Poco/Net/TCPServer.h"
+
+//@ Hash Map
+#include "google/dense_hash_map"
+
+#include "defines.h"
 
 using Poco::SharedPtr;
 using Poco::Net::Socket;
@@ -27,10 +33,12 @@ class Packet;
 
 struct OpcodeHandleType;
 
+
 class Server
 {
 public:
-    typedef std::map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*object*/> ObjectMap;
+    //typedef std::unordered_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*object*/> ObjectMap;
+    typedef google::dense_hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*object*/, std::hash<Poco::UInt64>, equint64> ObjectMap;
     typedef std::pair<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*object*/> ObjectMapInserter;
     typedef std::list<Client*> ClientList;
 

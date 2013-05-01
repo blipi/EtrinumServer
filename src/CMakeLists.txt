@@ -37,6 +37,8 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/poco/Data/include
   ${CMAKE_SOURCE_DIR}/dep/poco/Data/MySQL/include
   ${CMAKE_SOURCE_DIR}/dep/cryptocpp
+
+  ${CMAKE_SOURCE_DIR}/dep/sparsehash/src
   
   ${CMAKE_CURRENT_SOURCE_DIR}/Database
   ${CMAKE_CURRENT_SOURCE_DIR}/Entities
@@ -61,7 +63,9 @@ add_executable(EtrinumProjectServer
 
 target_link_libraries(EtrinumProjectServer
   cryptlib
-  ${MYSQL_LIBRARY}
+  libmysql
   ${OPENSSL_LIBRARIES}
   ${ZLIB_LIBRARIES}
 )
+
+install(TARGETS EtrinumProjectServer DESTINATION "${CMAKE_INSTALL_PREFIX}")

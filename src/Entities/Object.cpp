@@ -4,6 +4,7 @@
 #include "Character.h"
 #include "Grid.h"
 #include "Server.h"
+#include "Tools.h"
 
 #ifdef SERVER_FRAMEWORK_TESTING
 
@@ -33,12 +34,34 @@ Object::~Object()
 
 void Object::update(const Poco::UInt32 diff)
 {
+    if (hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
+    {
+        // Check if movement has finalized, in which case, remove flag
+        Vector2D newPos;
+        if (motionMaster.evaluate(diff, newPos))
+            clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
 
+        // Update grid if we have to
+        Vector2D currentPos = GetPosition();
+        if (Tools::GetCellFromPos(newPos.x) != Tools::GetCellFromPos(currentPos.x) || Tools::GetCellFromPos(newPos.y) != Tools::GetCellFromPos(currentPos.y))
+        {                    
+            // Add it to GridLoader move list, we can't add it directly from here to the new Grid
+            // We would end up being deadlocked, so the GridLoader handles it
+            _grid->addToMoveList(GetGUID());
+            sGridLoader.addToMoveList(GetGUID());
+        }
+
+        // Relocate Object
+        Relocate(newPos);
+
+        // Update LoS
+        UpdateLoS();
+    }
 }
 
 void Object::UpdateLoS()
 {
-    std::list<Poco::UInt64> newObjectsInSight = sGridLoader.ObjectsInGridNear(this->ToObject(), 70.0f);
+    std::list<Poco::UInt64> newObjectsInSight = sGridLoader.ObjectsInGridNear(this->ToObject(), 35.0f);
 
     // Send spawn packets
     for (std::list<Poco::UInt64>::iterator itr = newObjectsInSight.begin(); itr != newObjectsInSight.end(); itr++)
@@ -48,7 +71,7 @@ void Object::UpdateLoS()
         if (found == _objectsInSight.end())
         {
             // Send update packet to only players
-            SharedPtr<Object> object = sServer->GetObject(*itr);
+            SharedPtr<Object> object = _grid->getObject(*itr);
             if (object.isNull() || object->GetHighGUID() != HIGH_GUID_PLAYER)
                 continue;
 
@@ -64,7 +87,7 @@ void Object::UpdateLoS()
         if (found == newObjectsInSight.end())
         {
             // Send update packet to only players
-            SharedPtr<Object> object = sServer->GetObject(*itr);
+            SharedPtr<Object> object = _grid->getObject(*itr);
             if (object.isNull() || object->GetHighGUID() != HIGH_GUID_PLAYER)
                 continue;
 
@@ -81,7 +104,7 @@ void Object::Despawn()
     for (std::list<Poco::UInt64>::iterator itr = _objectsInSight.begin(); itr != _objectsInSight.end(); itr++)
     {
         // Send update packet to only players
-        SharedPtr<Object> object = sServer->GetObject(*itr);
+        SharedPtr<Object> object = _grid->getObject(*itr);
         if (object.isNull() || object->GetHighGUID() != HIGH_GUID_PLAYER)
             continue;
 

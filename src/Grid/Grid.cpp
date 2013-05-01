@@ -14,7 +14,29 @@ Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
     _playersInGrid(0)
 {
     _lastTick = clock();
-    _lastRemoveCheck = clock();
+    _objects.set_empty_key(NULL);
+    _objects.set_deleted_key(std::numeric_limits<Poco::UInt64>::max());
+}
+
+struct CenterSearch
+{
+    CenterSearch(Poco::UInt64 x, Poco::UInt64 y, Poco::UInt16 cx, Poco::UInt16 cy):
+        x(x), y(y), cx(cx), cy(cy)
+    {
+    }
+
+    Poco::UInt64 x;
+    Poco::UInt64 y;
+    Poco::UInt16 cx;
+    Poco::UInt16 cy;
+};
+
+static bool findObjectsIf(std::pair<Poco::UInt64, SharedPtr<Object> > it, CenterSearch c)
+{
+    Poco::UInt32 x = Tools::GetPositionInCell(c.cx, it.second->GetPosition().x);
+    Poco::UInt32 y = Tools::GetPositionInCell(c.cy, it.second->GetPosition().y);
+
+    return !(it.second->GetHighGUID() & HIGH_GUID_PLAYER) && (x - 20 >= c.x && x + 20 <= c.x && y - 20 >= c.y && y + 20 <= c.y);
 }
 
 bool Grid::update()
@@ -22,78 +44,53 @@ bool Grid::update()
     // Update only if it's more than 1ms since last tick
     if (clock() - _lastTick > 0)
     {
-        // TODO: Multi-threading issues here (NOTE: Only if more than 1 grid processor, not multithreading in general)
-        _moveListLock.readLock();
-        for (ObjectList::const_iterator itr = _moveList.cbegin(); itr != _moveList.cend(); itr++)
+        for (ObjectList::const_iterator itr = _moveList.cbegin(); itr != _moveList.cend();)
         {
+            Poco::UInt64 GUID = *itr;
+            itr++;
+            
             _objectsLock.writeLock();
 
             // Object MUST be in Grid
-            // ASSERT(_objects.find(*itr) != _objects.end())
-            if (_objects.find(*itr) == _objects.end())
-            {
-                _objectsLock.unlock();
-                continue;
-            }
+            if (_objects.find(GUID) == _objects.end())
+                ASSERT(false);
 
             // Erase the object from this grid
-            _objects.erase(*itr);
-            
-            if ((*itr >> 32) & HIGH_GUID_PLAYER)
-                _playersInGrid--;
-
+            _objects.erase(GUID);
             _objectsLock.unlock();
+            
+            if (HIGUID(GUID) & HIGH_GUID_PLAYER)
+                _playersInGrid--;
         }
-        _moveListLock.unlock();
-
-        _moveListLock.writeLock();
         _moveList.clear();
-        _moveListLock.unlock();
         
         _objectsLock.readLock();
-        for (ObjectMap::const_iterator itr = _objects.cbegin(); itr != _objects.cend(); itr++)
+        for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end();)
         {
             SharedPtr<Object> object = itr->second;
+            itr++;
 
-            // Update AI if there is any or we have to
+            if (!(object->GetHighGUID() & HIGH_GUID_PLAYER))
+                continue;
+
+            // Update AI, movement, everything if there is any or we have to
             object->update(clock() - _lastTick);
 
-            // Update movement if we have to
-            if (object->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
+            // Update near mobs
+            CenterSearch c(object->GetPosition().x, object->GetPosition().y, GetPositionX(), GetPositionY());
+            ObjectMap::iterator it = std::find_if(_objects.begin(), _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
+            while (it != _objects.end())
             {
-                // Check if movement has finalized, in which case, remove flag
-                Vector2D newPos;
-                if (object->motionMaster.evaluate(clock() - _lastTick, newPos))
-                {
-                    #ifdef SERVER_FRAMEWORK_TESTING
-                        printf("Object %s has reached destination\n", Poco::NumberFormatter::formatHex(object->GetGUID()).c_str());
-                    #endif
-                    
-                    object->clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
-                }
+                SharedPtr<Object> obj = it->second;
+                it++;
 
-                // Update grid if we have to
-                Vector2D currentPos = object->GetPosition();
-                if (Tools::GetCellFromPos(newPos.x) != Tools::GetCellFromPos(currentPos.x) || Tools::GetCellFromPos(newPos.y) != Tools::GetCellFromPos(currentPos.y))
-                {
-                    #ifdef SERVER_FRAMEWORK_TESTING
-                        printf("Object %s must change grid (%d, %d) -> (%d, %d)\n", Poco::NumberFormatter::formatHex(object->GetGUID()).c_str(), Tools::GetCellFromPos(currentPos.x), Tools::GetCellFromPos(currentPos.y), Tools::GetCellFromPos(newPos.x), Tools::GetCellFromPos(newPos.y));
-                    #endif
+                Poco::UInt32 x = Tools::GetPositionInCell(c.cx, object->GetPosition().x);
+                Poco::UInt32 y = Tools::GetPositionInCell(c.cy, object->GetPosition().y);
 
-                    _moveListLock.writeLock();
-                    _moveList.push_back(object->GetGUID());
-                    _moveListLock.unlock();
-                    
-                    // Add it to GridLoader move list, we can't add it directly from here to the new Grid
-                    // We would end up being deadlocked, so the GridLoader handles it
-                    sGridLoader.addToMoveList(object->GetGUID());
-                }
+                if (!(x - 20 >= c.x && x + 20 <= c.x && y - 20 >= c.y && y + 20 <= c.y))
+                    break;
 
-                // Relocate Object
-                object->Relocate(newPos);
-
-                // Update LoS
-                object->UpdateLoS();
+                obj->update(clock() - _lastTick);
             }
         }
 
@@ -104,24 +101,16 @@ bool Grid::update()
     return true;
 }
 
-
-std::list<Poco::UInt64> Grid::getObjects()
+std::list<Poco::UInt64> Grid::getObjects(Poco::UInt32 highGUID)
 {
     std::list<Poco::UInt64> objects;
-
+        
     _objectsLock.readLock();
-
-    for (ObjectMap::const_iterator itr = _objects.cbegin(); itr != _objects.cend(); itr++)
-        objects.push_back(itr->first);
-    
+    for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); itr++)
+        objects.push_back(itr->first);    
     _objectsLock.unlock();
 
     return objects;
-}
-
-bool findObjectIfGUIDMatches(Grid::ObjectMapInserter obj, Poco::UInt64 GUID)
-{
-    return obj.first == GUID;
 }
 
 SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
@@ -130,7 +119,7 @@ SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
 
     _objectsLock.readLock();
 
-    ObjectMap::iterator itr = std::find_if(_objects.begin(), _objects.end(), std::bind2nd(std::ptr_fun(findObjectIfGUIDMatches), GUID));
+    ObjectMap::iterator itr = _objects.find(GUID);
     if (itr != _objects.end())
         object = itr->second;
 
@@ -145,7 +134,7 @@ bool Grid::addObject(SharedPtr<Object> object)
 
     bool inserted = _objects.insert(ObjectMapInserter(object->GetGUID(), object)).second;    
     if (inserted)
-    {
+    {        
         if (object->GetHighGUID() & HIGH_GUID_PLAYER)
             _playersInGrid++;
     
@@ -162,17 +151,6 @@ void Grid::removeObject(Poco::UInt64 GUID)
     _moveListLock.writeLock();
     _moveList.push_back(GUID);
     _moveListLock.unlock();
-}
-
-bool Grid::mustDoRemoveCheck()
-{
-    if (clock() - _lastRemoveCheck > 1500)
-    {
-        _lastRemoveCheck = clock();
-        return true;
-    }
-
-    return false;
 }
 
 GridLoader::GridLoader():
@@ -283,7 +261,7 @@ std::list<Poco::UInt64> GridLoader::ObjectsInGrid(Object* object)
         return objectsList;
 
     if (Grid* grid = GetGrid(x, y))
-        objectsList = grid->getObjects();
+        objectsList = grid->getObjects(HIGH_GUID_PLAYER | HIGH_GUID_MONSTER | HIGH_GUID_ITEM);
 
     return objectsList;
 }
@@ -357,24 +335,13 @@ void GridLoader::run_impl()
                 removeGrid(grid);
 
             // If the grid has no players in it, check for nearby grids, if they are not loaded or have no players, remove it
-            if (grid->getNumberOfPlayers() == 0 && grid->mustDoRemoveCheck())
+            if (!grid->hasPlayers())
                 removeGrid(grid);
         }
         _gridsLock.unlock();
 
         Poco::Thread::sleep(1);
     }
-}
-
-bool GridLoader::checkNearbyGrid(Poco::UInt16 x, Poco::UInt16 y)
-{
-    if (!_isGridLoaded[x][y])
-        return false;
-
-    GridsList::const_iterator itr = std::find_if(_grids.cbegin(), _grids.cend(), std::bind2nd(std::ptr_fun(findGridIfPositionMatches), Vector2D(x, y)));
-    Grid* grid = *itr;
-
-    return grid->getNumberOfPlayers() != 0;
 }
 
 void GridLoader::removeGrid(Grid* grid)

@@ -108,6 +108,9 @@ Server::Server(Poco::UInt16 port):
         OpcodesMap.insert(OpcodeHashInserter(OpcodeTable[i].Opcode, OpcodeTable[i].Handler));
     }
 
+    // Init hash map
+    _objectsList.set_empty_key(NULL);
+
     // Reset all players online state
     PreparedStatement* stmt = AuthDatabase.getPreparedStatement(QUERY_AUTH_UPDATE_ONLINE_ONSTART);
     stmt->execute();
@@ -153,7 +156,7 @@ SharedPtr<Object> Server::GetObject(Poco::UInt64 GUID)
 {
     _objectMapLock.readLock();
     ObjectMap::iterator itr = _objectsList.find(GUID);
-    if (itr != _objectsList.cend())
+    if (itr != _objectsList.end())
     {
         SharedPtr<Object> o = itr->second;
         _objectMapLock.unlock();

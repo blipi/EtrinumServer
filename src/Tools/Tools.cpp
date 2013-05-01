@@ -28,4 +28,9 @@ namespace Tools
     {
         return (int)(p/UNITS_PER_CELL) + 1;
     }
+
+    Poco::UInt16 GetPositionInCell(Poco::UInt16 cell, float b)
+    {
+        return Poco::UInt16(abs((cell * UNITS_PER_CELL) - b));
+    }
 }
