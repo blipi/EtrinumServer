@@ -75,6 +75,18 @@ bool Grid::update()
             // Update AI, movement, everything if there is any or we have to
             object->update(clock() - _lastTick);
 
+            //@todo: Check proximity to another Grid and load it if we have to!
+            /*
+                We could add a parameter, such as _forcedLoadTime = clock()
+                which gets updated at each this->update().
+
+                At GridLoader run method:
+                If clock() - nearGrid->_forcedLoadTime > xxx and !nearGrid->hasPlayers() Then
+                    RemoveGrid
+
+                std::list<Grid*> nearGrids = xxx; // Up to 3 if we are in a corner!!
+            */
+
             // Update near mobs
             Vector2D c(object->GetPosition().x, object->GetPosition().y);
             ObjectMap::iterator it = std::find_if(_objects.begin(), _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
@@ -87,6 +99,13 @@ bool Grid::update()
                 // Find next near object
                 it = std::find_if(++it, _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
             }
+
+            //@todo: Update objects in near grids
+            /*
+                Foreach nearGrids Do
+                    Foreach FindNearObjects Do
+                        nearObject->update
+            */
         }
 
         _objectsLock.unlock();
