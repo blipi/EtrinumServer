@@ -342,42 +342,25 @@ void GridLoader::run_impl()
                 addObject(object);
         }
         _moveList.clear();
-
-        // Remove Grids where there are no players (save RAM and CPU, less ticks)
-        _gridsLock.writeLock();
-        for (GridsList::iterator itr = _removeList.begin(); itr != _removeList.end(); itr++)
-        {
-            Grid* grid = *itr;
-
-            _grids.erase(grid);
-            _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
-            delete grid;
-        }
-        _gridsLock.unlock();
-        _removeList.clear();
-
+        
         // Update all Grids
         _gridsLock.readLock();
-        for (GridsList::const_iterator itr = _grids.cbegin(); itr != _grids.cend(); )
+        for (GridsList::const_iterator itr = _grids.begin(); itr != _grids.end(); )
         {
             Grid* grid = *itr;
             itr++;
 
             // If update fails, something went really wrong, delete this grid
-            if (!grid->update())
-                removeGrid(grid);
-
             // If the grid has no players in it, check for nearby grids, if they are not loaded or have no players, remove it
-            if (!grid->hasPlayers())
-                removeGrid(grid);
+            if (!grid->update() || !grid->hasPlayers())
+            {
+                _grids.erase(grid);
+                _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
+                delete grid;
+            }
         }
         _gridsLock.unlock();
 
         Poco::Thread::sleep(1);
     }
-}
-
-void GridLoader::removeGrid(Grid* grid)
-{
-    _removeList.insert(grid);
 }

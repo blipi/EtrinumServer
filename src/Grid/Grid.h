@@ -125,15 +125,10 @@ public:
     void run_impl();
     
 private:
-    bool checkNearbyGrid(Poco::UInt16 x, Poco::UInt16 y);
-    void removeGrid(Grid* grid);
-
-private:
     Server* _server;
     
     Poco::ThreadPool* _gridsPool;
     GridsList _grids;
-    GridsList _removeList;
     GridsList::const_iterator _gridsIterator;
 
     Grid::ObjectList _moveList;
