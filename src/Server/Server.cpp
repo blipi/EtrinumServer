@@ -52,6 +52,7 @@ enum OPCODES
 
     OPCODE_SC_SPAWN_OBJECT              = 0x5201,
     OPCODE_SC_DESPAWN_OBJECT            = 0x5202,
+    OPCODE_SC_PLAYER_STATS              = 0x5203,
 
     
     // Client -> Server
@@ -274,7 +275,7 @@ void Server::UpdateVisibilityOf(Object* from, Object* to, bool visible)
         *packet << from->GetLowGUID();
         *packet << from->GetHighGUID();
         *packet << Tools::getU32(from->GetPosition().x);
-        *packet << Tools::getU32(from->GetPosition().x);
+        *packet << Tools::getU32(from->GetPosition().y);
         
         switch (from->GetHighGUID())
         {
@@ -284,18 +285,30 @@ void Server::UpdateVisibilityOf(Object* from, Object* to, bool visible)
                     Character* character = from->ToCharacter();
 
                     *packet << character->GetName();
-                    *packet << Tools::getU32(character->GetSPeed(MOVEMENT_RUN));
-                    *packet << Tools::getU32(character->GetSPeed(MOVEMENT_WALK));
-                    *packet << character->MovementType();
+                    *packet << Tools::getU32(character->GetSpeed(MOVEMENT_RUN));
+                    *packet << Tools::getU32(character->GetSpeed(MOVEMENT_WALK));
+                    *packet << character->MovementTypeSpeed();
 
                     if (character->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
                     {
                         *packet << Poco::UInt8(0x01);
-                        *packet << Tools::getU32(character->motionMaster.next().x);
-                        *packet << Tools::getU32(character->motionMaster.next().y);
+                        *packet << character->motionMaster.getMovementType();
+
+                        if (character->motionMaster.getMovementType() == MOVEMENT_TO_POINT)
+                        {
+                            *packet << Tools::getU32(character->motionMaster.next().x);
+                            *packet << Tools::getU32(character->motionMaster.next().y);
+                        }
+                        else if (character->motionMaster.getMovementType() == MOVEMENT_BY_ANGLE)
+                            *packet << Tools::getU32(character->getFacingTo());
                     }
                     else
                         *packet << Poco::UInt8(0x00);
+
+                    *packet << character->GetMaxHP();
+                    *packet << character->GetHP();
+                    *packet << character->GetMaxMP();
+                    *packet << character->GetMP();
                 }
                 break;
         }
@@ -307,6 +320,21 @@ void Server::UpdateVisibilityOf(Object* from, Object* to, bool visible)
         setPacketHMAC(client, packet);
         client->addWritePacket(packet);
     }
+}
+
+void Server::sendPlayerStats(Client* client, SharedPtr<Object> object)
+{
+    // We should send the STR, INT, attack, defense, and private attributes here
+    //@todo: All the params, right now we are only sending the player guid
+    Packet* packet = new Packet(OPCODE_SC_PLAYER_STATS, 8);
+    *packet << object->GetLowGUID();
+    *packet << object->GetHighGUID();
+    encryptPacket(client, packet);
+    setPacketHMAC(client, packet);
+    client->addWritePacket(packet);
+
+    // Send an spawn packet of ourself
+    UpdateVisibilityOf(object, object, true);
 }
 
 bool Server::parsePacket(Client* client, Packet* packet, Poco::UInt8 securityByte)
@@ -540,9 +568,12 @@ void Server::OnEnterToWorld(Client* client, Poco::UInt32 characterID)
         // Create the player (Object) and add it to the object list
         if (Player* player = client->onEnterToWorld(MAKE_GUID(HIGH_GUID_PLAYER, GUID), characterID))
         {
-            SharedPtr<Object> obj(player->ToObject());
+            SharedPtr<Object> obj(player);
             newObject(obj);
             client->setInWorld(true);
+
+            // Send player information
+            sendPlayerStats(client, obj);
             
             // Add the player to the GridLoader system
             sGridLoader.addObject(obj);

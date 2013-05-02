@@ -82,6 +82,7 @@ private:
     bool sendCharactersList(Client* client);
     bool handleCharacterSelect(Client* client, Packet* packet);
 
+    void sendPlayerStats(Client* client, SharedPtr<Object> object);
     void OnEnterToWorld(Client* client, Poco::UInt32 characterID);
 
 private:

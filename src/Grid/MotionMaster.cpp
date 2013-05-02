@@ -99,6 +99,12 @@ bool MotionMaster::evaluate(Poco::UInt32 diff, Vector2D& pos)
     return true;
 }
 
+Poco::UInt8 MotionMaster::getMovementType()
+{
+    current(); // Verify there's some kind of movement
+    return _movement.movementType;
+}
+
 void MotionMaster::clear()
 {
     _movement.points.clear();

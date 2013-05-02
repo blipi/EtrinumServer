@@ -76,8 +76,8 @@ void Object::UpdateLoS(GuidsSet newObjectsInSight)
 
             if (object->GetHighGUID() != HIGH_GUID_PLAYER)
                 object->ToCreature()->UpdateVisibilityOf(GetGUID(), true);
-            else
-                sServer->UpdateVisibilityOf(this->ToObject(), object, true);
+            
+            sServer->UpdateVisibilityOf(this->ToObject(), object, true);
         }
     }
 
@@ -94,8 +94,8 @@ void Object::UpdateLoS(GuidsSet newObjectsInSight)
 
             if (object.isNull() || object->GetHighGUID() != HIGH_GUID_PLAYER)
                 object->ToCreature()->UpdateVisibilityOf(GetGUID(), false);
-            else
-                sServer->UpdateVisibilityOf(this->ToObject(), object, false);
+            
+            sServer->UpdateVisibilityOf(this->ToObject(), object, false);
         }
     }
 

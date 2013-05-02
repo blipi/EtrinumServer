@@ -63,14 +63,24 @@ public:
         _lvl = lvl;
     }
 
-    inline float GetSPeed(Poco::UInt8 movementType)
+    inline float getFacingTo()
+    {
+        return _angle;
+    }
+
+    inline void setFacingTo(float angle)
+    {
+        _angle = angle;
+    }
+
+    inline float GetSpeed(Poco::UInt8 movementType)
     {
         return _speed[movementType];
     }
 
-    inline Poco::UInt8 MovementType()
+    inline Poco::UInt8 MovementTypeSpeed()
     {
-        return _movementType;
+        return _movementTypeSpeed;
     }
 
 private:
@@ -81,7 +91,9 @@ private:
     Poco::UInt32 _mp;
     Poco::UInt8 _lvl;
 
-    Poco::UInt8 _movementType;
+    float _angle;
+
+    Poco::UInt8 _movementTypeSpeed;
     float _speed[2];
 };
 
