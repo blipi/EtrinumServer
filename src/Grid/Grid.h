@@ -98,6 +98,7 @@ public:
     
     bool checkAndLoad(Poco::UInt16 x, Poco::UInt16 y);
     Grid* GetGrid(Poco::UInt16 x, Poco::UInt16 y);
+    Grid* GetGridOrLoad(Poco::UInt16 x, Poco::UInt16 y);
 
     Grid* addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> object);
     Grid* addObject(SharedPtr<Object> object);

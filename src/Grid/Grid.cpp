@@ -220,20 +220,27 @@ bool findGridIfPositionMatches(Grid* grid, Vector2D position)
     return (grid->GetPositionX() == position.x && grid->GetPositionY() == position.y);
 }
 
- Grid* GridLoader::GetGrid(Poco::UInt16 x, Poco::UInt16 y)
- {
+Grid* GridLoader::GetGrid(Poco::UInt16 x, Poco::UInt16 y)
+{
+    Grid* grid = NULL;
+    if (!_isGridLoaded[x][y])
+        return grid;
+
     _gridsLock.readLock();
     GridsList::const_iterator itr = std::find_if(_grids.cbegin(), _grids.cend(), std::bind2nd(std::ptr_fun(findGridIfPositionMatches), Vector2D(x, y)));
-    if (itr == _grids.end())
-    {
-        _gridsLock.unlock();
-        return NULL;
-    }
-    Grid* grid = *itr;
+    if (itr != _grids.end())
+        grid = *itr;
     _gridsLock.unlock();
 
     return grid;
- }
+}
+
+Grid* GridLoader::GetGridOrLoad(Poco::UInt16 x, Poco::UInt16 y)
+{
+    if (checkAndLoad(x, y))
+        return GetGrid(x, y);
+    return NULL;
+}
 
 Grid* GridLoader::addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> object)
 {
