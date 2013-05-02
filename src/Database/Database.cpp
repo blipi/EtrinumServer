@@ -74,9 +74,17 @@ Database::~Database()
 
 bool Database::Open(std::string connectionString)
 {
-    _pool = new SessionPool("MySQL", connectionString, 1, 32);
-    if (!_pool->get().isConnected())
-        return false;
+    try
+    {
+        _pool = new SessionPool("MySQL", connectionString, 1, 32);
+        if (!_pool->get().isConnected())
+            return false;
+    }
+    catch (Poco::Data::MySQL::ConnectionException ex)
+    {
+        printf("%s\n", ex.message().c_str());
+        ASSERT(false);
+    }
 
     DoPreparedStatements();
     return true;

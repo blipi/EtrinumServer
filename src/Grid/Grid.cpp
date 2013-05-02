@@ -62,8 +62,15 @@ bool Grid::update()
         
         for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
         {
+            // Avoid NULL value and deleted value
+            if (itr->first == NULL || itr->first == std::numeric_limits<Poco::UInt64>::max())
+            {
+                ++itr;
+                continue;
+            }
+
             SharedPtr<Object> object = itr->second;
-            itr++;
+            ++itr;
 
             if (!(object->GetHighGUID() & HIGH_GUID_PLAYER))
                 continue;
@@ -119,7 +126,7 @@ bool Grid::update()
 Grid::ObjectList Grid::getObjects(Poco::UInt32 highGUID)
 {
     std::list<Poco::UInt64> objects;
-        
+
     for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
     {
         Poco::UInt64 GUID = itr->first;
@@ -310,10 +317,17 @@ std::list<Poco::UInt64> GridLoader::ObjectsInGridNear(Object* object, float dist
 void GridLoader::run_impl()
 {
     while (sServer->isRunning())
-    {        
+    {
         // Update all Grids
         for (GridsMap::const_iterator itr = _grids.begin(); itr != _grids.end(); )
         {
+            // Avoid NULL value and deleted value
+            if (itr->first == NULL || itr->first == std::numeric_limits<Poco::UInt32>::max())
+            {
+                itr++;
+                continue;
+            }
+
             Grid* grid = itr->second;
             itr++;
 
