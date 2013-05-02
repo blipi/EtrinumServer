@@ -74,7 +74,6 @@ public:
 
 private:
     ObjectMap _objects;
-    Poco::RWLock _objectsLock;
     ObjectList _moveList;
     Poco::UInt32 _playersInGrid;
     Poco::UInt16 _x;

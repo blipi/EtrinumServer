@@ -32,8 +32,9 @@ Object::~Object()
 #endif
 }
 
-void Object::update(const Poco::UInt32 diff)
+bool Object::update(const Poco::UInt32 diff)
 {
+    bool updatedGrid = false;
     if (hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
     {
         // Check if movement has finalized, in which case, remove flag
@@ -47,20 +48,26 @@ void Object::update(const Poco::UInt32 diff)
         {                    
             // Add it to GridLoader move list, we can't add it directly from here to the new Grid
             // We would end up being deadlocked, so the GridLoader handles it
-            _grid->addToMoveList(GetGUID());
+            SetGrid(NULL);
             sGridLoader.addToMoveList(GetGUID());
+            updatedGrid = true;
         }
 
         // Relocate Object
         Relocate(newPos);
 
-        // Update LoS
+        // Update LoS in case we are in a grid!!
         UpdateLoS();
     }
+
+    return !updatedGrid;
 }
 
 void Object::UpdateLoS()
 {
+    if (!GetGrid())
+        return;
+
     std::list<Poco::UInt64> newObjectsInSight = sGridLoader.ObjectsInGridNear(this->ToObject(), 35.0f);
 
     // Send spawn packets

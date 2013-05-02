@@ -35,7 +35,7 @@ public:
     Object();
     ~Object();
     
-    void update(const Poco::UInt32 diff);
+    bool update(const Poco::UInt32 diff);
     void UpdateLoS();
     void Despawn();
 

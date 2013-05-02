@@ -42,29 +42,25 @@ bool Grid::update()
     if (clock() - _lastTick > 0)
     {
         // Delete an object if it's in the move list
-        for (ObjectList::const_iterator itr = _moveList.cbegin(); itr != _moveList.cend();)
+        for (ObjectList::const_iterator itr = _moveList.begin(); itr != _moveList.end(); )
         {
             // Get the GUID and increment the iterator, it'd be safe to delete from movelist now, but we rather use clear
             Poco::UInt64 GUID = *itr;
             itr++;
             
-            _objectsLock.writeLock();
-
             // Object MUST be in Grid
             if (_objects.find(GUID) == _objects.end())
                 ASSERT(false);
 
             // Erase the object from this grid
             _objects.erase(GUID);
-            _objectsLock.unlock();
             
             if (HIGUID(GUID) & HIGH_GUID_PLAYER)
                 _playersInGrid--;
         }
         _moveList.clear();
         
-        _objectsLock.readLock();
-        for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end();)
+        for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
         {
             SharedPtr<Object> object = itr->second;
             itr++;
@@ -73,7 +69,12 @@ bool Grid::update()
                 continue;
 
             // Update AI, movement, everything if there is any or we have to
-            object->update(clock() - _lastTick);
+            // If update returns false, that means the object is no longer in this grid!
+            if (!object->update(clock() - _lastTick))
+            {
+                _objects.erase(object->GetGUID());
+                _playersInGrid--;
+            }
 
             //@todo: Check proximity to another Grid and load it if we have to!
             /*
@@ -92,9 +93,10 @@ bool Grid::update()
             ObjectMap::iterator it = std::find_if(_objects.begin(), _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
             while (it != _objects.end())
             {
-                // Update the object
+                // Update the object, if it fails, it means it is in a new grid
                 SharedPtr<Object> obj = it->second;
-                obj->update(clock() - _lastTick);
+                if (!obj->update(clock() - _lastTick))
+                    _objects.erase(obj->GetGUID());
 
                 // Find next near object
                 it = std::find_if(++it, _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
@@ -108,8 +110,6 @@ bool Grid::update()
             */
         }
 
-        _objectsLock.unlock();
-
         _lastTick = clock();
     }
     return true;
@@ -120,14 +120,14 @@ Grid::ObjectList Grid::getObjects(Poco::UInt32 highGUID)
 {
     std::list<Poco::UInt64> objects;
         
-    _objectsLock.readLock();
-    for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); itr++)
+    for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
     {
-        SharedPtr<Object> object = itr->second;
-        if (object->GetHighGUID() & highGUID)
-            objects.push_back(itr->first);
+        Poco::UInt64 GUID = itr->first;
+        itr++;
+
+        if (GUID & highGUID)
+            objects.push_back(GUID);
     }
-    _objectsLock.unlock();
 
     return objects;
 }
@@ -135,22 +135,16 @@ Grid::ObjectList Grid::getObjects(Poco::UInt32 highGUID)
 SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
 {
     SharedPtr<Object> object = NULL;
-
-    _objectsLock.readLock();
-
+    
     ObjectMap::iterator itr = _objects.find(GUID);
     if (itr != _objects.end())
         object = itr->second;
-
-    _objectsLock.unlock();
-
+    
     return object;
 }
 
 bool Grid::addObject(SharedPtr<Object> object)
 {
-    _objectsLock.writeLock();
-
     bool inserted = _objects.insert(ObjectMapInserter(object->GetGUID(), object)).second;    
     if (inserted)
     {        
@@ -159,8 +153,6 @@ bool Grid::addObject(SharedPtr<Object> object)
     
         object->SetGrid(this);
     }
-
-    _objectsLock.unlock();
 
     return inserted;
 }
