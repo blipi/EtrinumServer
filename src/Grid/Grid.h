@@ -128,10 +128,6 @@ private:
     
     Poco::ThreadPool* _gridsPool;
     GridsList _grids;
-    GridsList::const_iterator _gridsIterator;
-
-    Grid::ObjectList _moveList;
-    Poco::RWLock _gridsLock;
     bool _isGridLoaded[MAX_X][MAX_Y];
 };
 

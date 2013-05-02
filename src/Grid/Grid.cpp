@@ -195,10 +195,8 @@ bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
 
     Grid* grid = new Grid(x, y);
 
-    _gridsLock.writeLock();
     _grids.insert(grid);
     _isGridLoaded[x][y] = true;
-    _gridsLock.unlock();
 
     #ifdef SERVER_FRAMEWORK_TESTING
         printf("Grid (%d, %d) has been created\n", x, y);
@@ -212,17 +210,21 @@ bool findGridIfPositionMatches(Grid* grid, Vector2D position)
     return (grid->GetPositionX() == position.x && grid->GetPositionY() == position.y);
 }
 
+/**
+ * Gets a Grid. Should be safe as std::set iterators are safe, but we should keep and eye to this.
+ *
+ * @param x Cell Position x
+ * @param y Cell Position y
+ */
 Grid* GridLoader::GetGrid(Poco::UInt16 x, Poco::UInt16 y)
 {
     Grid* grid = NULL;
     if (!_isGridLoaded[x][y])
         return grid;
 
-    _gridsLock.readLock();
     GridsList::const_iterator itr = std::find_if(_grids.cbegin(), _grids.cend(), std::bind2nd(std::ptr_fun(findGridIfPositionMatches), Vector2D(x, y)));
     if (itr != _grids.end())
         grid = *itr;
-    _gridsLock.unlock();
 
     return grid;
 }
@@ -307,36 +309,11 @@ std::list<Poco::UInt64> GridLoader::ObjectsInGridNear(Object* object, float dist
     return objects_near;
 }
 
-
-/**
-* Can't be used from outside the GridLoader or the Grid classes as it is NOT thread safe
-*
-* @param GUID Object GUID, including HIGH_GUID
-*/
-void GridLoader::addToMoveList(Poco::UInt64 GUID)
-{
-    _moveList.push_back(GUID);
-}
-
 void GridLoader::run_impl()
 {
     while (sServer->isRunning())
-    {
-        // TODO: Multi-threading
-        // Objects moved from a Grid to another are added here to the new Grid, otherwise we would run into deadlocks
-        for (Grid::ObjectList::const_iterator itr = _moveList.cbegin(); itr != _moveList.cend(); )
-        {
-            Poco::UInt64 GUID = *itr;
-            itr++;
-
-            SharedPtr<Object> object = _server->GetObject(GUID);
-            if (!object.isNull())
-                addObject(object);
-        }
-        _moveList.clear();
-        
+    {        
         // Update all Grids
-        _gridsLock.readLock();
         for (GridsList::const_iterator itr = _grids.begin(); itr != _grids.end(); )
         {
             Grid* grid = *itr;
@@ -351,7 +328,6 @@ void GridLoader::run_impl()
                 delete grid;
             }
         }
-        _gridsLock.unlock();
 
         Poco::Thread::sleep(1);
     }
