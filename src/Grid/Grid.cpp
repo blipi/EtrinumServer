@@ -204,7 +204,7 @@ bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
     Grid* grid = new Grid(x, y);
 
     _gridsLock.writeLock();
-    _grids.push_back(grid);
+    _grids.insert(grid);
     _isGridLoaded[x][y] = true;
     _gridsLock.unlock();
 
@@ -332,9 +332,12 @@ void GridLoader::run_impl()
     {
         // TODO: Multi-threading
         // Objects moved from a Grid to another are added here to the new Grid, otherwise we would run into deadlocks
-        for (Grid::ObjectList::const_iterator itr = _moveList.cbegin(); itr != _moveList.cend(); itr++)
+        for (Grid::ObjectList::const_iterator itr = _moveList.cbegin(); itr != _moveList.cend(); )
         {
-            SharedPtr<Object> object = _server->GetObject(*itr);
+            Poco::UInt64 GUID = *itr;
+            itr++;
+
+            SharedPtr<Object> object = _server->GetObject(GUID);
             if (!object.isNull())
                 addObject(object);
         }
@@ -346,7 +349,7 @@ void GridLoader::run_impl()
         {
             Grid* grid = *itr;
 
-            _grids.remove(grid);
+            _grids.erase(grid);
             _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
             delete grid;
         }
@@ -355,9 +358,10 @@ void GridLoader::run_impl()
 
         // Update all Grids
         _gridsLock.readLock();
-        for (GridsList::const_iterator itr = _grids.cbegin(); itr != _grids.cend(); itr++)
+        for (GridsList::const_iterator itr = _grids.cbegin(); itr != _grids.cend(); )
         {
             Grid* grid = *itr;
+            itr++;
 
             // If update fails, something went really wrong, delete this grid
             if (!grid->update())
@@ -375,9 +379,5 @@ void GridLoader::run_impl()
 
 void GridLoader::removeGrid(Grid* grid)
 {
-#if defined(SERVER_FRAMEWORK_TESTING)
-    printf("Removing Grid (%d, %d)\n", grid->GetPositionX(), grid->GetPositionY());
-#endif
-
-    _removeList.push_back(grid);
+    _removeList.insert(grid);
 }

@@ -10,6 +10,7 @@
 
 #include <list>
 #include <map>
+#include <set>
 #include <unordered_map>
 
 //@ Basic server information
@@ -84,7 +85,15 @@ private:
 class GridLoader: public Poco::Runnable
 {
 private:
-    typedef std::list<Grid*> GridsList;
+    struct GridCompare
+    {
+        bool operator() (Grid* g1, Grid* g2) const
+        {
+            return g1->GetPositionX() < g2->GetPositionY();
+        }
+    };
+
+    typedef std::set<Grid*, GridCompare> GridsList;
 
 public:
     GridLoader();
