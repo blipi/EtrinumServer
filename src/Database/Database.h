@@ -7,6 +7,7 @@
 #include "Poco/Data/RecordSet.h"
 #include "Poco/Data/MySQL/Connector.h"
 
+#include "debugging.h"
 
 using namespace Poco::Data;
 
@@ -116,9 +117,17 @@ public:
     {
         while (true)
         {
-            _stmt.execute();
-            if (_stmt.done())
-                return RecordSet(_stmt);
+            try
+            {
+                _stmt.execute();
+                if (_stmt.done())
+                    return RecordSet(_stmt);
+            }
+            catch (Poco::Exception& ex)
+            {
+                printf("MYSQL Error: %s\n", ex.message().c_str());
+                ASSERT(false);
+            }
         }
     }
 

@@ -172,6 +172,9 @@ GridLoader::GridLoader():
 {
     _gridsPool = new Poco::ThreadPool(1, 1); // TODO: Multithreading (more than one grid worker thread)
     
+    _grids.set_empty_key(NULL);
+    _grids.set_deleted_key(std::numeric_limits<Poco::UInt32>::max());
+
     for (Poco::UInt16 x = 0; x < MAX_X; x++)
         for (Poco::UInt16 y = 0; y < MAX_Y; y++)
             _isGridLoaded[x][y] = false;
@@ -195,7 +198,7 @@ bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
 
     Grid* grid = new Grid(x, y);
 
-    _grids.insert(grid);
+    _grids.insert(GridInserter(grid->hashCode(), grid));
     _isGridLoaded[x][y] = true;
 
     #ifdef SERVER_FRAMEWORK_TESTING
@@ -203,11 +206,6 @@ bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
     #endif
 
     return true;
-}
-
-bool findGridIfPositionMatches(Grid* grid, Vector2D position)
-{
-    return (grid->GetPositionX() == position.x && grid->GetPositionY() == position.y);
 }
 
 /**
@@ -222,9 +220,9 @@ Grid* GridLoader::GetGrid(Poco::UInt16 x, Poco::UInt16 y)
     if (!_isGridLoaded[x][y])
         return grid;
 
-    GridsList::const_iterator itr = std::find_if(_grids.cbegin(), _grids.cend(), std::bind2nd(std::ptr_fun(findGridIfPositionMatches), Vector2D(x, y)));
+    GridsMap::const_iterator itr = _grids.find((x << 16) | y);
     if (itr != _grids.end())
-        grid = *itr;
+        grid = itr->second;
 
     return grid;
 }
@@ -314,16 +312,16 @@ void GridLoader::run_impl()
     while (sServer->isRunning())
     {        
         // Update all Grids
-        for (GridsList::const_iterator itr = _grids.begin(); itr != _grids.end(); )
+        for (GridsMap::const_iterator itr = _grids.begin(); itr != _grids.end(); )
         {
-            Grid* grid = *itr;
+            Grid* grid = itr->second;
             itr++;
 
             // If update fails, something went really wrong, delete this grid
             // If the grid has no players in it, check for nearby grids, if they are not loaded or have no players, remove it
             if (!grid->update() || !grid->hasPlayers())
             {
-                _grids.erase(grid);
+                _grids.erase(grid->hashCode());
                 _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
                 delete grid;
             }

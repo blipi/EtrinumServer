@@ -206,7 +206,7 @@ void Client::run()
         }
 
         #if defined(SERVER_FRAMEWORK_TESTING)
-            if (_logicFlags & DISCONNECT_ON_EMPTY_QUEUE)
+            if ((_logicFlags & DISCONNECT_ON_EMPTY_QUEUE) && (_logicFlags & ~DISCONNECT_ON_EMPTY_QUEUE))
                 printf("Disconnect flags: %d\n", _logicFlags & ~DISCONNECT_ON_EMPTY_QUEUE);
         #endif
 		

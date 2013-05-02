@@ -35,12 +35,11 @@ class Server;
 
 class Grid
 {
-public:
-    //typedef std::map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*client*/> ObjectMap;
-
-    typedef google::dense_hash_map<Poco::UInt64 /*key*/, Poco::SharedPtr<Object> /*object*/, std::hash<Poco::UInt64>, equint64> ObjectMap;
+private:
+    typedef google::dense_hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*object*/, std::hash<Poco::UInt64>, equint64> ObjectMap;
     typedef std::pair<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*client*/> ObjectMapInserter;
 
+public:
     typedef std::list<Poco::UInt64> ObjectList;
 
     Grid(Poco::UInt16 x, Poco::UInt16 y);
@@ -66,6 +65,11 @@ public:
     {
         return _y;
     }
+
+    inline Poco::UInt32 hashCode()
+    {
+        return (_x << 16) |  _y;
+    }
     
     inline bool hasPlayers()
     {
@@ -86,13 +90,14 @@ class GridLoader: public Poco::Runnable
 private:
     struct GridCompare
     {
-        bool operator() (Grid* g1, Grid* g2) const
+        bool operator() (Poco::UInt32 hash1, Poco::UInt32 hash2) const
         {
-            return g1->GetPositionX() < g2->GetPositionY();
+            return hash1 < hash2;
         }
     };
-
-    typedef std::set<Grid*, GridCompare> GridsList;
+    
+    typedef google::dense_hash_map<Poco::UInt32 /*hash*/, Grid* /*object*/, std::hash<Poco::UInt32>, GridCompare> GridsMap;
+    typedef std::pair<Poco::UInt32 /*hash*/, Grid* /*grid*/> GridInserter;
 
 public:
     GridLoader();
@@ -127,7 +132,7 @@ private:
     Server* _server;
     
     Poco::ThreadPool* _gridsPool;
-    GridsList _grids;
+    GridsMap _grids;
     bool _isGridLoaded[MAX_X][MAX_Y];
 };
 
