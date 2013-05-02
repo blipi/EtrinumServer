@@ -48,20 +48,22 @@ public:
     {
          _flags[flagType] |= flag;
     }
+
     inline bool hasFlag(Poco::UInt8 flagType, Poco::UInt64 flag)
     {
         return (_flags[flagType] & flag) == flag;
     }
+
     inline void clearFlag(Poco::UInt8 flagType, Poco::UInt64 flag)
     {
-        if (hasFlag(flagType, flag))
-            _flags[flagType] &= ~flag;
+        _flags[flagType] &= ~flag;
     }
 
     inline Vector2D& GetPosition()
     {
         return _position;
     }
+
     inline void Relocate(Vector2D position)
     {
         _position = position;
