@@ -48,8 +48,8 @@ bool Object::update(const Poco::UInt32 diff)
         {                    
             // Add it to GridLoader move list, we can't add it directly from here to the new Grid
             // We would end up being deadlocked, so the GridLoader handles it
-            sGridLoader.addObject(this);
             _grid = NULL;
+            sGridLoader.addObject(this);
             updatedGrid = true;
         }
 
