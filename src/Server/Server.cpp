@@ -155,17 +155,15 @@ void Server::newClient(Client* client)
 */
 SharedPtr<Object> Server::GetObject(Poco::UInt64 GUID)
 {
+    SharedPtr<Object> o = NULL;
+
     _objectMapLock.readLock();
     ObjectMap::iterator itr = _objectsList.find(GUID);
     if (itr != _objectsList.end())
-    {
-        SharedPtr<Object> o = itr->second;
-        _objectMapLock.unlock();
-        return o;
-    }
+        o = itr->second;
     _objectMapLock.unlock();
 
-    return NULL;
+    return o;
 }
 
 /**
