@@ -2,6 +2,7 @@
 #include "Puller.h"
 #include "Player.h"
 #include "Character.h"
+#include "Creature.h"
 #include "Grid.h"
 #include "Server.h"
 #include "Tools.h"
@@ -55,50 +56,46 @@ bool Object::update(const Poco::UInt32 diff)
 
         // Relocate Object
         Relocate(newPos);
-
-        // Update LoS
-        UpdateLoS();
     }
 
     return !updatedGrid;
 }
 
-void Object::UpdateLoS()
+void Object::UpdateLoS(GuidsSet newObjectsInSight)
 {
-    if (!_grid)
-        return;
-
-    std::list<Poco::UInt64> newObjectsInSight = sGridLoader.ObjectsInGridNear(this->ToObject(), 35.0f);
-
     // Send spawn packets
-    for (std::list<Poco::UInt64>::iterator itr = newObjectsInSight.begin(); itr != newObjectsInSight.end(); itr++)
+    for (GuidsSet::iterator itr = newObjectsInSight.begin(); itr != newObjectsInSight.end(); itr++)
     {
         // Is the object already in the LOS list? If not, send an update packet
-        std::list<Poco::UInt64>::iterator found = std::find(_objectsInSight.begin(), _objectsInSight.end(), *itr);
-        if (found == _objectsInSight.end())
+        if (_objectsInSight.find(*itr) == _objectsInSight.end())
         {
-            // Send update packet to only players
-            SharedPtr<Object> object = _grid->getObject(*itr);
-            if (object.isNull() || object->GetHighGUID() != HIGH_GUID_PLAYER)
+            // Send update packet to players only
+            SharedPtr<Object> object = sServer->GetObject(*itr);
+            if (object.isNull())
                 continue;
 
-            sServer->UpdateVisibilityOf(this->ToObject(), object, true);
+            if (object->GetHighGUID() != HIGH_GUID_PLAYER)
+                object->ToCreature()->UpdateVisibilityOf(GetGUID(), true);
+            else
+                sServer->UpdateVisibilityOf(this->ToObject(), object, true);
         }
     }
 
     // Send despawn packets
-    for (std::list<Poco::UInt64>::iterator itr = _objectsInSight.begin(); itr != _objectsInSight.end(); itr++)
+    for (GuidsSet::iterator itr = _objectsInSight.begin(); itr != _objectsInSight.end(); itr++)
     {
         // Is the object no longer in sight? Send Despawn packet
-        std::list<Poco::UInt64>::iterator found = std::find(newObjectsInSight.begin(), newObjectsInSight.end(), *itr);
-        if (found == newObjectsInSight.end())
+        if (newObjectsInSight.find(*itr) == newObjectsInSight.end())
         {
-            // Send update packet to only players
-            SharedPtr<Object> object = _grid->getObject(*itr);
-            if (object.isNull() || object->GetHighGUID() != HIGH_GUID_PLAYER)
+            // Send update packet to players only
+            SharedPtr<Object> object = sServer->GetObject(*itr);
+            if (object.isNull())
                 continue;
 
-            sServer->UpdateVisibilityOf(this->ToObject(), object, false);
+            if (object.isNull() || object->GetHighGUID() != HIGH_GUID_PLAYER)
+                object->ToCreature()->UpdateVisibilityOf(GetGUID(), false);
+            else
+                sServer->UpdateVisibilityOf(this->ToObject(), object, false);
         }
     }
 
@@ -108,14 +105,17 @@ void Object::UpdateLoS()
 void Object::Despawn()
 {
     // Send despawn packets
-    for (std::list<Poco::UInt64>::iterator itr = _objectsInSight.begin(); itr != _objectsInSight.end(); itr++)
+    for (GuidsSet::iterator itr = _objectsInSight.begin(); itr != _objectsInSight.end(); itr++)
     {
         // Send update packet to only players
         SharedPtr<Object> object = _grid->getObject(*itr);
-        if (object.isNull() || object->GetHighGUID() != HIGH_GUID_PLAYER)
+        if (object.isNull())
             continue;
 
-        sServer->UpdateVisibilityOf(this->ToObject(), object, false);
+        if (object->GetHighGUID() != HIGH_GUID_PLAYER)
+            object->ToCreature()->UpdateVisibilityOf(GetGUID(), false);
+        else
+            sServer->UpdateVisibilityOf(this->ToObject(), object, false);
     }
 }
 
@@ -145,10 +145,17 @@ Player* Object::ToPlayer()
         return (Player*)this;
     return NULL;
 }
+
+Creature* Object::ToCreature()
+{
+    if (GetHighGUID() & HIGH_GUID_CREATURE)
+        return (Creature*)this;
+    return NULL;
+}
    
 Character* Object::ToCharacter()
 {
-    if ((GetHighGUID() & HIGH_GUID_PLAYER) || (GetHighGUID() & HIGH_GUID_MONSTER))
+    if ((GetHighGUID() & HIGH_GUID_PLAYER) || (GetHighGUID() & HIGH_GUID_CREATURE))
         return (Character*)this;
     return NULL;
 }

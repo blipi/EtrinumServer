@@ -40,20 +40,23 @@ private:
     typedef std::pair<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*client*/> ObjectMapInserter;
 
 public:
-    typedef std::list<Poco::UInt64> ObjectList;
+    typedef std::list<Grid*> GridsList;
 
     Grid(Poco::UInt16 x, Poco::UInt16 y);
     bool update();
 
-    ObjectList getObjects(Poco::UInt32 highGUID);
+    GuidsSet getObjects(Poco::UInt32 highGUID);
     SharedPtr<Object> getObject(Poco::UInt64 GUID);
 
     bool addObject(SharedPtr<Object> object);
     void removeObject(Poco::UInt64 GUID);
 
+    GridsList findNearGrids(SharedPtr<Object> object);
+    void visit(SharedPtr<Object> object, GuidsSet& objects);
+
     inline void addToMoveList(Poco::UInt64 GUID)
     {
-        _moveList.push_back(GUID);
+        _moveList.insert(GUID);
     }
 
     inline Poco::UInt16 GetPositionX()
@@ -76,10 +79,21 @@ public:
         return _playersInGrid > 0;
     }
 
+    inline void forceLoad()
+    {
+        _forceLoad = clock();
+    }
+
+    inline Poco::UInt32 isForceLoaded()
+    {
+        return (clock() - _forceLoad) < 5000;
+    }
+
 private:
     ObjectMap _objects;
-    ObjectList _moveList;
+    GuidsSet _moveList;
     Poco::UInt32 _playersInGrid;
+    Poco::UInt32 _forceLoad;
     Poco::UInt16 _x;
     Poco::UInt16 _y;
     Poco::UInt32 _lastTick;
@@ -116,9 +130,6 @@ public:
     Grid* addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> object);
     Grid* addObject(SharedPtr<Object> object);
     bool removeObject(Object* object);
-
-    std::list<Poco::UInt64> ObjectsInGrid(Object* object);
-    std::list<Poco::UInt64> ObjectsInGridNear(Object* object, float distance);
 
     void addToMoveList(Poco::UInt64 GUID);
 

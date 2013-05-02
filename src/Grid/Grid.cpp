@@ -19,20 +19,6 @@ Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
 }
 
 /**
- * Finds an object in the Grid near to a given position
- *
- * @param it dense_hash_map element
- * @param c Position taken as center
- */
-static bool findObjectsIf(std::pair<Poco::UInt64, SharedPtr<Object> > it, Vector2D c)
-{
-    Poco::UInt32 x = it.second->GetPosition().x;
-    Poco::UInt32 y = it.second->GetPosition().y;
-
-    return !(it.second->GetHighGUID() & HIGH_GUID_PLAYER) && (x - 20 >= c.x && x + 20 <= c.x && y - 20 >= c.y && y + 20 <= c.y);
-}
-
-/**
  * Updates the Grid and its objects
  *
  */
@@ -42,7 +28,7 @@ bool Grid::update()
     if (clock() - _lastTick > 0)
     {
         // Delete an object if it's in the move list
-        for (ObjectList::const_iterator itr = _moveList.begin(); itr != _moveList.end(); )
+        for (GuidsSet::const_iterator itr = _moveList.begin(); itr != _moveList.end(); )
         {
             // Get the GUID and increment the iterator, it'd be safe to delete from movelist now, but we rather use clear
             Poco::UInt64 GUID = *itr;
@@ -68,6 +54,10 @@ bool Grid::update()
             if (!(object->GetHighGUID() & HIGH_GUID_PLAYER))
                 continue;
 
+            // Find near grids
+            // Must be done before moving, other we may run into LoS problems
+            GridsList nearGrids = findNearGrids(object);
+
             // Update AI, movement, everything if there is any or we have to
             // If update returns false, that means the object is no longer in this grid!
             if (!object->update(clock() - _lastTick))
@@ -76,38 +66,17 @@ bool Grid::update()
                 _playersInGrid--;
             }
 
-            //@todo: Check proximity to another Grid and load it if we have to!
-            /*
-                We could add a parameter, such as _forcedLoadTime = clock()
-                which gets updated at each this->update().
-
-                At GridLoader run method:
-                If clock() - nearGrid->_forcedLoadTime > xxx and !nearGrid->hasPlayers() Then
-                    RemoveGrid
-
-                std::list<Grid*> nearGrids = xxx; // Up to 3 if we are in a corner!!
-            */
-
             // Update near mobs
-            Vector2D c(object->GetPosition().x, object->GetPosition().y);
-            ObjectMap::iterator it = std::find_if(_objects.begin(), _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
-            while (it != _objects.end())
-            {
-                // Update the object, if it fails, it means it is in a new grid
-                SharedPtr<Object> obj = it->second;
-                if (!obj->update(clock() - _lastTick))
-                    _objects.erase(obj->GetGUID());
+            GuidsSet objects;
+            visit(object, objects);
 
-                // Find next near object
-                it = std::find_if(++it, _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
-            }
+            // Update other grids near mobs
+            for (GridsList::iterator nGrid = nearGrids.begin(); nGrid != nearGrids.end(); nGrid++)
+                (*nGrid)->visit(object, objects);
 
-            //@todo: Update objects in near grids
-            /*
-                Foreach nearGrids Do
-                    Foreach FindNearObjects Do
-                        nearObject->update
-            */
+            // Update players LoS
+            // Players will update mobs LoS in its method
+            object->UpdateLoS(objects);
         }
 
         _lastTick = clock();
@@ -115,10 +84,124 @@ bool Grid::update()
     return true;
 }
 
-
-Grid::ObjectList Grid::getObjects(Poco::UInt32 highGUID)
+/**
+ * Returns all near grids to the object
+ *
+ * @param object Object which we must find near grids
+ */
+Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
 {
-    std::list<Poco::UInt64> objects;
+    Vector2D position = object->GetPosition();
+    Poco::UInt16 gridX = Tools::GetPositionInCell(GetPositionX(), position.x);
+    Poco::UInt16 gridY = Tools::GetPositionInCell(GetPositionY(), position.y);
+
+    std::list<Grid*> nearGrids;
+    // Near at left
+    if (gridX < 35 && GetPositionX() > 1)
+    {
+        Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() - 1, GetPositionY());
+        grid->forceLoad();
+        nearGrids.push_back(grid);
+
+        // Near at left top corner
+        if (gridY < 35 && GetPositionY() > 1)
+        {
+            Grid* grid = sGridLoader.GetGrid(GetPositionX() - 1, GetPositionY() - 1);
+            grid->forceLoad();
+            nearGrids.push_back(grid);
+        }
+
+        // Near at left bottom corner
+        if (gridY > 500 - 35 && GetPositionY() < 0xFF)
+        {
+            Grid* grid = sGridLoader.GetGrid(GetPositionX() - 1, GetPositionY() + 1);
+            grid->forceLoad();
+            nearGrids.push_back(grid);
+        }
+    }
+
+    // Near at top
+    if (gridY < 35 && GetPositionY() > 1)
+    {
+        Grid* grid = sGridLoader.GetGrid(GetPositionX(), GetPositionY() - 1);
+        grid->forceLoad();
+        nearGrids.push_back(grid);
+    }
+
+    // Near at right
+    if (gridX > 500 - 35 && GetPositionX() < 0xFF)
+    {
+        Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() + 1, GetPositionY());
+        grid->forceLoad();
+        nearGrids.push_back(grid);
+
+        // Near at right top corner
+        if (gridY < 35 && GetPositionY() > 1)
+        {
+            Grid* grid = sGridLoader.GetGrid(GetPositionX() + 1, GetPositionY() - 1);
+            grid->forceLoad();
+            nearGrids.push_back(grid);
+        }
+
+        // Near at right bottom corner
+        if (gridY > 500 - 35 && GetPositionY() < 0xFF)
+        {
+            Grid* grid = sGridLoader.GetGrid(GetPositionX() + 1, GetPositionY() + 1);
+            grid->forceLoad();
+            nearGrids.push_back(grid);
+        }
+    }
+
+    // Near at bottom
+    if (gridY < 500 - 35 && GetPositionY() < 0xFF)
+    {
+        Grid* grid = sGridLoader.GetGrid(GetPositionX(), GetPositionY() + 1);
+        grid->forceLoad();
+        nearGrids.push_back(grid);
+    }
+}
+
+/**
+ * Finds an object in the Grid near to a given position
+ *
+ * @param it dense_hash_map element
+ * @param c Position taken as center
+ */
+static bool findObjectsIf(std::pair<Poco::UInt64, SharedPtr<Object> > it, Vector2D c)
+{
+    Poco::UInt32 x = it.second->GetPosition().x;
+    Poco::UInt32 y = it.second->GetPosition().y;
+
+    return !(it.second->GetHighGUID() & HIGH_GUID_PLAYER) && (x - 20 >= c.x && x + 20 <= c.x && y - 20 >= c.y && y + 20 <= c.y);
+}
+
+/**
+ * Enables a player to visit a grid, be it its grid or a nearby grid
+ *
+ * @param object Visiting object
+ * @param objets List where near objects are included
+ */
+void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
+{
+    Vector2D c(object->GetPosition().x, object->GetPosition().y);
+    ObjectMap::iterator it = std::find_if(_objects.begin(), _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
+    while (it != _objects.end())
+    {
+        // Update the object, if it fails, it means it is in a new grid
+        SharedPtr<Object> obj = it->second;
+        // Find next near object now, avoid issues
+        it = std::find_if(++it, _objects.end(), std::bind2nd(std::ptr_fun(findObjectsIf), c));
+
+        if (!obj->update(clock() - _lastTick))
+            _objects.erase(obj->GetGUID());
+        else
+            objects.insert(obj->GetGUID());
+    }
+}
+
+GuidsSet Grid::getObjects(Poco::UInt32 highGUID)
+{
+    GuidsSet objects;
 
     for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
     {
@@ -126,7 +209,7 @@ Grid::ObjectList Grid::getObjects(Poco::UInt32 highGUID)
         itr++;
 
         if (GUID & highGUID)
-            objects.push_back(GUID);
+            objects.insert(GUID);
     }
 
     return objects;
@@ -164,7 +247,7 @@ bool Grid::addObject(SharedPtr<Object> object)
  */
 void Grid::removeObject(Poco::UInt64 GUID)
 {
-    _moveList.push_back(GUID);
+    _moveList.insert(GUID);
 }
 
 GridLoader::GridLoader():
@@ -271,41 +354,6 @@ bool GridLoader::removeObject(Object* object)
     return false;
 }
 
-std::list<Poco::UInt64> GridLoader::ObjectsInGrid(Object* object)
-{
-    Poco::UInt16 x = Tools::GetCellFromPos(object->GetPosition().x);
-    Poco::UInt16 y = Tools::GetCellFromPos(object->GetPosition().y);
-    std::list<Poco::UInt64> objectsList;
-    
-    if (!_isGridLoaded[x][y])
-        return objectsList;
-
-    if (Grid* grid = GetGrid(x, y))
-        objectsList = grid->getObjects(HIGH_GUID_PLAYER | HIGH_GUID_MONSTER | HIGH_GUID_ITEM);
-
-    return objectsList;
-}
-
-std::list<Poco::UInt64> GridLoader::ObjectsInGridNear(Object* object, float distance)
-{
-    std::list<Poco::UInt64> objects_grid = ObjectsInGrid(object);
-    std::list<Poco::UInt64> objects_near;
-
-    for (std::list<Poco::UInt64>::iterator itr = objects_grid.begin(); itr != objects_grid.end(); itr++)
-    {
-        SharedPtr<Object> object_near = sServer->GetObject(*itr);
-        if (object_near.isNull())
-            continue;
-
-        Vector2D org = object->GetPosition();
-        Vector2D dest = object_near->GetPosition();
-        if (pow(org.x - dest.x, 2) + pow(org.y - dest.y, 2) <= pow(distance, 2))
-			objects_near.push_back(*itr);
-    }
-
-    return objects_near;
-}
-
 void GridLoader::run_impl()
 {
     while (sServer->isRunning())
@@ -318,7 +366,7 @@ void GridLoader::run_impl()
 
             // If update fails, something went really wrong, delete this grid
             // If the grid has no players in it, check for nearby grids, if they are not loaded or have no players, remove it
-            if (!grid->update() || !grid->hasPlayers())
+            if (!grid->update() || (!grid->hasPlayers() && !grid->isForceLoaded()))
             {
                 _grids.erase(grid->hashCode());
                 _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;

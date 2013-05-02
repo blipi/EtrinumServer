@@ -278,7 +278,7 @@ void Server::UpdateVisibilityOf(Object* from, Object* to, bool visible)
         
         switch (from->GetHighGUID())
         {
-            case HIGH_GUID_MONSTER:
+            case HIGH_GUID_CREATURE:
             case HIGH_GUID_PLAYER:
                 {
                     Character* character = from->ToCharacter();

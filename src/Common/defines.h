@@ -6,7 +6,7 @@
 enum HIGH_GUID
 {
     HIGH_GUID_PLAYER    = 0x0001,
-    HIGH_GUID_MONSTER   = 0x0002,
+    HIGH_GUID_CREATURE  = 0x0002,
     HIGH_GUID_ITEM      = 0x0004,
 };
 #define MAX_HIGH_GUID 3
@@ -40,6 +40,9 @@ struct equint64
         return u1 == u2;
     }
 };
+    
+#include <set>
+typedef std::set<Poco::UInt64> GuidsSet;
 
 //@ Testing purpouses macros
 #define SERVER_FRAMEWORK_TESTING

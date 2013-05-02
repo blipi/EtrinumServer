@@ -26,6 +26,7 @@ enum OBJECT_MOVEMENT_FLAGS
 };
 
 class Player;
+class Creature;
 class Character;
 class Grid;
 
@@ -36,7 +37,7 @@ public:
     ~Object();
     
     bool update(const Poco::UInt32 diff);
-    void UpdateLoS();
+    void UpdateLoS(GuidsSet newObjectsInSight);
     void Despawn();
 
     void SetGUID(Poco::UInt64 GUID);
@@ -87,13 +88,14 @@ public:
     MotionMaster motionMaster;
 
     Player* ToPlayer();
+    Creature* ToCreature();
     Character* ToCharacter();
     Object* ToObject();    
 
 private:
     Poco::UInt64 _GUID;
     Poco::UInt64 _flags[MAX_FLAGS_TYPES];
-    std::list<Poco::UInt64> _objectsInSight;
+    GuidsSet _objectsInSight;
     Vector2D _position;
     Grid* _grid;
 };
