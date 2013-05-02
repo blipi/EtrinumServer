@@ -1,0 +1,9 @@
+EtrinumServer uses (parts of or in whole) the following opensource software :
+
+MySQL (the world's most popular open source database software)
+  http://www.mysql.com/
+  Version: 5.5.9 (GA)
+
+zlib (A Massively Spiffy Yet Delicately Unobtrusive Compression Library)
+  http://www.zlib.net/
+  Version: 1.2.7
