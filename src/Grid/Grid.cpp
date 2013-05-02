@@ -159,6 +159,8 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
         grid->forceLoad();
         nearGrids.push_back(grid);
     }
+
+    return nearGrids;
 }
 
 /**
@@ -248,6 +250,17 @@ bool Grid::addObject(SharedPtr<Object> object)
 void Grid::removeObject(Poco::UInt64 GUID)
 {
     _moveList.insert(GUID);
+}
+
+
+void Grid::forceLoad()   
+{
+    _forceLoad = clock();
+}
+
+bool Grid::isForceLoaded()
+{
+    return (clock() - _forceLoad) < 5000;
 }
 
 GridLoader::GridLoader():

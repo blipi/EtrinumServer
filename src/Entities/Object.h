@@ -92,10 +92,12 @@ public:
     Character* ToCharacter();
     Object* ToObject();    
 
+protected:
+    GuidsSet _objectsInSight;
+
 private:
     Poco::UInt64 _GUID;
     Poco::UInt64 _flags[MAX_FLAGS_TYPES];
-    GuidsSet _objectsInSight;
     Vector2D _position;
     Grid* _grid;
 };

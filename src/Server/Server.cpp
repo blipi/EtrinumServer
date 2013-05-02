@@ -543,11 +543,7 @@ void Server::OnEnterToWorld(Client* client, Poco::UInt32 characterID)
             SharedPtr<Object> obj(player->ToObject());
             newObject(obj);
             client->setInWorld(true);
-
-            // Before adding the object to the GridLoader system, and therefore risking to run
-            // Into threading issues, update visibility for nearby players (spawn)
-            player->UpdateLoS();
-
+            
             // Add the player to the GridLoader system
             sGridLoader.addObject(obj);
         }

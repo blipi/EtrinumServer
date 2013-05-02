@@ -4,11 +4,21 @@
 
 void MotionMaster::StartSimpleMovement(Object* object, Vector2D to, float speed)
 {
+    object->motionMaster.clear();
     object->motionMaster.addPoint(object->GetPosition());
     object->motionMaster.addPoint(to);
-    object->motionMaster.set(speed);
+    object->motionMaster.set(speed, MOVEMENT_TO_POINT);
     object->setFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
 }
+
+void MotionMaster::StartAngleMovement(Object* object, float angle, float speed)
+{
+    object->motionMaster.clear();
+    object->motionMaster.addPoint(object->GetPosition());
+    object->motionMaster.set(speed, MOVEMENT_BY_ANGLE);
+    object->setFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
+}
+
 
 void MotionMaster::addPoint(Vector2D point)
 {
@@ -32,19 +42,23 @@ Vector2D& MotionMaster::next()
     return _movement.points[1];
 }
 
-void MotionMaster::set(float speed, float elapsed)
+void MotionMaster::set(float speed, Poco::UInt8 movementType, float elapsed)
 {
+    _movement.movementType = movementType;
     _movement.speed = speed;
         
-    Vector2D c = current();
-    Vector2D n = next();
+    if (movementType == MOVEMENT_TO_POINT)
+    {
+        Vector2D c = current();
+        Vector2D n = next();
 
-    _movement.dx = (float)((Poco::Int32)n.x - (Poco::Int32)c.x);
-    _movement.dy = (float)((Poco::Int32)n.y - (Poco::Int32)c.y);
+        _movement.dx = (float)((Poco::Int32)n.x - (Poco::Int32)c.x);
+        _movement.dy = (float)((Poco::Int32)n.y - (Poco::Int32)c.y);
 
-    float distance = sqrt(pow(_movement.dx, 2) + pow(_movement.dy, 2));
-    _time = distance/speed;
-    _elapsed = elapsed;
+        float distance = sqrt(pow(_movement.dx, 2) + pow(_movement.dy, 2));
+        _time = distance/speed;
+        _elapsed = elapsed;
+    }
 
     #if defined(SERVER_FRAMEWORK_TESTING)
         printf("\t\tObject starting movement, t=%f\n", _time);
@@ -54,23 +68,35 @@ void MotionMaster::set(float speed, float elapsed)
 bool MotionMaster::evaluate(Poco::UInt32 diff, Vector2D& pos)
 {
     _elapsed += diff/1000.0f;
-
-    float r = _elapsed;
-    if (_elapsed > _time)
-        r = _time;
-        
     Vector2D c = current();
-    pos.x = c.x + _movement.dx * _elapsed / _time;
-    pos.y = c.y + _movement.dy * _elapsed / _time;
 
-    if (r >= _time)
+    if (_movement.movementType == MOVEMENT_TO_POINT)
     {
-        _movement.points.erase(_movement.points.begin());
-        if (hasNext())
-            set(_movement.speed, _max(0, _elapsed - r));
+        float r = _elapsed;
+        if (_elapsed > _time)
+            r = _time;
+        
+        pos.x = c.x + _movement.dx * _elapsed / _time;
+        pos.y = c.y + _movement.dy * _elapsed / _time;
+
+        if (r >= _time)
+        {
+            _movement.points.erase(_movement.points.begin());
+            if (hasNext())
+                set(_movement.speed, _movement.movementType, _max(0, _elapsed - r));
+        }
+
+        return r >= _time && !hasNext();
+    }
+    else if (_movement.movementType == MOVEMENT_BY_ANGLE)
+    {
+        pos.x = c.x + (_movement.speed * _elapsed * cos(_movement.angle));
+        pos.y = c.y + (_movement.speed * _elapsed * sin(_movement.angle));
+
+        return false;
     }
 
-    return r >= _time;
+    return true;
 }
 
 void MotionMaster::clear()

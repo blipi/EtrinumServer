@@ -79,15 +79,8 @@ public:
         return _playersInGrid > 0;
     }
 
-    inline void forceLoad()
-    {
-        _forceLoad = clock();
-    }
-
-    inline Poco::UInt32 isForceLoaded()
-    {
-        return (clock() - _forceLoad) < 5000;
-    }
+    void forceLoad();
+    bool isForceLoaded();
 
 private:
     ObjectMap _objects;

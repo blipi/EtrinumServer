@@ -15,10 +15,16 @@
 #define JUMP_ANIM_SPEED     1.5f
 #define LAND_ANIM_SPEED     2.0f
 
-enum MOVEMENT_TYPE
+enum MOVEMENT_TYPE_SPEED
 {
     MOVEMENT_RUN,
     MOVEMENT_WALK,
+};
+
+enum MOVEMENT_TYPE
+{
+    MOVEMENT_TO_POINT,
+    MOVEMENT_BY_ANGLE
 };
 
 class Object;
@@ -26,14 +32,15 @@ class Object;
 class MotionMaster
 {
 public:
-    void StartSimpleMovement(Object* object, Vector2D to, float speed);
+    static void StartSimpleMovement(Object* object, Vector2D to, float speed);
+    static void StartAngleMovement(Object* object, float angle, float speed);
 
     void addPoint(Vector2D point);
     Vector2D& current();
     bool hasNext();
     Vector2D& next();
 
-    void set(float speed, float elapsed = 0);
+    void set(float speed, Poco::UInt8 movementType, float elapsed = 0);
     bool evaluate(Poco::UInt32 diff, Vector2D& pos);
 
     void clear();
@@ -41,8 +48,9 @@ public:
 private:
     struct MovementVector
     {
+        Poco::UInt8 movementType;
         std::vector<Vector2D> points;
-        Poco::UInt16 angle;
+        float angle;
         float speed;
         float dx;
         float dy;
