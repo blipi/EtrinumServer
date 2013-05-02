@@ -62,13 +62,6 @@ bool Grid::update()
         
         for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
         {
-            // Avoid NULL value and deleted value
-            if (itr->first == NULL || itr->first == std::numeric_limits<Poco::UInt64>::max())
-            {
-                ++itr;
-                continue;
-            }
-
             SharedPtr<Object> object = itr->second;
             ++itr;
 
@@ -204,7 +197,6 @@ bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
         return true;
 
     Grid* grid = new Grid(x, y);
-
     _grids.insert(GridInserter(grid->hashCode(), grid));
     _isGridLoaded[x][y] = true;
 
@@ -321,13 +313,6 @@ void GridLoader::run_impl()
         // Update all Grids
         for (GridsMap::const_iterator itr = _grids.begin(); itr != _grids.end(); )
         {
-            // Avoid NULL value and deleted value
-            if (itr->first == NULL || itr->first == std::numeric_limits<Poco::UInt32>::max())
-            {
-                itr++;
-                continue;
-            }
-
             Grid* grid = itr->second;
             itr++;
 

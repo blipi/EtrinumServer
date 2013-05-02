@@ -92,7 +92,7 @@ private:
     {
         bool operator() (Poco::UInt32 hash1, Poco::UInt32 hash2) const
         {
-            return hash1 < hash2;
+            return hash1 == hash2;
         }
     };
     
