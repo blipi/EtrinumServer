@@ -1,5 +1,5 @@
 #include "Object.h"
-#include "Puller.h"
+#include "ObjectManager.h"
 #include "Player.h"
 #include "Character.h"
 #include "Creature.h"
@@ -15,7 +15,7 @@
 
 Object::Object(Client* client):
     _client(client),
-    _GUID(GuidManager::MAX_GUID)
+    _GUID(ObjectManager::MAX_GUID)
 {
     // Reset all flags
     for (Poco::UInt8 i = 0; i < MAX_FLAGS_TYPES; i++)

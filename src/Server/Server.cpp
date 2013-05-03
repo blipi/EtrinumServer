@@ -1,6 +1,6 @@
 #include "Server.h"
 #include "defines.h"
-#include "Puller.h"
+#include "ObjectManager.h"
 #include "Object.h"
 #include "Player.h"
 #include "Client.h"
@@ -533,9 +533,9 @@ bool Server::handleCharacterSelect(Client* client, Packet* packet)
 void Server::OnEnterToWorld(Client* client, Poco::UInt32 characterID)
 {
     // Get a new GUID for the client
-    Poco::UInt32 GUID = sGuidManager.getNewGUID(HIGH_GUID_PLAYER);
+    Poco::UInt32 GUID = sObjectManager.getNewGUID(HIGH_GUID_PLAYER);
     // If GUID is MAX_GUID, it means the servers has run out of guids! O_O (Shouldn't happen, that's uint32(0xFFFFFFFF))
-    if (GUID != GuidManager::MAX_GUID)
+    if (GUID != ObjectManager::MAX_GUID)
     {
         // Create the player (Object) and add it to the object list
         if (Player* player = client->onEnterToWorld(MAKE_GUID(HIGH_GUID_PLAYER, GUID), characterID))

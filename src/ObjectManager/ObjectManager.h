@@ -14,13 +14,13 @@
 
 #include "defines.h"
 
-class GuidManager
+class ObjectManager
 {
 public:
-    GuidManager();
-    static GuidManager& instance()
+    ObjectManager();
+    static ObjectManager& instance()
     {
-        static Poco::SingletonHolder<GuidManager> sh;
+        static Poco::SingletonHolder<ObjectManager> sh;
         return *sh.get();
     }
 
@@ -35,6 +35,6 @@ private:
     Poco::RWLock _lock[MAX_HIGH_GUID];
 };
 
-#define sGuidManager GuidManager::instance()
+#define sObjectManager ObjectManager::instance()
 
 #endif

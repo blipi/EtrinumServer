@@ -35,7 +35,7 @@ void Player::UpdateLoS(GuidsSet newObjectsInSight)
         if (newObjectsInSight.find(*itr) == newObjectsInSight.end())
         {
             // Send update packet to players only
-            // Even if we don't find the object, we should notify it's despawn
+            // Even if we don't find the object, we should notify its despawn
             // Not finding it means it is not longer in the server!
             SharedPtr<Object> object = sServer->GetObject(*itr);
             if (!object.isNull())
