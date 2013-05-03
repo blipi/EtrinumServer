@@ -5,10 +5,12 @@
 
 #include "Character.h"
 
+class Client;
+
 class Player: public Character
 {
 public:
-    Player(std::string name);
+    Player(std::string name, Client* client);
 
 private:
 

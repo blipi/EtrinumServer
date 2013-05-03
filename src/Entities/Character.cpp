@@ -1,7 +1,7 @@
 #include "Character.h"
 
-Character::Character(std::string name):
-    Object()
+Character::Character(std::string name, Client* client):
+    Object(client)
 {
     _name = name;
     _maxhp = _hp = 0;

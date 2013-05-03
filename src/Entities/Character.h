@@ -3,10 +3,12 @@
 
 #include "Object.h"
 
+class Client;
+
 class Character: public Object
 {
 public:
-    Character(std::string name);
+    Character(std::string name, Client* client = NULL);
 
     inline std::string GetName()
     {

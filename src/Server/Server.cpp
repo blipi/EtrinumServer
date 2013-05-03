@@ -137,18 +137,6 @@ Server::~Server()
 }
 
 /**
-* Setups a new Client connection when stablished
-* This is called by the client thread
-*
-* @param client Client object already created
-*/
-void Server::newClient(Client* client)
-{
-    // TODO: Thread safe!!!!!
-    _clients.push_back(client);
-}
-
-/**
 * Returns an Object given it's GUID
 *
 * @param GUID Object GUID including its High GUID
@@ -197,34 +185,16 @@ void Server::removeObject(Poco::UInt64 GUID, bool force /*= false*/)
     if (force || !isPlayer)
     {
         _objectMapLock.writeLock();
-
         _objectsList.erase(GUID);
-        if (isPlayer)
-            _clients.remove(getClient(GUID));
-
         _objectMapLock.unlock();
     }
 
     if (isPlayer && !force)
     {
-        for (ClientList::iterator itr = _clients.begin(); itr != _clients.end(); itr++)
-        {
-            if ((*itr)->GetPlayer()->GetGUID() == GUID)
-            {
-                (*itr)->SetFlag(DISCONNECT_ON_EMPTY_QUEUE);
-                break;
-            }
-        }
+        if (SharedPtr<Object> object = GetObject(GUID))
+            if (Client* client = object->getClient())
+                client->SetFlag(DISCONNECT_ON_EMPTY_QUEUE);
     }
-}
-
-Client* Server::getClient(Poco::UInt64 objectGUID)
-{
-    for (ClientList::iterator itr = _clients.begin(); itr != _clients.end(); itr++)
-        if ((*itr)->GetPlayer()->GetGUID() == objectGUID)
-            return *itr;
-
-    return NULL;
 }
 
 // Server -> Client packets
@@ -314,7 +284,7 @@ void Server::UpdateVisibilityOf(Object* from, Object* to, bool visible)
         }
     }
 
-    if (Client* client = getClient(to->GetGUID()))
+    if (Client* client = to->getClient())
     {
         encryptPacket(client, packet);
         setPacketHMAC(client, packet);

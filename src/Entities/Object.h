@@ -29,11 +29,12 @@ class Player;
 class Creature;
 class Character;
 class Grid;
+class Client;
 
 class Object
 {
 public:
-    Object();
+    Object(Client* client = NULL);
     ~Object();
     
     bool update(const Poco::UInt32 diff);
@@ -85,6 +86,11 @@ public:
         return _grid != NULL;
     }
 
+    inline Client* getClient()
+    {
+        return _client;
+    }
+
     MotionMaster motionMaster;
 
     Player* ToPlayer();
@@ -100,6 +106,7 @@ private:
     Poco::UInt64 _flags[MAX_FLAGS_TYPES];
     Vector2D _position;
     Grid* _grid;
+    Client* _client;
 };
 
 #endif

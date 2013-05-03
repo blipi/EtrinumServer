@@ -47,7 +47,7 @@ Player* Client::onEnterToWorld(Poco::UInt64 GUID, Poco::UInt32 characterID)
 
     _characterId = characterID;
 
-    _player = new Player(character->name);
+    _player = new Player(character->name, this);
     _player->SetGUID(GUID);
 
     PreparedStatement* stmt = CharactersDatabase.getPreparedStatement(QUERY_CHARACTERS_SELECT_INFORMATION);
@@ -85,9 +85,6 @@ Player* Client::onEnterToWorld(Poco::UInt64 GUID, Poco::UInt32 characterID)
 */
 void Client::run()
 {
-    // Once connection has been done
-    // Create the client at the server
-    sServer->newClient(this);
     // Send the handshake to the player
     sServer->SendPlayerEHLO(this);
     
@@ -227,6 +224,9 @@ void Client::run()
                 _player->motionMaster.clear();
                 _player->clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
 
+                // Save GUID for further usage
+                Poco::UInt64 GUID = _player->GetGUID();
+
                 // It ALWAYS must be deleted from Grid first, otherwise we may run into heap corruption
                 if (_player->IsOnGrid())
                     sGridLoader.removeObject(_player->ToObject());
@@ -235,7 +235,16 @@ void Client::run()
                 _player->Despawn();
 
                 // Delete from the server object list
-                sServer->removeObject(_player->GetGUID(), true);
+                sServer->removeObject(GUID, true);
+
+                // Flag it as not in world
+                setInWorld(false);
+                
+                /*
+                    @todo: We must free this used guid! 
+                    1. MySQL set GUID 0 for the character
+                    2. sGuidManager->freeGuid(GUID);
+                */
             }
 
 		    _stop = true;

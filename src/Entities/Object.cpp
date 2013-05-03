@@ -13,7 +13,8 @@
 
 #endif
 
-Object::Object():
+Object::Object(Client* client):
+    _client(client),
     _GUID(GuidManager::MAX_GUID)
 {
     // Reset all flags

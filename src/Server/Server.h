@@ -45,12 +45,9 @@ public:
     Server(Poco::UInt16 port);
     ~Server();
     
-    void newClient(Client* client);
-
     void newObject(Poco::SharedPtr<Object> object);
     SharedPtr<Object> GetObject(Poco::UInt64 GUID);
     void removeObject(Poco::UInt64 GUID, bool force = false);
-    Client* getClient(Poco::UInt64 objectGUID);
 
     inline bool isRunning()
     {
@@ -91,9 +88,6 @@ private:
 
     ObjectMap _objectsList;
     Poco::RWLock _objectMapLock;
-	    
-    ClientList _clients;
-
     
     static const OpcodeHandleType OpcodeTable[];
 };
