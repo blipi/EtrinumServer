@@ -13,6 +13,10 @@
 #include "Poco/SingletonHolder.h"
 
 #include "defines.h"
+#include "google/dense_hash_map"
+
+class Object;
+class Client;
 
 class ObjectManager
 {
@@ -24,15 +28,36 @@ public:
         return *sh.get();
     }
 
-    Poco::UInt32 getNewGUID(Poco::UInt32 highGUID);
+    Object* create(Poco::UInt32 highGUID);
+    Object* createPlayer(std::string name, Client* client);
+
+    Object* getObject(Poco::UInt64 GUID);
+    void removeObject(Poco::UInt64 GUID);
+
+private:
+    Poco::UInt32 newGUID(Poco::UInt32 highGUID);
 
 public:
     static Poco::UInt32 MAX_GUID;
 
 private:
-    std::list<Poco::UInt32> _freeGUIDs[MAX_HIGH_GUID];
-    Poco::UInt32 _lastGUID[MAX_HIGH_GUID];
-    Poco::RWLock _lock[MAX_HIGH_GUID];
+    struct eqObj
+    {
+        bool operator() (Poco::UInt32 u1, Poco::UInt32 u2)
+        {
+            return u1 == u2;
+        }
+    };
+    typedef google::dense_hash_map<Poco::UInt32 /*loguid*/, Object* /*object*/, std::hash<Poco::UInt32>, eqObj> ObjectsMap;
+    typedef std::pair<Poco::UInt32 /*loguid*/, Object* /*object*/> ObjectInserter;
+
+    ObjectsMap _players;
+    ObjectsMap _creatures;
+    ObjectsMap _items;
+
+    Poco::UInt32 _playersGUID;
+    Poco::UInt32 _creaturesGUID;
+    Poco::UInt32 _itemsGUID;
 };
 
 #define sObjectManager ObjectManager::instance()

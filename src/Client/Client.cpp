@@ -4,6 +4,7 @@
 #include "Packet.h"
 #include "Grid.h"
 #include "Tools.h"
+#include "ObjectManager.h"
 #include "AuthDatabase.h"
 #include "CharactersDatabase.h"
 
@@ -39,7 +40,7 @@ Client::~Client()
 * @param characterID Which of the users in the character list is selected
 * @return Player created entity
 */
-Player* Client::onEnterToWorld(Poco::UInt64 GUID, Poco::UInt32 characterID)
+Player* Client::onEnterToWorld(Poco::UInt32 characterID)
 {
     Characters* character = FindCharacter(characterID);
     if (!character)
@@ -47,8 +48,9 @@ Player* Client::onEnterToWorld(Poco::UInt64 GUID, Poco::UInt32 characterID)
 
     _characterId = characterID;
 
-    _player = new Player(character->name, this);
-    _player->SetGUID(GUID);
+    _player = (Player*)sObjectManager.createPlayer(character->name, this);
+    if (!_player)
+        return NULL;
 
     PreparedStatement* stmt = CharactersDatabase.getPreparedStatement(QUERY_CHARACTERS_SELECT_INFORMATION);
     stmt->bindUInt32(0, characterID);
@@ -106,100 +108,109 @@ void Client::run()
     Poco::Timespan timeOut(1, 0);
     while (!_stop)
     {
-        _writeLock.readLock();
-        if (!_writePackets.empty())
+        try
         {
-            _writeLock.unlock();
-
-            if (socket().poll(timeOut, Poco::Net::Socket::SELECT_WRITE))
+            _writeLock.readLock();
+            if (!_writePackets.empty())
             {
-                _writeLock.writeLock();
-                while (!_writePackets.empty())
-                {
-                    Packet* packet = _writePackets.front();
-                    socket().sendBytes(&packet->len, sizeof(packet->len));
-                    socket().sendBytes(&packet->opcode, sizeof(packet->opcode));
-                    socket().sendBytes(&packet->sec, sizeof(packet->sec));
-                    socket().sendBytes(packet->digest, sizeof(packet->digest));
-                    socket().sendBytes(packet->rawdata, packet->getLength());
-                    delete packet;
-
-                    _writePackets.pop_front();
-                }
                 _writeLock.unlock();
+
+                if (socket().poll(timeOut, Poco::Net::Socket::SELECT_WRITE))
+                {
+                    _writeLock.writeLock();
+                    while (!_writePackets.empty())
+                    {
+                        Packet* packet = _writePackets.front();
+                        printf("[%d]\t[S->C] %.4X\n", GetId(), packet->opcode);
+                        socket().sendBytes(&packet->len, sizeof(packet->len));
+                        socket().sendBytes(&packet->opcode, sizeof(packet->opcode));
+                        socket().sendBytes(&packet->sec, sizeof(packet->sec));
+                        socket().sendBytes(packet->digest, sizeof(packet->digest));
+                        socket().sendBytes(packet->rawdata, packet->getLength());
+                        delete packet;
+
+                        _writePackets.pop_front();
+                    }
+                    _writeLock.unlock();
+                }
+            }
+            else
+                _writeLock.unlock();
+
+            if (socket().poll(timeOut, Poco::Net::Socket::SELECT_READ) == false)
+            {
+                // TODO: Config: Timeout interval
+                lastRead++;
+                if (lastRead == 15)
+                    _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_TIME_OUT;
+            }
+            else
+            {
+                int nBytes = -1;
+
+                try
+                {
+                    if (packetStep == STEP_NEW_PACKET)
+                    {
+                        packet = new Packet();
+                        packetStep = STEP_READ_LENGTH;
+                    }
+
+                    switch (packetStep)
+                    {
+                        case STEP_READ_LENGTH:
+                            nBytes = socket().receiveBytes(&packet->len, sizeof(packet->len));
+                            break;
+                        case STEP_READ_OPCODE:
+                            nBytes = socket().receiveBytes(&packet->opcode, sizeof(packet->opcode));
+                            break;
+                        case STEP_READ_SEC:
+                            nBytes = socket().receiveBytes(&packet->sec, sizeof(packet->sec));
+                            break;
+                        case STEP_READ_DIGEST:
+                            nBytes = socket().receiveBytes(packet->digest, sizeof(packet->digest));
+                            break;
+                        case STEP_READ_DATA:
+                            nBytes = socket().receiveBytes(packet->rawdata, packet->getLength());
+                            break;
+                    }
+
+                    packetStep++;
+
+                    if (packetStep == STEP_READ_DATA)
+                    {
+                        packet->rawdata = new Poco::UInt8[packet->getLength() + 1];
+
+                        if (packet->getLength() == 0)
+                            packetStep = STEP_END_PACKET;
+                    }
+
+                    if (packetStep == STEP_END_PACKET)
+                    {
+                        lastRead = 0;
+                        generateSecurityByte();
+                        if (!sServer->parsePacket(this, packet, (Poco::UInt8)(_packetData.securityByte & 0xFF)))
+                            _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_INCORRECT_DATA;
+
+                        packetStep = STEP_NEW_PACKET;
+                        delete packet;
+                    }
+                }
+                catch (Poco::Exception& /*ex*/)
+                {
+                    //Handle your network errors.
+                    _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_NETWORK_ERROR;
+                }
+
+                // If bytes read are 0 and we are not already disconnecting, flag it
+                if (nBytes == 0 && !(_logicFlags & DISCONNECT_ON_EMPTY_QUEUE))
+                    _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_CONNECTION_CLOSED;
             }
         }
-        else
-            _writeLock.unlock();
-
-        if (socket().poll(timeOut, Poco::Net::Socket::SELECT_READ) == false)
+        catch (Poco::Net::ConnectionResetException ex)
         {
-            // TODO: Config: Timeout interval
-            lastRead++;
-            if (lastRead == 15)
-                _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_TIME_OUT;
-        }
-        else
-        {
-            int nBytes = -1;
-
-            try
-            {
-                if (packetStep == STEP_NEW_PACKET)
-                {
-                    packet = new Packet();
-                    packetStep = STEP_READ_LENGTH;
-                }
-
-                switch (packetStep)
-                {
-                    case STEP_READ_LENGTH:
-                        nBytes = socket().receiveBytes(&packet->len, sizeof(packet->len));
-                        break;
-                    case STEP_READ_OPCODE:
-                        nBytes = socket().receiveBytes(&packet->opcode, sizeof(packet->opcode));
-                        break;
-                    case STEP_READ_SEC:
-                        nBytes = socket().receiveBytes(&packet->sec, sizeof(packet->sec));
-                        break;
-                    case STEP_READ_DIGEST:
-                        nBytes = socket().receiveBytes(packet->digest, sizeof(packet->digest));
-                        break;
-                    case STEP_READ_DATA:
-                        nBytes = socket().receiveBytes(packet->rawdata, packet->getLength());
-                        break;
-                }
-
-                packetStep++;
-
-                if (packetStep == STEP_READ_DATA)
-                {
-                    packet->rawdata = new Poco::UInt8[packet->getLength() + 1];
-
-                    if (packet->getLength() == 0)
-                        packetStep = STEP_END_PACKET;
-                }
-
-                if (packetStep == STEP_END_PACKET)
-                {
-                    lastRead = 0;
-                    generateSecurityByte();
-                    if (!sServer->parsePacket(this, packet, (Poco::UInt8)(_packetData.securityByte & 0xFF)))
-                        _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_INCORRECT_DATA;
-
-                    packetStep = STEP_NEW_PACKET;
-                    delete packet;
-                }
-            }
-            catch (Poco::Exception& /*ex*/)
-            {
-                //Handle your network errors.
-                _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_NETWORK_ERROR;
-            }
-
-            // If bytes read are 0 and we are not already disconnecting, flag it
-            if (nBytes == 0 && !(_logicFlags & DISCONNECT_ON_EMPTY_QUEUE))
-                _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_CONNECTION_CLOSED;
+            printf("Client exception: %s\n", ex.what());
+            _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_CONNECTION_CLOSED;
         }
 
         #if defined(SERVER_FRAMEWORK_TESTING)

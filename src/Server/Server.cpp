@@ -156,18 +156,6 @@ SharedPtr<Object> Server::GetObject(Poco::UInt64 GUID)
 }
 
 /**
-* Adds a new Object to the server
-*
-* @param object Assigned SharedPtr to the object to be added
-*/
-void Server::newObject(Poco::SharedPtr<Object> object)
-{
-    _objectMapLock.writeLock();
-    _objectsList.insert(ObjectMapInserter(object->GetGUID(), object));
-    _objectMapLock.unlock();
-}
-
-/**
 * Remove an object from the server objects list
 *
 * @param GUID Object Ingame ID, including Type High GUID
@@ -532,29 +520,24 @@ bool Server::handleCharacterSelect(Client* client, Packet* packet)
 
 void Server::OnEnterToWorld(Client* client, Poco::UInt32 characterID)
 {
-    // Get a new GUID for the client
-    Poco::UInt32 GUID = sObjectManager.getNewGUID(HIGH_GUID_PLAYER);
-    // If GUID is MAX_GUID, it means the servers has run out of guids! O_O (Shouldn't happen, that's uint32(0xFFFFFFFF))
-    if (GUID != ObjectManager::MAX_GUID)
+    // Create the player (Object) and add it to the object list
+    if (Player* player = client->onEnterToWorld(characterID))
     {
-        // Create the player (Object) and add it to the object list
-        if (Player* player = client->onEnterToWorld(MAKE_GUID(HIGH_GUID_PLAYER, GUID), characterID))
-        {
-            SharedPtr<Object> obj(player);
-            newObject(obj);
-            client->setInWorld(true);
+        client->setInWorld(true);
 
-            // Send player information
-            sendPlayerStats(client, obj);
+        // Create a SharedPtr
+        SharedPtr<Object> obj(player);
+
+        // Send player information
+        sendPlayerStats(client, obj);
             
-            // Add the player to the GridLoader system
-            sGridLoader.addObject(obj);
-        }
+        // Add the player to the GridLoader system
+        sGridLoader.addObject(obj);
     }
     else
     {
-        throw new Poco::ApplicationException("Server has run out of GUIDs\n");
-        setRunning(false);
+        //@todo: Notify player that he can't connect
+        //@todo: time out client
     }
 }
 

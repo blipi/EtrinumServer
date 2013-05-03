@@ -2,6 +2,7 @@
 #include "defines.h"
 #include "Server.h"
 #include "Creature.h"
+#include "ObjectManager.h"
 
 Player::Player(std::string name, Client* client):
     Character(name, client)
@@ -17,7 +18,7 @@ void Player::UpdateLoS(GuidsSet newObjectsInSight)
         if (_objectsInSight.find(*itr) == _objectsInSight.end())
         {
             // Send update packet to players only
-            SharedPtr<Object> object = sServer->GetObject(*itr);
+            SharedPtr<Object> object = sObjectManager.getObject(*itr);
             if (object.isNull())
                 continue;
 
@@ -37,7 +38,7 @@ void Player::UpdateLoS(GuidsSet newObjectsInSight)
             // Send update packet to players only
             // Even if we don't find the object, we should notify its despawn
             // Not finding it means it is not longer in the server!
-            SharedPtr<Object> object = sServer->GetObject(*itr);
+            SharedPtr<Object> object = sObjectManager.getObject(*itr);
             if (!object.isNull())
                 if (object->GetHighGUID() != HIGH_GUID_PLAYER)
                     object->ToCreature()->UpdateVisibilityOf(GetGUID(), false);

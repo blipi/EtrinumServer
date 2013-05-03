@@ -10,6 +10,7 @@
 
 //@ Basic Net connections
 #include "Poco/Net/TCPServerConnection.h"
+#include "Poco/Net/NetException.h"
 
 // Crypting
 #include <iostream>
@@ -53,7 +54,7 @@ public:
 
     void run();
 
-    Player* onEnterToWorld(Poco::UInt64 GUID, Poco::UInt32 characterID);
+    Player* onEnterToWorld(Poco::UInt32 characterID);
     void addWritePacket(Packet* packet);
 
     inline Poco::UInt32 GetId()
