@@ -59,7 +59,7 @@ Player* Client::onEnterToWorld(Poco::UInt64 GUID, Poco::UInt32 characterID)
         //  0     1    2       3       4      5      6
         // c.x, c.y, c.maxhp, c.hp, c.maxmp, c.mp, c.lvl        
 
-        _player->Relocate(Vector2D(Tools::u32tof(rs[0].convert<Poco::UInt32>()), Tools::u32tof(rs[1].convert<Poco::UInt32>())));
+        _player->Relocate(Vector2D(rs[0].convert<Poco::UInt32>(), rs[1].convert<Poco::UInt32>()));
         _player->SetMaxHP(rs[2].convert<Poco::UInt32>());
         _player->SetHP(rs[3].convert<Poco::UInt32>());
         _player->SetMaxMP(rs[4].convert<Poco::UInt32>());

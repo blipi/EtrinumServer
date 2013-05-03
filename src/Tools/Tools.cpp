@@ -31,6 +31,6 @@ namespace Tools
 
     Poco::UInt16 GetPositionInCell(Poco::UInt16 cell, float b)
     {
-        return Poco::UInt16(abs((cell * UNITS_PER_CELL) - b));
+        return Poco::UInt16(abs(((cell - 1) * UNITS_PER_CELL) - b));
     }
 }

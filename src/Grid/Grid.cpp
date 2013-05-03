@@ -106,7 +106,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
         // Near at left top corner
         if (gridY < 35 && GetPositionY() > 1)
         {
-            Grid* grid = sGridLoader.GetGrid(GetPositionX() - 1, GetPositionY() - 1);
+            Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() - 1, GetPositionY() - 1);
             grid->forceLoad();
             nearGrids.push_back(grid);
         }
@@ -114,7 +114,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
         // Near at left bottom corner
         if (gridY > 500 - 35 && GetPositionY() < 0xFF)
         {
-            Grid* grid = sGridLoader.GetGrid(GetPositionX() - 1, GetPositionY() + 1);
+            Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() - 1, GetPositionY() + 1);
             grid->forceLoad();
             nearGrids.push_back(grid);
         }
@@ -123,7 +123,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
     // Near at top
     if (gridY < 35 && GetPositionY() > 1)
     {
-        Grid* grid = sGridLoader.GetGrid(GetPositionX(), GetPositionY() - 1);
+        Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX(), GetPositionY() - 1);
         grid->forceLoad();
         nearGrids.push_back(grid);
     }
@@ -138,7 +138,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
         // Near at right top corner
         if (gridY < 35 && GetPositionY() > 1)
         {
-            Grid* grid = sGridLoader.GetGrid(GetPositionX() + 1, GetPositionY() - 1);
+            Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() + 1, GetPositionY() - 1);
             grid->forceLoad();
             nearGrids.push_back(grid);
         }
@@ -146,16 +146,16 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
         // Near at right bottom corner
         if (gridY > 500 - 35 && GetPositionY() < 0xFF)
         {
-            Grid* grid = sGridLoader.GetGrid(GetPositionX() + 1, GetPositionY() + 1);
+            Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() + 1, GetPositionY() + 1);
             grid->forceLoad();
             nearGrids.push_back(grid);
         }
     }
 
     // Near at bottom
-    if (gridY < 500 - 35 && GetPositionY() < 0xFF)
+    if (gridY > 500 - 35 && GetPositionY() < 0xFF)
     {
-        Grid* grid = sGridLoader.GetGrid(GetPositionX(), GetPositionY() + 1);
+        Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX(), GetPositionY() + 1);
         grid->forceLoad();
         nearGrids.push_back(grid);
     }
