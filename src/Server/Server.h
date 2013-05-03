@@ -61,7 +61,8 @@ public:
     // Server -> Client packets
     void SendPlayerEHLO(Client* client);
     void SendClientDisconnected(Client* client);
-    void UpdateVisibilityOf(Object* from, Object* to, bool visible);
+    void UpdateVisibilityOf(Object* from, Object* to);
+    void sendDespawnPacket(Object* from, Poco::UInt64 GUID);
 
     // Packet parsing function
     bool parsePacket(Client* client, Packet* packet, Poco::UInt8 securityByte);

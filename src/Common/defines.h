@@ -2,6 +2,7 @@
 #define BASIC_SERVER_DEFINES_H
 
 #define MAKE_GUID(a, b) ( ((Poco::UInt64)a << 32) | b )
+#define LOGUID(a) ( a & 0xFFFFFFFF )
 #define HIGUID(a) ( a >> 32 )
 enum HIGH_GUID
 {

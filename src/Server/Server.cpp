@@ -230,63 +230,65 @@ void Server::SendClientDisconnected(Client* client)
     client->addWritePacket(packet);
 }
 
-void Server::UpdateVisibilityOf(Object* from, Object* to, bool visible)
+void Server::UpdateVisibilityOf(Object* from, Object* to)
 {
-    Packet* packet = NULL;
-
-    if (!visible)
-    {
-        packet = new Packet(OPCODE_SC_DESPAWN_OBJECT, 4);
-        *packet << from->GetLowGUID();
-    }
-    else
-    {
-        packet = new Packet(OPCODE_SC_SPAWN_OBJECT, 2048, true);
-        *packet << from->GetLowGUID();
-        *packet << from->GetHighGUID();
-        *packet << Tools::getU32(from->GetPosition().x);
-        *packet << Tools::getU32(from->GetPosition().y);
+    Packet* packet = new Packet(OPCODE_SC_SPAWN_OBJECT, 2048, true);
+    *packet << from->GetLowGUID();
+    *packet << from->GetHighGUID();
+    *packet << Tools::getU32(from->GetPosition().x);
+    *packet << Tools::getU32(from->GetPosition().y);
         
-        switch (from->GetHighGUID())
+    switch (from->GetHighGUID())
+    {
+        case HIGH_GUID_CREATURE:
+        case HIGH_GUID_PLAYER:
         {
-            case HIGH_GUID_CREATURE:
-            case HIGH_GUID_PLAYER:
+            Character* character = from->ToCharacter();
+
+            *packet << character->GetName();
+            *packet << Tools::getU32(character->GetSpeed(MOVEMENT_RUN));
+            *packet << Tools::getU32(character->GetSpeed(MOVEMENT_WALK));
+            *packet << character->MovementTypeSpeed();
+
+            if (character->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
+            {
+                *packet << Poco::UInt8(0x01);
+                *packet << character->motionMaster.getMovementType();
+
+                if (character->motionMaster.getMovementType() == MOVEMENT_TO_POINT)
                 {
-                    Character* character = from->ToCharacter();
-
-                    *packet << character->GetName();
-                    *packet << Tools::getU32(character->GetSpeed(MOVEMENT_RUN));
-                    *packet << Tools::getU32(character->GetSpeed(MOVEMENT_WALK));
-                    *packet << character->MovementTypeSpeed();
-
-                    if (character->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
-                    {
-                        *packet << Poco::UInt8(0x01);
-                        *packet << character->motionMaster.getMovementType();
-
-                        if (character->motionMaster.getMovementType() == MOVEMENT_TO_POINT)
-                        {
-                            *packet << Tools::getU32(character->motionMaster.next().x);
-                            *packet << Tools::getU32(character->motionMaster.next().y);
-                        }
-                        else if (character->motionMaster.getMovementType() == MOVEMENT_BY_ANGLE)
-                            *packet << Tools::getU32(character->getFacingTo());
-                    }
-                    else
-                        *packet << Poco::UInt8(0x00);
-
-                    *packet << character->GetMaxHP();
-                    *packet << character->GetHP();
-                    *packet << character->GetMaxMP();
-                    *packet << character->GetMP();
+                    *packet << Tools::getU32(character->motionMaster.next().x);
+                    *packet << Tools::getU32(character->motionMaster.next().y);
                 }
-                break;
+                else if (character->motionMaster.getMovementType() == MOVEMENT_BY_ANGLE)
+                    *packet << Tools::getU32(character->getFacingTo());
+            }
+            else
+                *packet << Poco::UInt8(0x00);
+
+            *packet << character->GetMaxHP();
+            *packet << character->GetHP();
+            *packet << character->GetMaxMP();
+            *packet << character->GetMP();
+            break;
         }
     }
 
     if (Client* client = to->getClient())
     {
-        encryptPacket(client, packet);
+        setPacketHMAC(client, packet);
+        client->addWritePacket(packet);
+    }
+}
+
+void Server::sendDespawnPacket(Object* to, Poco::UInt64 GUID)
+{
+    Packet* packet = new Packet(OPCODE_SC_DESPAWN_OBJECT, 8);
+    *packet << LOGUID(GUID);
+    *packet << HIGUID(GUID);
+    
+    if (Client* client = to->getClient())
+    {
         setPacketHMAC(client, packet);
         client->addWritePacket(packet);
     }
@@ -304,7 +306,7 @@ void Server::sendPlayerStats(Client* client, SharedPtr<Object> object)
     client->addWritePacket(packet);
 
     // Send an spawn packet of ourself
-    UpdateVisibilityOf(object, object, true);
+    UpdateVisibilityOf(object, object);
 }
 
 bool Server::parsePacket(Client* client, Packet* packet, Poco::UInt8 securityByte)
