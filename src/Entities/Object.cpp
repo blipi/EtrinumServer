@@ -93,7 +93,7 @@ void Object::UpdateLoS(GuidsSet newObjectsInSight)
             if (object.isNull())
                 continue;
 
-            if (object.isNull() || object->GetHighGUID() != HIGH_GUID_PLAYER)
+            if (object->GetHighGUID() != HIGH_GUID_PLAYER)
                 object->ToCreature()->UpdateVisibilityOf(GetGUID(), false);
             
             sServer->UpdateVisibilityOf(this->ToObject(), object, false);
