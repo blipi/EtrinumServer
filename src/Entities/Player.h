@@ -12,6 +12,8 @@ class Player: public Character
 public:
     Player(std::string name, Client* client);
 
+    void UpdateLoS(GuidsSet newObjectsInSight);
+
 private:
 
 };

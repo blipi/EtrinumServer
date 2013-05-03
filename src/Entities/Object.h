@@ -38,7 +38,6 @@ public:
     ~Object();
     
     bool update(const Poco::UInt32 diff);
-    void UpdateLoS(GuidsSet newObjectsInSight);
     void Despawn();
 
     void SetGUID(Poco::UInt64 GUID);

@@ -1,6 +1,7 @@
 #include "Grid.h"
 #include "Server.h"
 #include "Object.h"
+#include "Player.h"
 #include "Tools.h"
 
 #ifdef SERVER_FRAMEWORK_TESTING
@@ -76,7 +77,7 @@ bool Grid::update()
 
             // Update players LoS
             // Players will update mobs LoS in its method
-            object->UpdateLoS(objects);
+            object->ToPlayer()->UpdateLoS(objects);
         }
 
         _lastTick = clock();
