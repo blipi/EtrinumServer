@@ -55,7 +55,8 @@ void MotionMaster::set(float speed, Poco::UInt8 movementType, float elapsed)
         _movement.dx = (float)((Poco::Int32)n.x - (Poco::Int32)c.x);
         _movement.dy = (float)((Poco::Int32)n.y - (Poco::Int32)c.y);
 
-        float distance = sqrt(pow(_movement.dx, 2) + pow(_movement.dy, 2));
+        
+        float distance = std::sqrt(std::pow(_movement.dx, 2) + std::pow(_movement.dy, 2));
         _time = distance/speed;
         _elapsed = elapsed;
     }
@@ -90,8 +91,8 @@ bool MotionMaster::evaluate(Poco::UInt32 diff, Vector2D& pos)
     }
     else if (_movement.movementType == MOVEMENT_BY_ANGLE)
     {
-        pos.x = c.x + (_movement.speed * _elapsed * cos(_movement.angle));
-        pos.y = c.y + (_movement.speed * _elapsed * sin(_movement.angle));
+        pos.x = c.x + (_movement.speed * _elapsed * std::cos(_movement.angle));
+        pos.y = c.y + (_movement.speed * _elapsed * std::sin(_movement.angle));
 
         return false;
     }
