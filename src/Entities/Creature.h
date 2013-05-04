@@ -9,6 +9,7 @@ class Creature: public Character
 {
 public:
     Creature();
+    virtual ~Creature();
 
     void UpdateVisibilityOf(Poco::UInt64 GUID, bool visible);
 

@@ -14,5 +14,4 @@ Character::Character(std::string name, Client* client):
 
 Character::~Character()
 {
-    //Object::~Object();
 }

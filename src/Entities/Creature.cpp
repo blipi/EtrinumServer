@@ -5,6 +5,10 @@ Creature::Creature():
 {
 }
 
+Creature::~Creature()
+{
+}
+
 void Creature::UpdateVisibilityOf(Poco::UInt64 GUID, bool visible)
 {
     if (visible)
