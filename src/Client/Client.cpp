@@ -29,7 +29,7 @@ Client::Client(const Poco::Net::StreamSocket& s):
 */
 Client::~Client()
 {
-
+    _player = NULL;
 }
 
 /**
@@ -75,7 +75,7 @@ SharedPtr<Player> Client::onEnterToWorld(Poco::UInt32 characterID)
     }
     else
     {
-        delete _player;
+        sObjectManager.removeObject(_player->GetGUID());
         _player = NULL;
     }
 
@@ -230,7 +230,7 @@ void Client::run()
                 // Save GUID for further usage
                 Poco::UInt64 GUID = _player->GetGUID();
 
-                // It ALWAYS must be deleted from Grid first, otherwise we may run into heap corruption
+                // If we are on a Grid (it is spawned), remove us
                 if (_player->IsOnGrid())
                     _player->GetGrid()->removeObject(_player->GetGUID());
 
