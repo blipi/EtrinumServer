@@ -14,8 +14,9 @@ elseif( MSVC )
   add_definitions(/W0)
 endif()
 
-#if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+if(WIN32)
   add_subdirectory(mysqllite)
   add_subdirectory(zlib)
-  add_subdirectory(cryptocpp)
-#endif()
+endif()
+
+add_subdirectory(cryptocpp)

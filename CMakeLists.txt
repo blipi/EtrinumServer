@@ -27,20 +27,20 @@ if( NOT CMAKE_BUILD_TYPE )
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-option(CMAKE_USE_OPENSSL "Use OpenSSL code. Experimental" ON)
 option(OPENSSL_MT "Use OpenSSL MT libs instead of MD" ON)
 option(OPENSSL_STATIC "Use OpenSSL static libs instead of dynamic" ON)
-if(CMAKE_USE_OPENSSL)
-  find_package(OpenSSL REQUIRED)
-endif(CMAKE_USE_OPENSSL)
+find_package(OpenSSL REQUIRED)
 
-
-# must be changed in *NIX systems
 if(MSVC)
     set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "/MT /O1 /Ob1 /D NDEBUG")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "/MT /Zi /O2 /Ob1 /D NDEBUG")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+endif()
+
+if(UNIX)
+    find_package(MySQL REQUIRED)
+    find_package(ZLIB REQUIRED)
 endif()
 
 # add dependencies
