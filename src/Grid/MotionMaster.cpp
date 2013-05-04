@@ -2,6 +2,8 @@
 #include "Object.h"
 #include "debugging.h"
 
+#include <cmath>
+
 void MotionMaster::StartSimpleMovement(Object* object, Vector2D to, float speed)
 {
     object->motionMaster.clear();
