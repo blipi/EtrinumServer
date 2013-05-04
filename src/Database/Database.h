@@ -52,6 +52,9 @@ public:
     Poco::Int64 i64;
 };
 
+namespace Poco {
+namespace Data {
+
 template <>
 class TypeHandler<PreparedStatementData>
 {
@@ -98,6 +101,9 @@ public:
         }
     }
 };
+
+}
+}
 
 class PreparedStatement
 {
