@@ -11,3 +11,8 @@ Character::Character(std::string name, Client* client):
     _speed[0] = SPEED_RUN;
     _speed[1] = SPEED_WALK;
 }
+
+Character::~Character()
+{
+    //Object::~Object();
+}

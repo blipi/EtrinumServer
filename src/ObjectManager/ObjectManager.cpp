@@ -22,9 +22,9 @@ ObjectManager::ObjectManager()
     _items.set_deleted_key(std::numeric_limits<Poco::UInt32>::max());    
 }
 
-Object* ObjectManager::create(Poco::UInt32 highGUID)
+SharedPtr<Object> ObjectManager::create(Poco::UInt32 highGUID)
 {
-    Object* object = NULL;
+    SharedPtr<Object> object = NULL;
     
     if (Poco::UInt32 lowGUID = newGUID(HIGH_GUID_PLAYER))
     {
@@ -45,19 +45,19 @@ Object* ObjectManager::create(Poco::UInt32 highGUID)
     return object;
 }
 
-Object* ObjectManager::createPlayer(std::string name, Client* client)
+SharedPtr<Player> ObjectManager::createPlayer(std::string name, Client* client)
 {
-    Object* object = NULL;
+    SharedPtr<Object> object = NULL;
 
     if (Poco::UInt32 lowGUID = newGUID(HIGH_GUID_PLAYER))
     {
-        object = new Player(name, client);
+        object.assign(new Player(name, client));
         object->SetGUID(MAKE_GUID(HIGH_GUID_PLAYER, lowGUID));
 
         _players.insert(ObjectInserter(lowGUID, object));
     }
 
-    return object;
+    return object.cast<Player>();
 }
 
 Object* ObjectManager::getObject(Poco::UInt64 GUID)
@@ -88,11 +88,14 @@ void ObjectManager::removeObject(Poco::UInt64 GUID)
     switch (HIGUID(GUID))
     {
         case HIGH_GUID_PLAYER:
+            //@todo: DB set guid = 0
             _players.erase(LOGUID(GUID));
+            _freePlayers.insert(LOGUID(GUID));
             break;
 
         case HIGH_GUID_CREATURE:
             _creatures.erase(LOGUID(GUID));
+            _freeCreatures.insert(LOGUID(GUID));
             break;
 
         case HIGH_GUID_ITEM:
@@ -103,30 +106,53 @@ void ObjectManager::removeObject(Poco::UInt64 GUID)
 Poco::UInt32 ObjectManager::newGUID(Poco::UInt32 highGUID)
 {
     Poco::UInt32 GUID = MAX_GUID;
-    Poco::UInt32* puller = NULL;
 
     switch (highGUID)
     {
         case HIGH_GUID_PLAYER:
-            puller = &_playersGUID;
+            _playersMutex.lock();
+            if (!_freePlayers.empty())
+            {
+                GUID = *(_freePlayers.begin());
+                _freePlayers.erase(GUID);
+            }
+            else if (_playersGUID != MAX_GUID)
+            {
+                GUID = _playersGUID;
+                _playersGUID++;
+            }
+            _playersMutex.unlock();
             break;
         
         case HIGH_GUID_CREATURE:
-            puller = &_creaturesGUID;
+            _creaturesMutex.lock();
+            if (!_freeCreatures.empty())
+            {
+                GUID = *(_freeCreatures.begin());
+                _freeCreatures.erase(GUID);
+            }
+            else if (_creaturesGUID != MAX_GUID)
+            {
+                GUID = _creaturesGUID;
+                _creaturesGUID++;
+            }
+            _creaturesMutex.unlock();
             break;
 
         case HIGH_GUID_ITEM:
-            puller = &_itemsGUID;
+            _itemsMutex.lock();
+            if (!_freeItems.empty())
+            {
+                GUID = *(_freeItems.begin());
+                _freeItems.erase(GUID);
+            }
+            else if (_itemsGUID != MAX_GUID)
+            {
+                GUID = _itemsGUID;
+                _itemsGUID++;
+            }
+            _itemsMutex.unlock();
             break;
-    }
-
-    if (puller)
-    {
-        if (*puller != MAX_GUID)
-        {
-            GUID = *puller;
-            *puller = *puller + 1;
-        }
     }
 
     return GUID;

@@ -35,7 +35,7 @@ class Object
 {
 public:
     Object(Client* client = NULL);
-    ~Object();
+    virtual ~Object();
     
     bool update(const Poco::UInt32 diff);
     void Despawn();

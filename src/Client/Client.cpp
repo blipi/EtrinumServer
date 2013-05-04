@@ -29,7 +29,7 @@ Client::Client(const Poco::Net::StreamSocket& s):
 */
 Client::~Client()
 {
-    _player = NULL;
+
 }
 
 /**
@@ -40,7 +40,7 @@ Client::~Client()
 * @param characterID Which of the users in the character list is selected
 * @return Player created entity
 */
-Player* Client::onEnterToWorld(Poco::UInt32 characterID)
+SharedPtr<Player> Client::onEnterToWorld(Poco::UInt32 characterID)
 {
     Characters* character = FindCharacter(characterID);
     if (!character)
@@ -48,8 +48,8 @@ Player* Client::onEnterToWorld(Poco::UInt32 characterID)
 
     _characterId = characterID;
 
-    _player = (Player*)sObjectManager.createPlayer(character->name, this);
-    if (!_player)
+    _player = sObjectManager.createPlayer(character->name, this);
+    if (_player.isNull())
         return NULL;
 
     PreparedStatement* stmt = CharactersDatabase.getPreparedStatement(QUERY_CHARACTERS_SELECT_INFORMATION);
@@ -148,58 +148,50 @@ void Client::run()
             {
                 int nBytes = -1;
 
-                try
+                if (packetStep == STEP_NEW_PACKET)
                 {
-                    if (packetStep == STEP_NEW_PACKET)
-                    {
-                        packet = new Packet();
-                        packetStep = STEP_READ_LENGTH;
-                    }
-
-                    switch (packetStep)
-                    {
-                        case STEP_READ_LENGTH:
-                            nBytes = socket().receiveBytes(&packet->len, sizeof(packet->len));
-                            break;
-                        case STEP_READ_OPCODE:
-                            nBytes = socket().receiveBytes(&packet->opcode, sizeof(packet->opcode));
-                            break;
-                        case STEP_READ_SEC:
-                            nBytes = socket().receiveBytes(&packet->sec, sizeof(packet->sec));
-                            break;
-                        case STEP_READ_DIGEST:
-                            nBytes = socket().receiveBytes(packet->digest, sizeof(packet->digest));
-                            break;
-                        case STEP_READ_DATA:
-                            nBytes = socket().receiveBytes(packet->rawdata, packet->getLength());
-                            break;
-                    }
-
-                    packetStep++;
-
-                    if (packetStep == STEP_READ_DATA)
-                    {
-                        packet->rawdata = new Poco::UInt8[packet->getLength() + 1];
-
-                        if (packet->getLength() == 0)
-                            packetStep = STEP_END_PACKET;
-                    }
-
-                    if (packetStep == STEP_END_PACKET)
-                    {
-                        lastRead = 0;
-                        generateSecurityByte();
-                        if (!sServer->parsePacket(this, packet, (Poco::UInt8)(_packetData.securityByte & 0xFF)))
-                            _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_INCORRECT_DATA;
-
-                        packetStep = STEP_NEW_PACKET;
-                        delete packet;
-                    }
+                    packet = new Packet();
+                    packetStep = STEP_READ_LENGTH;
                 }
-                catch (Poco::Exception& /*ex*/)
+
+                switch (packetStep)
                 {
-                    //Handle your network errors.
-                    _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_NETWORK_ERROR;
+                    case STEP_READ_LENGTH:
+                        nBytes = socket().receiveBytes(&packet->len, sizeof(packet->len));
+                        break;
+                    case STEP_READ_OPCODE:
+                        nBytes = socket().receiveBytes(&packet->opcode, sizeof(packet->opcode));
+                        break;
+                    case STEP_READ_SEC:
+                        nBytes = socket().receiveBytes(&packet->sec, sizeof(packet->sec));
+                        break;
+                    case STEP_READ_DIGEST:
+                        nBytes = socket().receiveBytes(packet->digest, sizeof(packet->digest));
+                        break;
+                    case STEP_READ_DATA:
+                        nBytes = socket().receiveBytes(packet->rawdata, packet->getLength());
+                        break;
+                }
+
+                packetStep++;
+
+                if (packetStep == STEP_READ_DATA)
+                {
+                    packet->rawdata = new Poco::UInt8[packet->getLength() + 1];
+
+                    if (packet->getLength() == 0)
+                        packetStep = STEP_END_PACKET;
+                }
+
+                if (packetStep == STEP_END_PACKET)
+                {
+                    lastRead = 0;
+                    generateSecurityByte();
+                    if (!sServer->parsePacket(this, packet, (Poco::UInt8)(_packetData.securityByte & 0xFF)))
+                        _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_INCORRECT_DATA;
+
+                    packetStep = STEP_NEW_PACKET;
+                    delete packet;
                 }
 
                 // If bytes read are 0 and we are not already disconnecting, flag it
@@ -210,7 +202,7 @@ void Client::run()
         catch (Poco::Net::ConnectionResetException ex)
         {
             printf("Client exception: %s\n", ex.what());
-            _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_CONNECTION_CLOSED;
+            _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_NETWORK_ERROR;
         }
 
         #if defined(SERVER_FRAMEWORK_TESTING)
@@ -240,22 +232,17 @@ void Client::run()
 
                 // It ALWAYS must be deleted from Grid first, otherwise we may run into heap corruption
                 if (_player->IsOnGrid())
-                    sGridLoader.removeObject(_player->ToObject());
+                    _player->GetGrid()->removeObject(_player->GetGUID());
 
                 // Send despawn packet to all nearby objects
                 _player->Despawn();
 
                 // Delete from the server object list
-                sServer->removeObject(GUID, true);
+                sObjectManager.removeObject(_player->GetGUID());
 
-                // Flag it as not in world
+                // Flag it as not in world and not logged
                 setInWorld(false);
-                
-                /*
-                    @todo: We must free this used guid! 
-                    1. MySQL set GUID 0 for the character
-                    2. sGuidManager->freeGuid(GUID);
-                */
+                setLogged(false);
             }
 
 		    _stop = true;

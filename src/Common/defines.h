@@ -1,9 +1,11 @@
 #ifndef BASIC_SERVER_DEFINES_H
 #define BASIC_SERVER_DEFINES_H
 
+#include "Poco/Poco.h"
+
 #define MAKE_GUID(a, b) ( ((Poco::UInt64)a << 32) | b )
-#define LOGUID(a) ( a & 0xFFFFFFFF )
-#define HIGUID(a) ( a >> 32 )
+#define LOGUID(a) Poco::UInt32( a & 0xFFFFFFFF )
+#define HIGUID(a) Poco::UInt32( a >> 32 )
 enum HIGH_GUID
 {
     HIGH_GUID_PLAYER    = 0x0001,
@@ -31,8 +33,6 @@ struct Vector2D
     float x;
     float y;
 };
-
-#include "Poco/Poco.h"
 
 struct equint64
 {

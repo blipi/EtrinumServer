@@ -109,10 +109,6 @@ Server::Server(Poco::UInt16 port):
         OpcodesMap.insert(OpcodeHashInserter(OpcodeTable[i].Opcode, OpcodeTable[i].Handler));
     }
 
-    // Init hash map
-    _objectsList.set_empty_key(NULL);
-    _objectsList.set_deleted_key(std::numeric_limits<Poco::UInt64>::max());
-
     // Reset all players online state
     PreparedStatement* stmt = AuthDatabase.getPreparedStatement(QUERY_AUTH_UPDATE_ONLINE_ONSTART);
     stmt->execute();
@@ -134,55 +130,6 @@ Server::Server(Poco::UInt16 port):
 Server::~Server()
 {
     delete server;
-}
-
-/**
-* Returns an Object given it's GUID
-*
-* @param GUID Object GUID including its High GUID
-* @return NULL (SharedPtr<Object>(NULL) -> isNUll() = true) if not found, the Object otherwise
-*/
-SharedPtr<Object> Server::GetObject(Poco::UInt64 GUID)
-{
-    SharedPtr<Object> o = NULL;
-
-    _objectMapLock.readLock();
-    ObjectMap::iterator itr = _objectsList.find(GUID);
-    if (itr != _objectsList.end())
-        o = itr->second;
-    _objectMapLock.unlock();
-
-    return o;
-}
-
-/**
-* Remove an object from the server objects list
-*
-* @param GUID Object Ingame ID, including Type High GUID
-*/
-void Server::removeObject(Poco::UInt64 GUID, bool force /*= false*/)
-{
-    // The object MUST be there, if not found, crash!!
-    _objectMapLock.readLock();
-    ASSERT(_objectsList.find(GUID) != _objectsList.end());
-    _objectMapLock.unlock();
-
-    // If it's a player it requires special handling, the client itself will remove the
-    // Object when complete unload is done by passing force = true
-    bool isPlayer = ((GUID >> 32) & HIGH_GUID_PLAYER);
-    if (force || !isPlayer)
-    {
-        _objectMapLock.writeLock();
-        _objectsList.erase(GUID);
-        _objectMapLock.unlock();
-    }
-
-    if (isPlayer && !force)
-    {
-        if (SharedPtr<Object> object = GetObject(GUID))
-            if (Client* client = object->getClient())
-                client->SetFlag(DISCONNECT_ON_EMPTY_QUEUE);
-    }
 }
 
 // Server -> Client packets
@@ -289,6 +236,7 @@ void Server::sendPlayerStats(Client* client, SharedPtr<Object> object)
     Packet* packet = new Packet(OPCODE_SC_PLAYER_STATS, 8);
     *packet << object->GetLowGUID();
     *packet << object->GetHighGUID();
+
     encryptPacket(client, packet);
     setPacketHMAC(client, packet);
     client->addWritePacket(packet);
@@ -505,34 +453,35 @@ bool Server::handleCharacterSelect(Client* client, Packet* packet)
     Packet* resp = new Packet(OPCODE_SC_SELECT_CHARACTER_RESULT, 1);
     Characters* character = client->FindCharacter(characterID);
     if (character)
-    {
         *resp << Poco::UInt8(0x01);
-        OnEnterToWorld(client, characterID);
-    }
     else
         *resp << Poco::UInt8(0x00);
 
     setPacketHMAC(client, resp);
     client->addWritePacket(resp);
 
-    return character ? true : false;
+    if (character)
+    {
+        OnEnterToWorld(client, characterID);
+        return true;
+    }
+
+    return false;
 }
 
 void Server::OnEnterToWorld(Client* client, Poco::UInt32 characterID)
 {
     // Create the player (Object) and add it to the object list
-    if (Player* player = client->onEnterToWorld(characterID))
+    SharedPtr<Player> player = client->onEnterToWorld(characterID);
+    if (!player.isNull())
     {
         client->setInWorld(true);
 
-        // Create a SharedPtr
-        SharedPtr<Object> obj(player);
-
         // Send player information
-        sendPlayerStats(client, obj);
+        sendPlayerStats(client, player);
             
         // Add the player to the GridLoader system
-        sGridLoader.addObject(obj);
+        sGridLoader.addObject(player);
     }
     else
     {

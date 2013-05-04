@@ -71,7 +71,7 @@ void Object::Despawn()
         if (!(*itr & HIGH_GUID_CREATURE))
             continue;
 
-        SharedPtr<Object> object = sServer->GetObject(*itr);
+        SharedPtr<Object> object = sObjectManager.getObject(*itr);
         if (object.isNull())
             continue;
 

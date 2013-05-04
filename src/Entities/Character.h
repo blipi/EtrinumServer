@@ -9,6 +9,7 @@ class Character: public Object
 {
 public:
     Character(std::string name, Client* client = NULL);
+    virtual ~Character();
 
     inline std::string GetName()
     {

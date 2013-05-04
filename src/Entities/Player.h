@@ -11,6 +11,7 @@ class Player: public Character
 {
 public:
     Player(std::string name, Client* client);
+    virtual ~Player();
 
     void UpdateLoS(GuidsSet newObjectsInSight);
 

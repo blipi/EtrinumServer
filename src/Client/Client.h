@@ -54,7 +54,7 @@ public:
 
     void run();
 
-    Player* onEnterToWorld(Poco::UInt32 characterID);
+    SharedPtr<Player> onEnterToWorld(Poco::UInt32 characterID);
     void addWritePacket(Packet* packet);
 
     inline Poco::UInt32 GetId()
@@ -134,7 +134,7 @@ private:
 
 private:
     std::list<Characters> _characters;
-    Player* _player;
+    SharedPtr<Player> _player;
 
     Poco::UInt32 _id;
     Poco::UInt32 _characterId;

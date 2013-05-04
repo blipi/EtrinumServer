@@ -44,10 +44,6 @@ public:
 
     Server(Poco::UInt16 port);
     ~Server();
-    
-    void newObject(Poco::SharedPtr<Object> object);
-    SharedPtr<Object> GetObject(Poco::UInt64 GUID);
-    void removeObject(Poco::UInt64 GUID, bool force = false);
 
     inline bool isRunning()
     {
@@ -87,9 +83,6 @@ private:
     Poco::Net::TCPServer* server;
     bool _serverRunning;
 
-    ObjectMap _objectsList;
-    Poco::RWLock _objectMapLock;
-    
     static const OpcodeHandleType OpcodeTable[];
 };
 

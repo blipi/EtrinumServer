@@ -9,6 +9,11 @@ Player::Player(std::string name, Client* client):
 {
 }
 
+Player::~Player()
+{
+    //Character::~Character();
+}
+
 void Player::UpdateLoS(GuidsSet newObjectsInSight)
 {
     // Send spawn packets
