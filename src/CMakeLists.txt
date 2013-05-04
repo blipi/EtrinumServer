@@ -68,9 +68,13 @@ add_executable(EtrinumProjectServer
   ${EPS_SRCS}
 )
 
+if (MSVC)
+    set(MYSQL_LIBRARIES libmysql)
+endif()
+
 target_link_libraries(EtrinumProjectServer
   cryptlib
-  libmysql
+  ${MYSQL_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${ZLIB_LIBRARIES}
 )
