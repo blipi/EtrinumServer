@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <string.h>
 
 Packet::Packet()
 {
