@@ -53,7 +53,7 @@ public:
 };
 
 template <>
-class TypeHandler<class PreparedStatementData>
+class TypeHandler<PreparedStatementData>
 {
 public:
 

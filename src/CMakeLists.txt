@@ -58,6 +58,10 @@ include_directories(
 
 add_definitions(-DPOCO_STATIC)
 
+if (MSVC)
+    add_definitions(/EHsc)
+endif()
+
 link_directories(${CMAKE_SOURCE_DIR}/dep/poco/lib)
 
 add_executable(EtrinumProjectServer

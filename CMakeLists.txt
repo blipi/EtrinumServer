@@ -31,7 +31,6 @@ option(OPENSSL_MT "Use OpenSSL MT libs instead of MD" ON)
 option(OPENSSL_STATIC "Use OpenSSL static libs instead of dynamic" ON)
 find_package(OpenSSL REQUIRED)
 
-set (CMAKE_CXX_FLAGS "-std=c++0x")
 if(MSVC)
     set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "/MT /O1 /Ob1 /D NDEBUG")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "/MT /Zi /O2 /Ob1 /D NDEBUG")
@@ -40,6 +39,8 @@ if(MSVC)
 endif()
 
 if(UNIX)
+    set (CMAKE_CXX_FLAGS "-std=c++0x")
+
     find_package(MySQL REQUIRED)
     find_package(ZLIB REQUIRED)
 endif()
