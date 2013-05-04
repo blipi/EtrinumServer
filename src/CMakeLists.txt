@@ -60,17 +60,16 @@ add_definitions(-DPOCO_STATIC)
 
 if (MSVC)
     add_definitions(/EHsc)
+    link_directories(${CMAKE_SOURCE_DIR}/dep/poco/lib)
+    set(MYSQL_LIBRARIES libmysql)
+elseif(UNIX)
+    link_directories(${CMAKE_SOURCE_DIR}/dep/poco/lib/Linux/${CMAKE_OSX_ARCHITECTURES})
 endif()
-
-link_directories(${CMAKE_SOURCE_DIR}/dep/poco/lib)
 
 add_executable(EtrinumProjectServer
   ${EPS_SRCS}
 )
 
-if (MSVC)
-    set(MYSQL_LIBRARIES libmysql)
-endif()
 
 target_link_libraries(EtrinumProjectServer
   cryptlib
