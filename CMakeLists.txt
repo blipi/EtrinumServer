@@ -27,22 +27,34 @@ if( NOT CMAKE_BUILD_TYPE )
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-option(OPENSSL_MT "Use OpenSSL MT libs instead of MD" ON)
-option(OPENSSL_STATIC "Use OpenSSL static libs instead of dynamic" ON)
-find_package(OpenSSL REQUIRED)
+option(CMAKE_INSTALL_PREFIX "Install location" "./Install")
 
-if(MSVC)
+if( MSVC )
+    option(OPENSSL_MT "Use OpenSSL MT libs instead of MD" ON)
+    option(OPENSSL_STATIC "Use OpenSSL static libs instead of dynamic" ON)
+
     set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "/MT /O1 /Ob1 /D NDEBUG")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "/MT /Zi /O2 /Ob1 /D NDEBUG")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif()
 
-if(UNIX)
-    set (CMAKE_CXX_FLAGS "-std=c++0x")
+find_package(OpenSSL REQUIRED)
 
+if( UNIX )
+    set (CMAKE_CXX_FLAGS "-std=c++0x")
     find_package(MySQL REQUIRED)
     find_package(ZLIB REQUIRED)
+    
+    option(CMAKE_OSX_ARCHITECTURES "OS Architecture" "x86_64")
+elseif ( WIN32 )
+    option(MYSQL_USE_SOURCES "Use mysqllite sources" ON)
+    
+    if ( NOT MYSQL_USE_SOURCES )
+        find_package(MySQL REQUIRED)
+    else()
+        set(MYSQL_LIBRARIES libmysql)
+    endif()
 endif()
 
 # add dependencies

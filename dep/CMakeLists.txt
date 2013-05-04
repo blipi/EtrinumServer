@@ -14,7 +14,7 @@ elseif( MSVC )
   add_definitions(/W0)
 endif()
 
-if(WIN32)
+if( WIN32 )
   add_subdirectory(mysqllite)
   add_subdirectory(zlib)
 endif()

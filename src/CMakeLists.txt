@@ -58,11 +58,10 @@ include_directories(
 
 add_definitions(-DPOCO_STATIC)
 
-if (MSVC)
+if ( MSVC )
     add_definitions(/EHsc)
     link_directories(${CMAKE_SOURCE_DIR}/dep/poco/lib)
-    set(MYSQL_LIBRARIES libmysql)
-elseif(UNIX)
+elseif( UNIX )
     link_directories(${CMAKE_SOURCE_DIR}/dep/poco/lib/Linux/${CMAKE_OSX_ARCHITECTURES})
 endif()
 
@@ -70,8 +69,12 @@ add_executable(EtrinumProjectServer
   ${EPS_SRCS}
 )
 
-
+# TODO: Poco and crypt should automatically be added!
 target_link_libraries(EtrinumProjectServer
+  PocoData
+  PocoDataMySQL
+  PocoFoundation
+  PocoNet
   cryptlib
   ${MYSQL_LIBRARIES}
   ${OPENSSL_LIBRARIES}
