@@ -16,7 +16,7 @@ enum HIGH_GUID
 
 #define MAX_X           256
 #define MAX_Y           256
-#define UNITS_PER_CELL  500
+#define UNITS_PER_CELL  5000
 
 struct Vector2D
 {
