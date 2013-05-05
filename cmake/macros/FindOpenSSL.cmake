@@ -76,33 +76,45 @@ IF(WIN32 AND NOT CYGWIN)
     # We are using the libraries located in the VC subdir instead of the parent directory eventhough :
     # libeay32MD.lib is identical to ../libeay32.lib, and
     # ssleay32MD.lib is identical to ../ssleay32.lib
+    
+    if ( OPENSSL_STATIC )
+        set (OPENSSL_LIBS_PATH "/lib/VC/static")
+    else ()
+        set (OPENSSL_LIBS_PATH "/lib/VC")
+    endif ()
+    
+    if ( BUILD_MT )
+        set (LIB_EAY_SUFIX "MT")
+    else ()
+        set (LIB_EAY_SUFIX "MD")
+    endif ()
 
     FIND_LIBRARY(LIB_EAY_DEBUG
       NAMES
-        libeay32MTd libeay32
+        libeay32${LIB_EAY_SUFIX}d libeay32
       PATHS
-        ${OPENSSL_ROOT_DIR}/lib/VC/static
+        ${OPENSSL_ROOT_DIR}${OPENSSL_LIBS_PATH}
     )
 
     FIND_LIBRARY(LIB_EAY_RELEASE
       NAMES
-        libeay32MT libeay32
+        libeay32${LIB_EAY_SUFIX} libeay32
       PATHS
-        ${OPENSSL_ROOT_DIR}/lib/VC/static
+        ${OPENSSL_ROOT_DIR}${OPENSSL_LIBS_PATH}
     )
 
     FIND_LIBRARY(SSL_EAY_DEBUG
       NAMES
-        ssleay32MTd ssleay32 ssl
+        ssleay32${LIB_EAY_SUFIX}d ssleay32 ssl
       PATHS
-        ${OPENSSL_ROOT_DIR}/lib/VC/static
+        ${OPENSSL_ROOT_DIR}${OPENSSL_LIBS_PATH}
     )
 
     FIND_LIBRARY(SSL_EAY_RELEASE
       NAMES
-        ssleay32MT ssleay32 ssl
+        ssleay32${LIB_EAY_SUFIX} ssleay32 ssl
       PATHS
-        ${OPENSSL_ROOT_DIR}/lib/VC/static
+        ${OPENSSL_ROOT_DIR}${OPENSSL_LIBS_PATH}
     )
 
     if( CMAKE_CONFIGURATION_TYPES OR CMAKE_BUILD_TYPE )

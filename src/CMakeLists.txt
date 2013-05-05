@@ -41,6 +41,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/cryptocpp
 
   ${CMAKE_SOURCE_DIR}/dep/sparsehash/src
+  ${CMAKE_BINARY_DIR}/dep/sparsehash/src
   
   ${CMAKE_CURRENT_SOURCE_DIR}/Client
   ${CMAKE_CURRENT_SOURCE_DIR}/Common
@@ -56,29 +57,25 @@ include_directories(
   ${OPENSSL_INCLUDE_DIR}
 )
 
-add_definitions(-DPOCO_STATIC)
-
-if ( MSVC )
-    add_definitions(/EHsc)
-    link_directories(${CMAKE_SOURCE_DIR}/dep/poco/lib)
-elseif( UNIX )
-    link_directories(${CMAKE_SOURCE_DIR}/dep/poco/lib/Linux/${CMAKE_OSX_ARCHITECTURES})
-endif()
-
 add_executable(EtrinumProjectServer
   ${EPS_SRCS}
 )
 
 # TODO: Poco and crypt should automatically be added!
 target_link_libraries(EtrinumProjectServer
-  PocoData
-  PocoDataMySQL
-  PocoFoundation
-  PocoNet
   cryptlib
+  ${POCO_LIBRARIES}
   ${MYSQL_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${ZLIB_LIBRARIES}
 )
 
 install(TARGETS EtrinumProjectServer DESTINATION "${CMAKE_INSTALL_PREFIX}")
+
+if ( NOT OPENSSL_STATIC )
+    install(TARGETS ${OPENSSL_LIBRARIES} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+endif ()
+
+if ( NOT POCO_STATIC )
+    install(TARGETS ${POCO_LIBRARIES} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
+endif ()
