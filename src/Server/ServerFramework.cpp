@@ -9,6 +9,7 @@
 #include "Grid.h"
 #include "AuthDatabase.h"
 #include "CharactersDatabase.h"
+#include "Config.h"
 #include "debugging.h"
 
 //@ Basic server information
@@ -18,6 +19,7 @@
 
 //@ Everything is stored in SharedPtrs
 #include "Poco/SharedPtr.h"
+
 
 #ifdef SERVER_FRAMEWORK_TESTING
 
@@ -100,9 +102,12 @@ int main(int argc, char** argv)
     
     printf("[*] Initializing MySQL\n");
 
+    // Read database configuration
+    Config::DatabaseConnectionsMap connectionStrings = Config::readDatabaseInformation();
+
     // Databases
-    bool dbAuth = AuthDatabase.Open("host=127.0.0.1;user=root;password=;port=3306;db=auth");
-    bool dbChars = CharactersDatabase.Open("host=127.0.0.1;user=root;password=;port=3306;db=characters");
+    bool dbAuth = AuthDatabase.Open(connectionStrings["auth"]);
+    bool dbChars = CharactersDatabase.Open(connectionStrings["characters"]);
 
     if (!dbAuth || !dbChars)
         printf("\t[Fail] Auth (%d) - Characters (%d)\n", dbAuth, dbChars);
