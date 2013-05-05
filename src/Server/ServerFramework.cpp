@@ -20,7 +20,6 @@
 //@ Everything is stored in SharedPtrs
 #include "Poco/SharedPtr.h"
 
-
 #ifdef SERVER_FRAMEWORK_TESTING
 
     #include "Object.h"

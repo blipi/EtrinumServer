@@ -1,0 +1,18 @@
+<?xml version="2.0" encoding="UTF-8"?>
+<database>
+    <characters>
+        <host>127.0.0.1</host>
+        <user>root</user>
+        <password></password>
+        <port>3306</port>
+        <db>characters</db>
+    </characters>
+    
+    <auth>
+        <host>127.0.0.1</host>
+        <user>root</user>
+        <password></password>
+        <port>3306</port>
+        <db>auth</db>
+    </auth>
+</database>
