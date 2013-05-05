@@ -21,7 +21,6 @@ void MotionMaster::StartAngleMovement(Object* object, float angle, float speed)
     object->setFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
 }
 
-
 void MotionMaster::addPoint(Vector2D point)
 {
     _movement.points.push_back(point);
@@ -56,8 +55,7 @@ void MotionMaster::set(float speed, Poco::UInt8 movementType, float elapsed)
 
         _movement.dx = (float)((Poco::Int32)n.x - (Poco::Int32)c.x);
         _movement.dy = (float)((Poco::Int32)n.y - (Poco::Int32)c.y);
-
-        
+                
         float distance = std::sqrt(std::pow(_movement.dx, 2) + std::pow(_movement.dy, 2));
         _time = distance/speed;
         _elapsed = elapsed;

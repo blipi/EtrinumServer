@@ -10,6 +10,10 @@
 
 #endif
 
+/**
+ * Initializes a Grid object
+ *
+ */
 Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
     _x(x), _y(y),
     _playersInGrid(0)
@@ -22,6 +26,7 @@ Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
 /**
  * Updates the Grid and its objects
  *
+ * @return false if the grid must be deleted, true otherwise
  */
 bool Grid::update()
 {
@@ -89,6 +94,7 @@ bool Grid::update()
  * Returns all near grids to the object
  *
  * @param object Object which we must find near grids
+ * @return the list of near grids
  */
 Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
 {
@@ -169,6 +175,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
  *
  * @param it dense_hash_map element
  * @param c Position taken as center
+ * @return true if it's the searched object
  */
 static bool findObjectsIf(std::pair<Poco::UInt64, SharedPtr<Object> > it, Vector2D c)
 {
@@ -202,6 +209,12 @@ void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
     }
 }
 
+/**
+ * Returns a list of GUIDs
+ *
+ * @param highGUID object type to gather
+ * @return the objects list
+ */
 GuidsSet Grid::getObjects(Poco::UInt32 highGUID)
 {
     GuidsSet objects;
@@ -218,6 +231,12 @@ GuidsSet Grid::getObjects(Poco::UInt32 highGUID)
     return objects;
 }
 
+/**
+ * Returns the object specified by its complete GUID
+ *
+ * @param GUID object's GUID
+ * @return NULL SharedPtr if not found, the object otherwise
+ */
 SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
 {
     SharedPtr<Object> object = NULL;
@@ -229,6 +248,12 @@ SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
     return object;
 }
 
+/**
+ * Adds an object to the grid
+ *
+ * @param object Object to be added
+ * @return true if the object has been added
+ */
 bool Grid::addObject(SharedPtr<Object> object)
 {
     bool inserted = _objects.insert(ObjectMapInserter(object->GetGUID(), object)).second;    
@@ -246,7 +271,6 @@ bool Grid::addObject(SharedPtr<Object> object)
 /**
  * Removes an object from the Grid
  *
- * @TODO: Most likely won't cause threading issues, but we must keep an eye to this
  */
 void Grid::removeObject(Poco::UInt64 GUID)
 {
@@ -254,20 +278,36 @@ void Grid::removeObject(Poco::UInt64 GUID)
 }
 
 
+/**
+ * Forces a Grid to remain loaded (this happens when a players gets near to a grid!)
+ *
+ */
 void Grid::forceLoad()   
 {
     _forceLoad = clock();
 }
 
+/**
+ * Checks whether a grid has been force loaded or not
+ *
+ * @return true if it's force loaded
+ */
 bool Grid::isForceLoaded()
 {
     return (clock() - _forceLoad) < 5000;
 }
 
+/**
+ * Initializes the grid loader, which manages and handles all grids
+ *
+ */
 GridLoader::GridLoader():
     _server(NULL)
 {
-    _gridsPool = new Poco::ThreadPool(1, 1); // TODO: Multithreading (more than one grid worker thread)
+    //@todo: We should be able to have more than one grid handler
+    // and they should all balance themselves, in order to keep
+    // update rate really low (in ms)
+    _gridsPool = new Poco::ThreadPool(1, 1); 
     
     _grids.set_empty_key(NULL);
     _grids.set_deleted_key(std::numeric_limits<Poco::UInt32>::max());
@@ -277,31 +317,47 @@ GridLoader::GridLoader():
             _isGridLoaded[x][y] = false;
 }
 
+/**
+ * Class destructor, frees memory
+ *
+ */
 GridLoader::~GridLoader()
 {
     delete _gridsPool;
 }
 
+/**
+ * Initializes the grid loader, called uppon server start
+ *
+ * @param server Server reference, to keep this alive
+ */
 void GridLoader::initialize(Server* server)
 {
     _server = server;
     _gridsPool->start(*this);
 }
 
+/**
+ * Checks if a grid is loaded, and if it's not, it loads it
+ *
+ * @param x X position of the grid
+ * @param y Y position of the grid
+ * @return True if the grid is successfully added
+ */
 bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
 {
     if (_isGridLoaded[x][y])
         return true;
 
     Grid* grid = new Grid(x, y);
-    _grids.insert(GridInserter(grid->hashCode(), grid));
+    bool inserted = _grids.insert(GridInserter(grid->hashCode(), grid)).second;
     _isGridLoaded[x][y] = true;
 
     #ifdef SERVER_FRAMEWORK_TESTING
-        printf("Grid (%d, %d) has been created\n", x, y);
+        printf("Grid (%d, %d) has been created (%d)\n", x, y, inserted);
     #endif
 
-    return true;
+    return inserted;
 }
 
 /**
@@ -323,6 +379,13 @@ Grid* GridLoader::GetGrid(Poco::UInt16 x, Poco::UInt16 y)
     return grid;
 }
 
+/**
+ * Checks if a Grid is loaded, if not it loads it. Finally, returns the Grid
+ *
+ * @param x X position of the Grid
+ * @param y Y position of the Grid
+ * @return The grid itself
+ */
 Grid* GridLoader::GetGridOrLoad(Poco::UInt16 x, Poco::UInt16 y)
 {
     if (checkAndLoad(x, y))
@@ -330,6 +393,14 @@ Grid* GridLoader::GetGridOrLoad(Poco::UInt16 x, Poco::UInt16 y)
     return NULL;
 }
 
+/**
+ * Given an object, it adds it to a Grid
+ *
+ * @param x X position of the Grid
+ * @param y Y position of the Grid
+ * @param object Object to be added
+ * @return Grid where the object has been added
+ */
 Grid* GridLoader::addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> object)
 {
     if (!checkAndLoad(x, y))
@@ -343,13 +414,24 @@ Grid* GridLoader::addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> 
     return grid;
 }
 
+/**
+ * Adds an object to the Grid where it should be
+ *
+ * @param object Object to be added
+ * @return Grid where it has been added
+ */
 Grid* GridLoader::addObject(SharedPtr<Object> object)
 {
     Vector2D pos = object->GetPosition();
     return addObjectTo(Tools::GetCellFromPos(pos.x), Tools::GetCellFromPos(pos.y), object);
 }
 
-
+/**
+ * Removes an object from the Grid where it is
+ *
+ * @param object Object to be removed
+ * @return True if the object has been removed
+ */
 bool GridLoader::removeObject(Object* object)
 {
     Poco::UInt16 x = Tools::GetCellFromPos(object->GetPosition().x);
@@ -368,6 +450,10 @@ bool GridLoader::removeObject(Object* object)
     return false;
 }
 
+/**
+ * Thread where the Grids are updating
+ *
+ */
 void GridLoader::run_impl()
 {
     while (sServer->isRunning())

@@ -12,4 +12,13 @@ namespace Tools
     Poco::UInt16 GetPositionInCell(Poco::UInt16 cell, float b);
 }
 
+/**
+At some point, positions in Grid will have to be calculated from a base map
+mapId: x -> coordinates (x1, y1)
+which will be different from
+mapId: y -> coordinates (x1, y1)
+
+(Asumming both are the same x1 and y1)
+**/
+
 #endif

@@ -120,11 +120,8 @@ public:
     Grid* GetGrid(Poco::UInt16 x, Poco::UInt16 y);
     Grid* GetGridOrLoad(Poco::UInt16 x, Poco::UInt16 y);
 
-    Grid* addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> object);
     Grid* addObject(SharedPtr<Object> object);
     bool removeObject(Object* object);
-
-    void addToMoveList(Poco::UInt64 GUID);
 
     virtual void run()
     {
@@ -132,6 +129,9 @@ public:
     }
     void run_impl();
     
+private:
+    Grid* addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> object);
+
 private:
     Server* _server;
     
