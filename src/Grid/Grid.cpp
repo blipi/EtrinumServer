@@ -201,7 +201,7 @@ GuidsSet Grid::getObjects(Poco::UInt32 highGUID)
         }
     }
 
-    if (!(highGUID & HIGH_GUID_PLAYER))
+    if (highGUID & ~HIGH_GUID_PLAYER)
     {
         for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
         {
