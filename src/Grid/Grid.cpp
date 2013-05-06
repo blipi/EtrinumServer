@@ -341,6 +341,9 @@ void GridLoader::initialize(Server* server)
  */
 bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
 {
+    ASSERT(x >= 0 && x <= MAX_X)
+    ASSERT(y >= 0 && y <= MAX_Y)
+
     if (_isGridLoaded[x][y])
         return true;
 

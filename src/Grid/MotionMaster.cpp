@@ -1,5 +1,6 @@
 #include "MotionMaster.h"
 #include "Object.h"
+#include "Character.h"
 #include "debugging.h"
 
 #include <cmath>
@@ -11,6 +12,10 @@ void MotionMaster::StartSimpleMovement(Object* object, Vector2D to, float speed)
     object->motionMaster.addPoint(to);
     object->motionMaster.set(speed, MOVEMENT_TO_POINT);
     object->setFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
+    
+    #if defined(SERVER_FRAMEWORK_TESTING)
+        printf("\t\tObject starting movement, t=%f\n", object->motionMaster._time);
+    #endif
 }
 
 void MotionMaster::StartAngleMovement(Object* object, float angle, float speed)
@@ -18,7 +23,12 @@ void MotionMaster::StartAngleMovement(Object* object, float angle, float speed)
     object->motionMaster.clear();
     object->motionMaster.addPoint(object->GetPosition());
     object->motionMaster.set(speed, MOVEMENT_BY_ANGLE);
+    object->motionMaster.angle(angle);
     object->setFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
+    
+    #if defined(SERVER_FRAMEWORK_TESTING)
+        printf("\t\tObject starting movement, a=%f\n", angle);
+    #endif
 }
 
 void MotionMaster::addPoint(Vector2D point)
@@ -43,11 +53,16 @@ Vector2D& MotionMaster::next()
     return _movement.points[1];
 }
 
+void MotionMaster::angle(float angle)
+{
+    _movement.angle = angle;
+}
+
 void MotionMaster::set(float speed, Poco::UInt8 movementType, float elapsed)
 {
     _movement.movementType = movementType;
     _movement.speed = speed;
-        
+
     if (movementType == MOVEMENT_TO_POINT)
     {
         Vector2D c = current();
@@ -55,15 +70,13 @@ void MotionMaster::set(float speed, Poco::UInt8 movementType, float elapsed)
 
         _movement.dx = (float)((Poco::Int32)n.x - (Poco::Int32)c.x);
         _movement.dy = (float)((Poco::Int32)n.y - (Poco::Int32)c.y);
-                
+
         float distance = std::sqrt(std::pow(_movement.dx, 2) + std::pow(_movement.dy, 2));
         _time = distance/speed;
         _elapsed = elapsed;
     }
-
-    #if defined(SERVER_FRAMEWORK_TESTING)
-        printf("\t\tObject starting movement, t=%f\n", _time);
-    #endif
+    else if (movementType == MOVEMENT_BY_ANGLE)
+        _elapsed = 0;
 }
 
 bool MotionMaster::evaluate(Poco::UInt32 diff, Vector2D& pos)
@@ -76,7 +89,7 @@ bool MotionMaster::evaluate(Poco::UInt32 diff, Vector2D& pos)
         float r = _elapsed;
         if (_elapsed > _time)
             r = _time;
-        
+
         pos.x = c.x + _movement.dx * _elapsed / _time;
         pos.y = c.y + _movement.dy * _elapsed / _time;
 

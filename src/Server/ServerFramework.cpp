@@ -78,6 +78,18 @@ void doInitialize()
         printf("\n[OK] Server is running\n\n");
     }
 
+    #ifdef SERVER_FRAMEWORK_TESTING
+
+        SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
+        SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
+
+        sGridLoader.addObject(plr)->addObject(obj);
+
+        MotionMaster::StartAngleMovement(plr, 0.5f, 25.0f);
+        MotionMaster::StartAngleMovement(obj, 0.5f, 25.0f);
+
+    #endif
+
     while (server.isRunning())
     {
         // Parse CLI (Console Input)
