@@ -17,7 +17,8 @@ SharedPtr<Object> ObjectManager::create(Poco::UInt32 highGUID)
 {
     SharedPtr<Object> object = NULL;
     
-    if (Poco::UInt32 lowGUID = newGUID(HIGH_GUID_PLAYER))
+    Poco::UInt32 lowGUID = newGUID(highGUID);
+    if (lowGUID != MAX_GUID)
     {
         switch (highGUID)
         {
@@ -40,7 +41,8 @@ SharedPtr<Player> ObjectManager::createPlayer(std::string name, Client* client)
 {
     SharedPtr<Object> object = NULL;
 
-    if (Poco::UInt32 lowGUID = newGUID(HIGH_GUID_PLAYER))
+    Poco::UInt32 lowGUID = newGUID(HIGH_GUID_PLAYER);
+    if (lowGUID != MAX_GUID)
     {
         object.assign(new Player(name, client));
         object->SetGUID(MAKE_GUID(HIGH_GUID_PLAYER, lowGUID));
