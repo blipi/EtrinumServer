@@ -15,8 +15,7 @@
  *
  */
 Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
-    _x(x), _y(y),
-    _playersInGrid(0)
+    _x(x), _y(y)
 {
     _lastTick = clock();
 }
@@ -31,13 +30,10 @@ bool Grid::update()
     // Update only if it's more than 1ms since last tick
     if (clock() - _lastTick > 0)
     {
-        for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
+        for (ObjectMap::const_iterator itr = _players.begin(); itr != _players.end(); )
         {
             SharedPtr<Object> object = itr->second;
             ++itr;
-
-            if (!(object->GetHighGUID() & HIGH_GUID_PLAYER))
-                continue;
 
             // Find near grids
             // Must be done before moving, other we may run into LoS problems
@@ -46,10 +42,7 @@ bool Grid::update()
             // Update AI, movement, everything if there is any or we have to
             // If update returns false, that means the object is no longer in this grid!
             if (!object->update(clock() - _lastTick))
-            {
-                _objects.erase(object->GetGUID());
-                _playersInGrid--;
-            }
+                _players.erase(object->GetGUID());
 
             // Update near mobs
             GuidsSet objects;
@@ -161,7 +154,7 @@ static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector
     Poco::UInt32 x = it.second->GetPosition().x;
     Poco::UInt32 y = it.second->GetPosition().y;
 
-    return !(it.second->GetHighGUID() & HIGH_GUID_PLAYER) && (_max(x, 20) - 20, 0 <= c.x && c.x <= x + 20 && _max(y, 20) - 20, 0 <= c.y && c.y <= y + 20);
+    return (_max(x, 20) - 20, 0 <= c.x && c.x <= x + 20 && _max(y, 20) - 20, 0 <= c.y && c.y <= y + 20);
 }
 
 /**
@@ -198,13 +191,26 @@ GuidsSet Grid::getObjects(Poco::UInt32 highGUID)
 {
     GuidsSet objects;
 
-    for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
+    if (highGUID & HIGH_GUID_PLAYER)
     {
-        Poco::UInt64 GUID = itr->first;
-        itr++;
-
-        if (GUID & highGUID)
+        for (ObjectMap::const_iterator itr = _players.begin(); itr != _players.end(); )
+        {
+            Poco::UInt64 GUID = itr->first;
+            itr++;
             objects.insert(GUID);
+        }
+    }
+
+    if (!(highGUID & HIGH_GUID_PLAYER))
+    {
+        for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
+        {
+            Poco::UInt64 GUID = itr->first;
+            itr++;
+
+            if (GUID & highGUID)
+                objects.insert(GUID);
+        }
     }
 
     return objects;
@@ -220,10 +226,19 @@ SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
 {
     SharedPtr<Object> object = NULL;
     
-    ObjectMap::iterator itr = _objects.find(GUID);
-    if (itr != _objects.end())
-        object = itr->second;
-    
+    if (HIGUID(GUID) & HIGH_GUID_PLAYER)
+    {
+        ObjectMap::iterator itr = _players.find(GUID);
+        if (itr != _players.end())
+            object = itr->second;
+    }
+    else
+    {
+        ObjectMap::iterator itr = _objects.find(GUID);
+        if (itr != _objects.end())
+            object = itr->second;
+    }
+
     return object;
 }
 
@@ -235,14 +250,15 @@ SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
  */
 bool Grid::addObject(SharedPtr<Object> object)
 {
-    bool inserted = _objects.insert(rde::make_pair(object->GetGUID(), object)).second;    
-    if (inserted)
-    {        
-        if (object->GetHighGUID() & HIGH_GUID_PLAYER)
-            _playersInGrid++;
+    bool inserted = false;
     
+    if (object->GetHighGUID() & HIGH_GUID_PLAYER)
+        _players.insert(rde::make_pair(object->GetGUID(), object)).second;
+    else
+        _objects.insert(rde::make_pair(object->GetGUID(), object)).second;    
+
+    if (inserted)
         object->SetGrid(this);
-    }
 
     return inserted;
 }
@@ -253,7 +269,10 @@ bool Grid::addObject(SharedPtr<Object> object)
  */
 void Grid::removeObject(Poco::UInt64 GUID)
 {
-    _objects.erase(GUID);
+    if (HIGUID(GUID) & HIGH_GUID_PLAYER)
+        _players.erase(GUID);
+    else
+        _objects.erase(GUID);
 }
 
 

@@ -77,7 +77,7 @@ void doInitialize()
     {
         printf("\n[OK] Server is running\n\n");
     }
-    
+
     while (server.isRunning())
     {
         // Parse CLI (Console Input)

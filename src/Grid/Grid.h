@@ -71,7 +71,7 @@ public:
     
     inline bool hasPlayers()
     {
-        return _playersInGrid > 0;
+        return !_players.empty();
     }
 
     void forceLoad();
@@ -79,7 +79,7 @@ public:
 
 private:
     ObjectMap _objects;
-    Poco::UInt32 _playersInGrid;
+    ObjectMap _players;
     Poco::UInt32 _forceLoad;
     Poco::UInt16 _x;
     Poco::UInt16 _y;
