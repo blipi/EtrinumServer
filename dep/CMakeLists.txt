@@ -20,5 +20,4 @@ if( WIN32 )
 endif()
 
 add_subdirectory(cryptocpp)
-add_subdirectory(sparsehash)
 

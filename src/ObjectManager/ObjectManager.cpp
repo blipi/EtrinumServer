@@ -10,16 +10,7 @@ ObjectManager::ObjectManager()
 {
     _playersGUID = 1;
     _creaturesGUID = 1;
-    _itemsGUID = 1;
-
-    _players.set_empty_key(NULL);
-    _players.set_deleted_key(std::numeric_limits<Poco::UInt32>::max());
-
-    _creatures.set_empty_key(NULL);
-    _creatures.set_deleted_key(std::numeric_limits<Poco::UInt32>::max());
-    
-    _items.set_empty_key(NULL);
-    _items.set_deleted_key(std::numeric_limits<Poco::UInt32>::max());    
+    _itemsGUID = 1;   
 }
 
 SharedPtr<Object> ObjectManager::create(Poco::UInt32 highGUID)
@@ -31,8 +22,8 @@ SharedPtr<Object> ObjectManager::create(Poco::UInt32 highGUID)
         switch (highGUID)
         {
             case HIGH_GUID_CREATURE:
-                object = new Creature();
-                _creatures.insert(ObjectInserter(lowGUID, object));
+                object.assign(new Creature());
+                _creatures.insert(rde::make_pair(lowGUID, object));
                 break;
 
             default:
@@ -54,26 +45,30 @@ SharedPtr<Player> ObjectManager::createPlayer(std::string name, Client* client)
         object.assign(new Player(name, client));
         object->SetGUID(MAKE_GUID(HIGH_GUID_PLAYER, lowGUID));
 
-        _players.insert(ObjectInserter(lowGUID, object));
+        _players.insert(rde::make_pair(lowGUID, object));
     }
 
     return object.cast<Player>();
 }
 
-Object* ObjectManager::getObject(Poco::UInt64 GUID)
+SharedPtr<Object> ObjectManager::getObject(Poco::UInt64 GUID)
 {
-    ObjectsMap::iterator itr;
-
     switch (HIGUID(GUID))
     {
         case HIGH_GUID_PLAYER:
-            if ((itr = _players.find(LOGUID(GUID))) != _players.end())
-                return itr->second;
+            {
+                ObjectsMap::iterator itr = _players.find(LOGUID(GUID));
+                if (itr != _players.end())
+                    return itr->second;
+            }
             break;
 
         case HIGH_GUID_CREATURE:
-            if ((itr = _creatures.find(LOGUID(GUID))) != _creatures.end())
-                return itr->second;
+            {
+                ObjectsMap::iterator itr = _creatures.find(LOGUID(GUID));
+                if (itr != _creatures.end())
+                    return itr->second;
+            }
             break;
 
         case HIGH_GUID_ITEM:
@@ -85,6 +80,7 @@ Object* ObjectManager::getObject(Poco::UInt64 GUID)
 
 void ObjectManager::removeObject(Poco::UInt64 GUID)
 {
+    // An object removed from here should also be removed from grid
     switch (HIGUID(GUID))
     {
         case HIGH_GUID_PLAYER:

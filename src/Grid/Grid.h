@@ -25,7 +25,8 @@
 #include "Poco/SharedPtr.h"
 
 //@ Hash Map
-#include "google/dense_hash_map"
+#include "hash_map.h"
+#include "stack_allocator.h"
 
 
 using Poco::SharedPtr;
@@ -36,8 +37,7 @@ class Server;
 class Grid
 {
 private:
-    typedef google::dense_hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*object*/, std::hash<Poco::UInt64>, equint64> ObjectMap;
-    typedef std::pair<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object> /*client*/> ObjectMapInserter;
+    typedef rde::hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object>> ObjectMap;
 
 public:
     typedef std::list<Grid*> GridsList;
@@ -53,12 +53,7 @@ public:
 
     GridsList findNearGrids(SharedPtr<Object> object);
     void visit(SharedPtr<Object> object, GuidsSet& objects);
-
-    inline void addToMoveList(Poco::UInt64 GUID)
-    {
-        _moveList.insert(GUID);
-    }
-
+    
     inline Poco::UInt16 GetPositionX()
     {
         return _x;
@@ -84,7 +79,6 @@ public:
 
 private:
     ObjectMap _objects;
-    GuidsSet _moveList;
     Poco::UInt32 _playersInGrid;
     Poco::UInt32 _forceLoad;
     Poco::UInt16 _x;
@@ -103,8 +97,7 @@ private:
         }
     };
     
-    typedef google::dense_hash_map<Poco::UInt32 /*hash*/, Grid* /*object*/, std::hash<Poco::UInt32>, GridCompare> GridsMap;
-    typedef std::pair<Poco::UInt32 /*hash*/, Grid* /*grid*/> GridInserter;
+    typedef rde::hash_map<Poco::UInt32 /*hash*/, Grid* /*object*/> GridsMap;
 
 public:
     GridLoader();

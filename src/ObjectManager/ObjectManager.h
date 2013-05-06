@@ -15,8 +15,11 @@
 
 #include "Poco/SharedPtr.h"
 
+// Hash maps
+#include "hash_map.h"
+#include "stack_allocator.h"
+
 #include "defines.h"
-#include "google/dense_hash_map"
 
 using Poco::SharedPtr;
 
@@ -38,7 +41,7 @@ public:
     SharedPtr<Object> create(Poco::UInt32 highGUID);
     SharedPtr<Player> createPlayer(std::string name, Client* client);
 
-    Object* getObject(Poco::UInt64 GUID);
+    SharedPtr<Object> getObject(Poco::UInt64 GUID);
     void removeObject(Poco::UInt64 GUID);
 
 private:
@@ -48,16 +51,7 @@ public:
     static Poco::UInt32 MAX_GUID;
 
 private:
-    struct eqObj
-    {
-        bool operator() (Poco::UInt32 u1, Poco::UInt32 u2) const
-        {
-            return u1 == u2;
-        }
-    };
-    typedef google::dense_hash_map<Poco::UInt32 /*loguid*/, SharedPtr<Object> /*object*/, std::hash<Poco::UInt32>, eqObj> ObjectsMap;
-    typedef std::pair<Poco::UInt32 /*loguid*/, SharedPtr<Object> /*object*/> ObjectInserter;
-
+    typedef rde::hash_map<Poco::UInt32 /*loguid*/, SharedPtr<Object> /*object*/> ObjectsMap;
     typedef std::set<Poco::UInt32> LowGuidsSet;
 
     ObjectsMap _players;

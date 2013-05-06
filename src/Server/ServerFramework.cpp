@@ -22,17 +22,10 @@
 
 #ifdef SERVER_FRAMEWORK_TESTING
 
+    #include "ObjectManager.h"
     #include "Object.h"
+    #include "Player.h"
     #include "Tools.h"
-
-    //@ Basic Net connections
-    #include "Poco/Net/Net.h"
-    #include "Poco/Net/ServerSocket.h"
-    #include "Poco/Net/StreamSocket.h"
-
-    using Poco::Net::Socket;
-    using Poco::Net::StreamSocket;
-    using Poco::Net::SocketAddress;
 
 #endif
 
@@ -84,7 +77,7 @@ void doInitialize()
     {
         printf("\n[OK] Server is running\n\n");
     }
-
+    
     while (server.isRunning())
     {
         // Parse CLI (Console Input)

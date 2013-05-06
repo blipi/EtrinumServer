@@ -33,14 +33,6 @@ struct Vector2D
     float x;
     float y;
 };
-
-struct equint64
-{
-    bool operator() (const Poco::UInt64 u1, const Poco::UInt64 u2) const
-    {
-        return u1 == u2;
-    }
-};
     
 #include <set>
 typedef std::set<Poco::UInt64> GuidsSet;

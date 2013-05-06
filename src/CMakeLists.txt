@@ -40,9 +40,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/poco/Data/MySQL/include
   ${CMAKE_SOURCE_DIR}/dep/poco/XML/include
   ${CMAKE_SOURCE_DIR}/dep/cryptocpp
-
-  ${CMAKE_SOURCE_DIR}/dep/sparsehash/src
-  ${CMAKE_BINARY_DIR}/dep/sparsehash/src
+  ${CMAKE_SOURCE_DIR}/dep/rdestl
   
   ${CMAKE_CURRENT_SOURCE_DIR}/Client
   ${CMAKE_CURRENT_SOURCE_DIR}/Common

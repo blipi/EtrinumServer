@@ -42,21 +42,27 @@ bool Object::update(const Poco::UInt32 diff)
         // Check if movement has finalized, in which case, remove flag
         Vector2D newPos;
         if (motionMaster.evaluate(diff, newPos))
+        {
+            #if defined(SERVER_FRAMEWORK_TESTING)
+            printf("\t\tObject finished movement (%.2f, %.2f)\n", GetPosition().x, GetPosition().y);
+            #endif
             clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
+        }
 
         // Update grid if we have to
         Vector2D currentPos = GetPosition();
-        if (Tools::GetCellFromPos(newPos.x) != Tools::GetCellFromPos(currentPos.x) || Tools::GetCellFromPos(newPos.y) != Tools::GetCellFromPos(currentPos.y))
-        {                    
-            // Add it to GridLoader move list, we can't add it directly from here to the new Grid
-            // We would end up being deadlocked, so the GridLoader handles it
+        bool updateGrid = (Tools::GetCellFromPos(newPos.x) != Tools::GetCellFromPos(currentPos.x) || Tools::GetCellFromPos(newPos.y) != Tools::GetCellFromPos(currentPos.y));
+
+        // We must relocate the object before doing anything else
+        Relocate(newPos);
+
+        // Insert us to the new grid if we have to
+        if (updateGrid)
+        {
             _grid = NULL;
-            sGridLoader.addObject(this);
+            sGridLoader.addObject(sObjectManager.getObject(GetGUID()));
             updatedGrid = true;
         }
-
-        // Relocate Object
-        Relocate(newPos);
     }
 
     return !updatedGrid;
