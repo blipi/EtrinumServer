@@ -253,9 +253,9 @@ bool Grid::addObject(SharedPtr<Object> object)
     bool inserted = false;
     
     if (object->GetHighGUID() & HIGH_GUID_PLAYER)
-        _players.insert(rde::make_pair(object->GetGUID(), object)).second;
+        inserted = _players.insert(rde::make_pair(object->GetGUID(), object)).second;
     else
-        _objects.insert(rde::make_pair(object->GetGUID(), object)).second;    
+        inserted = _objects.insert(rde::make_pair(object->GetGUID(), object)).second;    
 
     if (inserted)
         object->SetGrid(this);
