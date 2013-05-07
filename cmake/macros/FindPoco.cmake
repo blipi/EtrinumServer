@@ -55,9 +55,13 @@ IF ( UNIX )
     set (LIB_XML "PocoXML")
     
 else ()
-    set (POCO_LIBRARIES_EXT "md")
-    if ( BUILD_MT )
-        set (POCO_LIBRARIES_EXT "mt")
+    if ( POCO_STATIC )
+        set (POCO_LIBRARIES_EXT "md")
+        if ( BUILD_MT )
+            set (POCO_LIBRARIES_EXT "mt")
+        endif ()
+    else ()
+        set (POCO_LIBRARIES_EXT "")
     endif ()
 endif()
     
@@ -137,6 +141,7 @@ IF ( UNIX )
         ${LIB_DATA_MYSQL_RELEASE} 
         ${LIB_FOUNDATION_RELEASE} 
         ${LIB_NET_RELEASE}
+        ${LIB_XML_RELEASE}
       )
 else ()
     if( CMAKE_CONFIGURATION_TYPES OR CMAKE_BUILD_TYPE )
@@ -150,6 +155,7 @@ else ()
         ${LIB_DATA_MYSQL_RELEASE} 
         ${LIB_FOUNDATION_RELEASE} 
         ${LIB_NET_RELEASE}
+        ${LIB_XML_RELEASE}
       )
     endif()
 endif()

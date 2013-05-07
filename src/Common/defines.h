@@ -41,7 +41,7 @@ typedef std::set<Poco::UInt64> GuidsSet;
 #define SERVER_FRAMEWORK_TESTING
 
 #if defined(SERVER_FRAMEWORK_TESTING)
-    #define SERVER_FRAMEWORK_TEST_SUITE
+    //#define SERVER_FRAMEWORK_TEST_SUITE
 #endif
 
 //@ Login database

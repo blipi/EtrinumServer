@@ -70,11 +70,3 @@ target_link_libraries(EtrinumProjectServer
 )
 
 install(TARGETS EtrinumProjectServer DESTINATION "${CMAKE_INSTALL_PREFIX}")
-
-if ( NOT OPENSSL_STATIC )
-    install(TARGETS ${OPENSSL_LIBRARIES} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
-endif ()
-
-if ( NOT POCO_STATIC )
-    install(TARGETS ${POCO_LIBRARIES} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")
-endif ()

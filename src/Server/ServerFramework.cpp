@@ -20,7 +20,7 @@
 //@ Everything is stored in SharedPtrs
 #include "Poco/SharedPtr.h"
 
-#ifdef SERVER_FRAMEWORK_TESTING
+#ifdef SERVER_FRAMEWORK_TEST_SUITE
 
     #include "ObjectManager.h"
     #include "Object.h"
@@ -78,7 +78,7 @@ void doInitialize()
         printf("\n[OK] Server is running\n\n");
     }
 
-    #ifdef SERVER_FRAMEWORK_TESTING
+    #ifdef SERVER_FRAMEWORK_TEST_SUITE
 
         SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
         SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
