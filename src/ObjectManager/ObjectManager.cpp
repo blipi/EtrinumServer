@@ -4,6 +4,8 @@
 #include "Player.h"
 #include "debugging.h"
 
+#include <limits>
+
 Poco::UInt32 ObjectManager::MAX_GUID = std::numeric_limits<Poco::UInt32>::max();
 
 ObjectManager::ObjectManager()
