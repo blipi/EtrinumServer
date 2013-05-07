@@ -25,12 +25,11 @@ public:
 
     inline void setLogLevel(Message::Priority prio)
     {
-        _logLevel = prio;
+        _logger->setLevel(prio);
     }
 
 private:
     Logger* _logger;
-    Message::Priority _logLevel;
 };
 
 #define sLog Log::instance()

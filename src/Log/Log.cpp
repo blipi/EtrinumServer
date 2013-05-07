@@ -17,7 +17,7 @@ using Poco::AutoPtr;
 Log::Log()
 {
     _logger = &Logger::get("Server");
-    _logLevel = Message::PRIO_INFORMATION;
+    _logger->setLevel(Message::PRIO_INFORMATION);
 
     AutoPtr<FileChannel> channel(new FileChannel);
     AutoPtr<ConsoleChannel> cons(new ConsoleChannel);
@@ -40,7 +40,7 @@ Log::Log()
 
 void Log::out(Message::Priority prio, const char* fmt, ...)
 {
-    if (prio > _logLevel)
+    if (prio > _logger->getLevel())
         return;
 
     int n, size=100;
@@ -62,7 +62,7 @@ void Log::out(Message::Priority prio, const char* fmt, ...)
 
 void Log::out(Message::Priority prio, std::string msg)
 {
-    if (prio > _logLevel)
+    if (prio > _logger->getLevel())
         return;
 
     switch (prio)
