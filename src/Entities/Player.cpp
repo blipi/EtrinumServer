@@ -29,7 +29,7 @@ void Player::UpdateLoS(GuidsSet newObjectsInSight)
             if (object->GetHighGUID() != HIGH_GUID_PLAYER)
                 object->ToCreature()->UpdateVisibilityOf(GetGUID(), true);
             
-            sServer->UpdateVisibilityOf(this->ToObject(), object);
+            sServer->UpdateVisibilityOf(object, ToObject());
         }
     }
 
@@ -47,7 +47,7 @@ void Player::UpdateLoS(GuidsSet newObjectsInSight)
                 if (object->GetHighGUID() != HIGH_GUID_PLAYER)
                     object->ToCreature()->UpdateVisibilityOf(GetGUID(), false);
             
-            sServer->sendDespawnPacket(this->ToObject(), *itr);
+            sServer->sendDespawnPacket(*itr, ToObject());
         }
     }
 

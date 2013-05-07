@@ -176,6 +176,15 @@ void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
         else
             objects.insert(obj->GetGUID());
     }
+
+    it = rde::find_if(_players.begin(), _players.end(), c, findObjectsIf);
+    while (it != _players.end())
+    {
+        if (it->first != object->GetGUID())
+            objects.insert(it->first);
+
+        it = rde::find_if(++it, _players.end(),c, findObjectsIf);
+    }
 }
 
 /**

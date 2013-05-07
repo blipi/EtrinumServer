@@ -219,7 +219,7 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
     }
 }
 
-void Server::sendDespawnPacket(Object* to, Poco::UInt64 GUID)
+void Server::sendDespawnPacket(Poco::UInt64 GUID, Object* to)
 {
     sLog.out(Message::PRIO_TRACE, "Despawning %s to %s", Poco::NumberFormatter::formatHex(GUID).c_str(), Poco::NumberFormatter::formatHex(to->GetGUID()).c_str());
 
@@ -252,7 +252,7 @@ void Server::sendPlayerStats(Client* client, SharedPtr<Object> object)
 
 bool Server::parsePacket(Client* client, Packet* packet, Poco::UInt8 securityByte)
 {
-    printf("[%d]\t[C->S] %.4X\n", client->GetId(), packet->opcode);
+    sLog.out(Message::PRIO_DEBUG, "[%d]\t[C->S] %.4X", client->GetId(), packet->opcode);
 
     OPCODES opcode = (OPCODES)packet->opcode;
     if (OpcodesMap.find(opcode) == OpcodesMap.end())

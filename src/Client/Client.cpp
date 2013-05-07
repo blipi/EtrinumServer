@@ -7,6 +7,7 @@
 #include "ObjectManager.h"
 #include "AuthDatabase.h"
 #include "CharactersDatabase.h"
+#include "Log.h"
 
 /**
 * Client class constructor
@@ -121,7 +122,7 @@ void Client::run()
                     while (!_writePackets.empty())
                     {
                         Packet* packet = _writePackets.front();
-                        printf("[%d]\t[S->C] %.4X\n", GetId(), packet->opcode);
+                        sLog.out(Message::PRIO_DEBUG, "[%d]\t[S->C] %.4X", GetId(), packet->opcode);
                         socket().sendBytes(&packet->len, sizeof(packet->len));
                         socket().sendBytes(&packet->opcode, sizeof(packet->opcode));
                         socket().sendBytes(&packet->sec, sizeof(packet->sec));
