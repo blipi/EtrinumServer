@@ -17,6 +17,7 @@ using Poco::AutoPtr;
 Log::Log()
 {
     _logger = &Logger::get("Server");
+    _logLevel = Message::PRIO_ERROR;
 
     AutoPtr<FileChannel> channel(new FileChannel);
     AutoPtr<ConsoleChannel> cons(new ConsoleChannel);
@@ -39,6 +40,9 @@ Log::Log()
 
 void Log::out(Message::Priority prio, const char* fmt, ...)
 {
+    if (prio > _logLevel)
+        return;
+
     int n, size=100;
     bool b=false;
     va_list marker;
@@ -58,6 +62,9 @@ void Log::out(Message::Priority prio, const char* fmt, ...)
 
 void Log::out(Message::Priority prio, std::string msg)
 {
+    if (prio > _logLevel)
+        return;
+
     switch (prio)
     {
         case Message::PRIO_CRITICAL:

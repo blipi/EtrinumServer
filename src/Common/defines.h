@@ -38,11 +38,7 @@ struct Vector2D
 typedef std::set<Poco::UInt64> GuidsSet;
 
 //@ Testing purpouses macros
-#define SERVER_FRAMEWORK_TESTING
-
-#if defined(SERVER_FRAMEWORK_TESTING)
-    #define SERVER_FRAMEWORK_TEST_SUITE
-#endif
+#define SERVER_FRAMEWORK_TEST_SUITE
 
 //@ Login database
 class AuthDatabaseConnection;

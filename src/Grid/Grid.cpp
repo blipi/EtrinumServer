@@ -352,10 +352,7 @@ bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
     bool inserted = _grids.insert(rde::make_pair(grid->hashCode(), grid)).second;
     _isGridLoaded[x][y] = true;
 
-    #ifdef SERVER_FRAMEWORK_TESTING
-        sLog.out(Message::PRIO_INFORMATION, "Grid (%d, %d) has been created (%d)", x, y, inserted);
-    #endif
-
+    sLog.out(Message::PRIO_INFORMATION, "Grid (%d, %d) has been created (%d)", x, y, inserted);
     return inserted;
 }
 
@@ -467,9 +464,8 @@ void GridLoader::run_impl()
             // If the grid has no players in it, check for nearby grids, if they are not loaded or have no players, remove it
             if (!grid->update() || (!grid->hasPlayers() && !grid->isForceLoaded()))
             {
-                #ifdef SERVER_FRAMEWORK_TESTING
-                    sLog.out(Message::PRIO_INFORMATION, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
-                #endif
+                sLog.out(Message::PRIO_INFORMATION, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
+                
                 _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
                 _grids.erase(grid->hashCode());
                 delete grid;

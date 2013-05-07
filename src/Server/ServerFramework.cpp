@@ -58,6 +58,8 @@ public:
 
 void doInitialize()
 {
+    sLog.setLogLevel(Message::PRIO_INFORMATION);
+
     sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing server");
     Server server(1616);
     sServer = &server;

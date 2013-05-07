@@ -22,8 +22,14 @@ public:
     void out(Message::Priority prio, const char* fmt, ...);
     void out(Message::Priority prio, std::string msg);
 
+    inline void setLogLevel(Message::Priority prio)
+    {
+        _logLevel = prio;
+    }
+
 private:
     Logger* _logger;
+    Message::Priority _logLevel;
 };
 
 #define sLog Log::instance()

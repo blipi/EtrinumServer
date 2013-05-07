@@ -13,10 +13,8 @@ void MotionMaster::StartSimpleMovement(Object* object, Vector2D to, float speed)
     object->motionMaster.addPoint(to);
     object->motionMaster.set(speed, MOVEMENT_TO_POINT);
     object->setFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
-    
-    #if defined(SERVER_FRAMEWORK_TESTING)
-        sLog.out(Message::PRIO_INFORMATION, "\t\tObject starting movement, t=%f", object->motionMaster._time);
-    #endif
+
+    sLog.out(Message::PRIO_INFORMATION, "\t\tObject starting movement, t=%f", object->motionMaster._time);
 }
 
 void MotionMaster::StartAngleMovement(Object* object, float angle, float speed)
@@ -27,9 +25,7 @@ void MotionMaster::StartAngleMovement(Object* object, float angle, float speed)
     object->motionMaster.angle(angle);
     object->setFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
     
-    #if defined(SERVER_FRAMEWORK_TESTING)
-        sLog.out(Message::PRIO_INFORMATION, "\t\tObject starting movement, a=%f", angle);
-    #endif
+    sLog.out(Message::PRIO_INFORMATION, "\t\tObject starting movement, a=%f", angle);
 }
 
 void MotionMaster::addPoint(Vector2D point)

@@ -30,9 +30,7 @@ Object::Object(Client* client):
 
 Object::~Object()
 {
-#if defined(SERVER_FRAMEWORK_TESTING)
     sLog.out(Message::PRIO_INFORMATION, "Object %s deleted", Poco::NumberFormatter::formatHex(GetGUID()).c_str());
-#endif
 }
 
 bool Object::update(const Poco::UInt32 diff)
@@ -44,9 +42,8 @@ bool Object::update(const Poco::UInt32 diff)
         Vector2D newPos;
         if (motionMaster.evaluate(diff, newPos))
         {
-            #if defined(SERVER_FRAMEWORK_TESTING)
             sLog.out(Message::PRIO_INFORMATION, "\t\tObject finished movement (%.2f, %.2f)", GetPosition().x, GetPosition().y);
-            #endif
+
             clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
         }
 
