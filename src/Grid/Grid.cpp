@@ -3,6 +3,7 @@
 #include "Object.h"
 #include "Player.h"
 #include "Tools.h"
+#include "Log.h"
 
 #ifdef SERVER_FRAMEWORK_TESTING
 
@@ -352,7 +353,7 @@ bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
     _isGridLoaded[x][y] = true;
 
     #ifdef SERVER_FRAMEWORK_TESTING
-        printf("Grid (%d, %d) has been created (%d)\n", x, y, inserted);
+        sLog.out(Message::PRIO_INFORMATION, "Grid (%d, %d) has been created (%d)", x, y, inserted);
     #endif
 
     return inserted;
@@ -467,7 +468,7 @@ void GridLoader::run_impl()
             if (!grid->update() || (!grid->hasPlayers() && !grid->isForceLoaded()))
             {
                 #ifdef SERVER_FRAMEWORK_TESTING
-                    printf("Grid (%d, %d) has been deleted (%d %d)\n", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
+                    sLog.out(Message::PRIO_INFORMATION, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
                 #endif
                 _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
                 _grids.erase(grid->hashCode());

@@ -10,6 +10,7 @@
 #include "AuthDatabase.h"
 #include "CharactersDatabase.h"
 #include "Config.h"
+#include "Log.h"
 #include "debugging.h"
 
 //@ Basic server information
@@ -41,41 +42,41 @@ class MyErrorHandler: public Poco::ErrorHandler
 public:
     void exception(const Poco::Exception& exc)
     {
-        std::cerr << "Poco Error triggered: " << exc.displayText() << std::endl;
+        sLog.out(Message::PRIO_CRITICAL, std::string("Poco Error triggered: ").append(exc.displayText()));
     }
 
     void exception(const std::exception& exc)
     {
-        std::cerr << "STD Error triggered: " << exc.what() << std::endl;
+        sLog.out(Message::PRIO_CRITICAL, std::string("STD Error triggered: ").append(exc.what()));
     }
 
     void exception()
     {
-        std::cerr << "Unknown error" << std::endl;
+        sLog.out(Message::PRIO_CRITICAL, "Unknown Error");
     }
 };
 
 void doInitialize()
 {
-    printf("\n[*] Initializing server\n");
+    sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing server");
     Server server(1616);
     sServer = &server;
-    printf("\t[OK] Done\n");
+    sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
     
     // --------------------- //
     // Initialize GridLoader //
     // --------------------- //
     {
-        printf("\n[*] Initializing GridLoader\n");
+        sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing GridLoader");
         sGridLoader.initialize(&server);
-        printf("\t[OK] Done\n");
+        sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
     }
 
     // --------------- //
     // Server is ready //
     // --------------- //
     {
-        printf("\n[OK] Server is running\n\n");
+        sLog.out(Message::PRIO_INFORMATION, "\n[OK] Server is running\n");
     }
 
     #ifdef SERVER_FRAMEWORK_TEST_SUITE
@@ -104,7 +105,7 @@ int main(int argc, char** argv)
     
     MySQL::Connector::registerConnector();
     
-    printf("[*] Initializing MySQL\n");
+    sLog.out(Message::PRIO_INFORMATION, "[*] Initializing MySQL");
 
     // Read database configuration
     Config::DatabaseConnectionsMap connectionStrings = Config::readDatabaseInformation();
@@ -114,10 +115,10 @@ int main(int argc, char** argv)
     bool dbChars = CharactersDatabase.Open(connectionStrings["characters"]);
 
     if (!dbAuth || !dbChars)
-        printf("\t[Fail] Auth (%d) - Characters (%d)\n", dbAuth, dbChars);
+        sLog.out(Message::PRIO_FATAL, "\t[Fail] Auth (%d) - Characters (%d)", dbAuth, dbChars);
     else
     {
-        printf("\t[OK] Done\n");
+        sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
         doInitialize();
     }
     

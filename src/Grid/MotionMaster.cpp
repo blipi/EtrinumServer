@@ -1,6 +1,7 @@
 #include "MotionMaster.h"
 #include "Object.h"
 #include "Character.h"
+#include "Log.h"
 #include "debugging.h"
 
 #include <cmath>
@@ -14,7 +15,7 @@ void MotionMaster::StartSimpleMovement(Object* object, Vector2D to, float speed)
     object->setFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
     
     #if defined(SERVER_FRAMEWORK_TESTING)
-        printf("\t\tObject starting movement, t=%f\n", object->motionMaster._time);
+        sLog.out(Message::PRIO_INFORMATION, "\t\tObject starting movement, t=%f", object->motionMaster._time);
     #endif
 }
 
@@ -27,7 +28,7 @@ void MotionMaster::StartAngleMovement(Object* object, float angle, float speed)
     object->setFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
     
     #if defined(SERVER_FRAMEWORK_TESTING)
-        printf("\t\tObject starting movement, a=%f\n", angle);
+        sLog.out(Message::PRIO_INFORMATION, "\t\tObject starting movement, a=%f", angle);
     #endif
 }
 
