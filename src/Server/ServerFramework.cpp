@@ -82,12 +82,9 @@ void doInitialize()
     #ifdef SERVER_FRAMEWORK_TEST_SUITE
 
         SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
-        SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
-
-        sGridLoader.addObject(plr)->addObject(obj);
-
-        MotionMaster::StartAngleMovement(plr, 0.5f, 25.0f);
-        MotionMaster::StartAngleMovement(obj, 0.5f, 25.0f);
+        sGridLoader.addObject(plr);
+        //MotionMaster::StartAngleMovement(plr, 0.5f, 0.5f);
+        MotionMaster::StartSimpleMovement(plr, Vector2D(400.0f, 200.0f), 15.0f);
 
     #endif
 

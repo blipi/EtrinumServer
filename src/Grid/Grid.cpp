@@ -151,7 +151,7 @@ static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector
     Poco::UInt32 x = it.second->GetPosition().x;
     Poco::UInt32 y = it.second->GetPosition().y;
 
-    return (_max(x, 20) - 20, 0 <= c.x && c.x <= x + 20 && _max(y, 20) - 20, 0 <= c.y && c.y <= y + 20);
+    return (_max(x, 20) - 20 <= c.x && c.x <= x + 20 && _max(y, 20) - 20 <= c.y && c.y <= y + 20);
 }
 
 /**
