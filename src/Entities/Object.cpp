@@ -8,12 +8,6 @@
 #include "Tools.h"
 #include "Log.h"
 
-#ifdef SERVER_FRAMEWORK_TESTING
-
-    #include "debugging.h"
-
-#endif
-
 Object::Object(Client* client):
     _client(client),
     _GUID(ObjectManager::MAX_GUID)
@@ -30,7 +24,7 @@ Object::Object(Client* client):
 
 Object::~Object()
 {
-    sLog.out(Message::PRIO_INFORMATION, "Object %s deleted", Poco::NumberFormatter::formatHex(GetGUID()).c_str());
+    sLog.out(Message::PRIO_TRACE, "Object %s deleted", Poco::NumberFormatter::formatHex(GetGUID()).c_str());
 }
 
 bool Object::update(const Poco::UInt32 diff)
@@ -42,8 +36,7 @@ bool Object::update(const Poco::UInt32 diff)
         Vector2D newPos;
         if (motionMaster.evaluate(diff, newPos))
         {
-            sLog.out(Message::PRIO_INFORMATION, "\t\tObject finished movement (%.2f, %.2f)", GetPosition().x, GetPosition().y);
-
+            sLog.out(Message::PRIO_TRACE, "\t\tObject finished movement (%.2f, %.2f)", GetPosition().x, GetPosition().y);
             clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
         }
 

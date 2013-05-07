@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include "Poco/NestedDiagnosticContext.h"
-#include "Poco/NumberFormatter.h"
 
 #define ASSERT(assertion) { if (!(assertion)) { Poco::NDC::current().dump(std::cerr); *((volatile int*)NULL) = 0; } }
 

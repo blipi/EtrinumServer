@@ -58,8 +58,6 @@ public:
 
 void doInitialize()
 {
-    sLog.setLogLevel(Message::PRIO_INFORMATION);
-
     sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing server");
     Server server(1616);
     sServer = &server;
@@ -102,9 +100,12 @@ void doInitialize()
 
 int main(int argc, char** argv)
 {
+    // Set log level to TRACE
+    sLog.setLogLevel(Message::PRIO_TRACE);
+
+    // Initialize the Error Handler and MySQL
     MyErrorHandler eh;
-    Poco::ErrorHandler* oldErrorHandler = Poco::ErrorHandler::set(&eh);
-    
+    Poco::ErrorHandler* oldErrorHandler = Poco::ErrorHandler::set(&eh);    
     MySQL::Connector::registerConnector();
     
     sLog.out(Message::PRIO_INFORMATION, "[*] Initializing MySQL");

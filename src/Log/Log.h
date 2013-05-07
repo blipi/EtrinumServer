@@ -5,6 +5,7 @@
 #include "Poco/SingletonHolder.h"
 #include "Poco/Logger.h"
 #include "Poco/Message.h"
+#include "Poco/NumberFormatter.h"
 
 using Poco::Logger;
 using Poco::Message;

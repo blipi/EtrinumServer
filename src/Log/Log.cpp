@@ -17,7 +17,7 @@ using Poco::AutoPtr;
 Log::Log()
 {
     _logger = &Logger::get("Server");
-    _logLevel = Message::PRIO_ERROR;
+    _logLevel = Message::PRIO_INFORMATION;
 
     AutoPtr<FileChannel> channel(new FileChannel);
     AutoPtr<ConsoleChannel> cons(new ConsoleChannel);
