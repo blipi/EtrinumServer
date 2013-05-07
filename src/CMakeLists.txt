@@ -70,3 +70,7 @@ target_link_libraries(EtrinumProjectServer
 )
 
 install(TARGETS EtrinumProjectServer DESTINATION "${CMAKE_INSTALL_PREFIX}")
+
+if ( UNIX AND NOT POCO_STATIC )
+    install(FILES ${POCO_RUNTIME} DESTINATION "${CMAKE_INSTALL_RPATH}")
+endif ()

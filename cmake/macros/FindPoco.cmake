@@ -143,6 +143,50 @@ IF ( UNIX )
         ${LIB_NET_RELEASE}
         ${LIB_XML_RELEASE}
       )
+      
+    FIND_LIBRARY(SHARED_DATA_LIB
+      NAMES
+        ${LIB_DATA}.so. 
+      PATHS
+        ${POCO_LIBRARIES_DIR}
+    )
+
+    FIND_LIBRARY(SHARED_DATA_MYSQL_LIB
+      NAMES
+        ${LIB_DATA_MYSQL}.so.
+      PATHS
+        ${POCO_LIBRARIES_DIR}
+    )
+
+    FIND_LIBRARY(SHARED_FOUNDATION_LIB
+      NAMES
+        ${LIB_FOUNDATION}.so.
+      PATHS
+        ${POCO_LIBRARIES_DIR}
+    )
+    
+    FIND_LIBRARY(SHARED_NET_LIB
+      NAMES
+        ${LIB_NET}.so.
+      PATHS
+        ${POCO_LIBRARIES_DIR}
+    )
+
+    FIND_LIBRARY(SHARED_XML_LIB
+      NAMES
+        ${LIB_XML}.so.   
+      PATHS
+        ${POCO_LIBRARIES_DIR}
+    )
+    
+    set( POCO_RUNTIME
+        ${SHARED_DATA_LIB} 
+        ${SHARED_DATA_MYSQL_LIB} 
+        ${SHARED_FOUNDATION_LIB} 
+        ${SHARED_NET_LIB}
+        ${SHARED_XML_LIB}
+      )
+    
 else ()
     if( CMAKE_CONFIGURATION_TYPES OR CMAKE_BUILD_TYPE )
       set( POCO_LIBRARIES
