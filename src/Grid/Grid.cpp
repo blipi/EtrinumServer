@@ -69,8 +69,8 @@ bool Grid::update()
 Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
 {
     Vector2D position = object->GetPosition();
-    Poco::UInt16 gridX = Tools::GetPositionInCell(GetPositionX(), position.x);
-    Poco::UInt16 gridY = Tools::GetPositionInCell(GetPositionY(), position.y);
+    Poco::UInt16 gridX = Tools::GetPositionInXCell(GetPositionX(), position.x);
+    Poco::UInt16 gridY = Tools::GetPositionInYCell(GetPositionY(), position.z);
 
     std::list<Grid*> nearGrids;
     // Near at left
@@ -150,9 +150,9 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
 static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector2D c)
 {
     Poco::UInt32 x = it.second->GetPosition().x;
-    Poco::UInt32 y = it.second->GetPosition().y;
+    Poco::UInt32 z = it.second->GetPosition().z;
 
-    return (_max(x, 20) - 20 <= c.x && c.x <= x + 20 && _max(y, 20) - 20 <= c.y && c.y <= y + 20);
+    return (_max(x, 20) - 20 <= c.x && c.x <= x + 20 && _max(z, 20) - 20 <= c.z && c.z <= z + 20);
 }
 
 /**
@@ -163,7 +163,7 @@ static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector
  */
 void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
 {
-    Vector2D c(object->GetPosition().x, object->GetPosition().y);
+    Vector2D c(object->GetPosition().x, object->GetPosition().z);
     ObjectMap::iterator it = rde::find_if(_objects.begin(), _objects.end(), c, findObjectsIf);
     while (it != _objects.end())
     {
@@ -425,7 +425,7 @@ Grid* GridLoader::addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> 
 Grid* GridLoader::addObject(SharedPtr<Object> object)
 {
     Vector2D pos = object->GetPosition();
-    return addObjectTo(Tools::GetCellFromPos(pos.x), Tools::GetCellFromPos(pos.y), object);
+    return addObjectTo(Tools::GetXCellFromPos(pos.x), Tools::GetXCellFromPos(pos.z), object);
 }
 
 /**
@@ -436,8 +436,8 @@ Grid* GridLoader::addObject(SharedPtr<Object> object)
  */
 bool GridLoader::removeObject(Object* object)
 {
-    Poco::UInt16 x = Tools::GetCellFromPos(object->GetPosition().x);
-    Poco::UInt16 y = Tools::GetCellFromPos(object->GetPosition().y);
+    Poco::UInt16 x = Tools::GetXCellFromPos(object->GetPosition().x);
+    Poco::UInt16 y = Tools::GetXCellFromPos(object->GetPosition().z);
 
     if (!_isGridLoaded[x][y])
         return false;

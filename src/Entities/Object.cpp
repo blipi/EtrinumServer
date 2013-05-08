@@ -18,7 +18,7 @@ Object::Object(Client* client):
 
     // Reset Position
     _position.x = 0;
-    _position.y = 0;
+    _position.z = 0;
     _grid = NULL;
 }
 
@@ -36,13 +36,13 @@ bool Object::update(const Poco::UInt32 diff)
         Vector2D newPos;
         if (motionMaster.evaluate(diff, newPos))
         {
-            sLog.out(Message::PRIO_TRACE, "\t\tObject finished movement (%.2f, %.2f)", GetPosition().x, GetPosition().y);
+            sLog.out(Message::PRIO_TRACE, "\t\tObject finished movement (%.2f, %.2f)", GetPosition().x, GetPosition().z);
             clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
         }
 
         // Update grid if we have to
         Vector2D currentPos = GetPosition();
-        bool updateGrid = (Tools::GetCellFromPos(newPos.x) != Tools::GetCellFromPos(currentPos.x) || Tools::GetCellFromPos(newPos.y) != Tools::GetCellFromPos(currentPos.y));
+        bool updateGrid = (Tools::GetXCellFromPos(newPos.x) != Tools::GetXCellFromPos(currentPos.x) || Tools::GetYCellFromPos(newPos.z) != Tools::GetYCellFromPos(currentPos.z));
 
         // We must relocate the object before doing anything else
         Relocate(newPos);

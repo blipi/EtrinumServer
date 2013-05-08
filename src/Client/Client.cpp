@@ -80,7 +80,7 @@ SharedPtr<Player> Client::onEnterToWorld(Poco::UInt32 characterID)
         _player = NULL;
     }
 
-    sLog.out(Message::PRIO_DEBUG, "Player created at (%.2f, %.2f)", _player->GetPosition().x, _player->GetPosition().y);
+    sLog.out(Message::PRIO_DEBUG, "Player created at (%.2f, %.2f)", _player->GetPosition().x, _player->GetPosition().z);
 
     return _player;
 }

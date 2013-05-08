@@ -56,7 +56,7 @@ private:
         float angle;
         float speed;
         float dx;
-        float dy;
+        float dz;
     };
 
 

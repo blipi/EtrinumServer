@@ -16,7 +16,10 @@ enum HIGH_GUID
 
 #define MAX_X           256
 #define MAX_Y           256
-#define UNITS_PER_CELL  5000
+#define UNITS_PER_CELL  100
+
+#define MAP_MIN_X       -637
+#define MAP_MIN_Z       -816
 
 struct Vector2D
 {
@@ -24,14 +27,14 @@ struct Vector2D
     {
     }
 
-    Vector2D(float x, float y)
+    Vector2D(float x, float z)
     {
         this->x = x;
-        this->y = y;
+        this->z = z;
     }
 
     float x;
-    float y;
+    float z;
 };
     
 #include <set>

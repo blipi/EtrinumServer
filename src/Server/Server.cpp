@@ -50,11 +50,11 @@ enum OPCODES
     OPCODE_SC_LOGIN_RESULT              = 0x5101,
     OPCODE_SC_SEND_CHARACTERS_LIST      = 0x5102,
     OPCODE_SC_SELECT_CHARACTER_RESULT   = 0x5103,
+    OPCODE_SC_CREATE_CHARACTER_RESULT   = 0x5104,
 
     OPCODE_SC_SPAWN_OBJECT              = 0x5201,
     OPCODE_SC_DESPAWN_OBJECT            = 0x5202,
     OPCODE_SC_PLAYER_STATS              = 0x5203,
-
     
     // Client -> Server
     OPCODE_CS_EHLO                      = 0x9000,
@@ -174,7 +174,7 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
     *packet << from->GetLowGUID();
     *packet << from->GetHighGUID();
     *packet << Tools::getU32(from->GetPosition().x);
-    *packet << Tools::getU32(from->GetPosition().y);
+    *packet << Tools::getU32(from->GetPosition().z);
 
     switch (from->GetHighGUID())
     {
@@ -196,7 +196,7 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
                 if (character->motionMaster.getMovementType() == MOVEMENT_TO_POINT)
                 {
                     *packet << Tools::getU32(character->motionMaster.next().x);
-                    *packet << Tools::getU32(character->motionMaster.next().y);
+                    *packet << Tools::getU32(character->motionMaster.next().z);
                 }
                 else if (character->motionMaster.getMovementType() == MOVEMENT_BY_ANGLE)
                     *packet << Tools::getU32(character->getFacingTo());
@@ -405,6 +405,9 @@ bool Server::handleRequestCharacters(Client* client, Packet* packet)
             return sendCharactersList(client);
             break;
 
+        case 0x02:
+            return sendCharacterCreateResult(client, packet);
+
         default:
             return false;
     }
@@ -485,6 +488,12 @@ bool Server::handleCharacterSelect(Client* client, Packet* packet)
     }
 
     return false;
+}
+
+bool Server::sendCharacterCreateResult(Client* client, Packet* packet)
+{
+    //Packet* resp = new Packet(OPCODE_SC_SEND_CHARACTERS_LIST, 1024, true);
+    return true;
 }
 
 void Server::OnEnterToWorld(Client* client, Poco::UInt32 characterID)

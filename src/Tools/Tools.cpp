@@ -26,13 +26,23 @@ namespace Tools
 		return f;
 	}
 
-    Poco::UInt16 GetCellFromPos(double p)
+    Poco::UInt16 GetXCellFromPos(double x)
     {
-        return (int)(p / UNITS_PER_CELL) + 1;
+        return (int)((x - MAP_MIN_X) / UNITS_PER_CELL) + 1;
     }
 
-    Poco::UInt16 GetPositionInCell(Poco::UInt16 cell, float b)
+    Poco::UInt16 GetYCellFromPos(double z)
     {
-        return Poco::UInt16(std::abs(((cell - 1) * UNITS_PER_CELL) - b));
+        return (int)((z - MAP_MIN_Z) / UNITS_PER_CELL) + 1;
+    }
+
+    Poco::UInt16 GetPositionInXCell(Poco::UInt16 cell, float x)
+    {
+        return Poco::UInt16(std::abs(((cell - 1) * UNITS_PER_CELL) - (x - MAP_MIN_X)));
+    }
+
+    Poco::UInt16 GetPositionInYCell(Poco::UInt16 cell, float z)
+    {
+        return Poco::UInt16(std::abs(((cell - 1) * UNITS_PER_CELL) - (z - MAP_MIN_Z)));
     }
 }
