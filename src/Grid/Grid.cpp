@@ -425,7 +425,7 @@ Grid* GridLoader::addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> 
 Grid* GridLoader::addObject(SharedPtr<Object> object)
 {
     Vector2D pos = object->GetPosition();
-    return addObjectTo(Tools::GetXCellFromPos(pos.x), Tools::GetXCellFromPos(pos.z), object);
+    return addObjectTo(Tools::GetXCellFromPos(pos.x), Tools::GetYCellFromPos(pos.z), object);
 }
 
 /**
@@ -437,7 +437,7 @@ Grid* GridLoader::addObject(SharedPtr<Object> object)
 bool GridLoader::removeObject(Object* object)
 {
     Poco::UInt16 x = Tools::GetXCellFromPos(object->GetPosition().x);
-    Poco::UInt16 y = Tools::GetXCellFromPos(object->GetPosition().z);
+    Poco::UInt16 y = Tools::GetYCellFromPos(object->GetPosition().z);
 
     if (!_isGridLoaded[x][y])
         return false;
