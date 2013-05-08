@@ -446,6 +446,7 @@ bool Server::sendCharactersList(Client* client)
             {
                 do
                 {
+                    *resp << Poco::UInt8(0x01);
                     *resp << rsItems[0].convert<Poco::UInt32>();
                 }
                 while (rsItems.moveNext());
