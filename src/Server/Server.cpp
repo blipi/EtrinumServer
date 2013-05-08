@@ -175,7 +175,7 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
     *packet << from->GetHighGUID();
     *packet << Tools::getU32(from->GetPosition().x);
     *packet << Tools::getU32(from->GetPosition().y);
-            
+
     switch (from->GetHighGUID())
     {
         case HIGH_GUID_CREATURE:
@@ -436,6 +436,21 @@ bool Server::sendCharactersList(Client* client)
             *resp << character.id;
             *resp << character.model;
             *resp << character.name;
+
+            PreparedStatement* stmtItems = CharactersDatabase.getPreparedStatement(QUERY_CHARACTERS_SELECT_VISIBLE_EQUIPMENT);
+            stmtItems->bindUInt32(0, client->GetId());
+
+            RecordSet rsItems = stmtItems->execute();
+
+            if (rsItems.moveFirst())
+            {
+                do
+                {
+                    *resp << rsItems[0].convert<Poco::UInt32>();
+                }
+                while (rsItems.moveNext());
+            }
+            *resp << Poco::UInt8(0x00);
         }
         while (rs.moveNext());
     }
@@ -451,7 +466,7 @@ bool Server::handleCharacterSelect(Client* client, Packet* packet)
 {
     Poco::UInt32 characterID;
     *packet >> characterID;
-    
+
     Packet* resp = new Packet(OPCODE_SC_SELECT_CHARACTER_RESULT, 1);
     Characters* character = client->FindCharacter(characterID);
     if (character)
