@@ -9,7 +9,7 @@
 #include "Grid.h"
 #include "AuthDatabase.h"
 #include "CharactersDatabase.h"
-#include "Config.h"
+#include "ServerConfig.h"
 #include "Log.h"
 #include "debugging.h"
 

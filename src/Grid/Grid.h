@@ -77,6 +77,9 @@ public:
     void forceLoad();
     bool isForceLoaded();
 
+public:
+    static Poco::UInt8 losRange;
+
 private:
     ObjectMap _objects;
     ObjectMap _players;

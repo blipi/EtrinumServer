@@ -19,7 +19,9 @@ enum HIGH_GUID
 #define UNITS_PER_CELL  100
 
 #define MAP_MIN_X       -637
+#define MAP_MAX_X       2837
 #define MAP_MIN_Z       -816
+#define MAP_MAX_Z       2000
 
 struct Vector2D
 {

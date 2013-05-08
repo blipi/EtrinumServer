@@ -3,10 +3,12 @@
 #include "Object.h"
 #include "Player.h"
 #include "Tools.h"
-#include "Config.h"
+#include "ServerConfig.h"
 #include "Log.h"
 
 #include "debugging.h"
+
+Poco::UInt8 Grid::losRange;
 
 /**
  * Initializes a Grid object
@@ -74,14 +76,14 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
 
     std::list<Grid*> nearGrids;
     // Near at left
-    if (gridX < 35 && GetPositionX() > 1)
+    if (gridX < losRange && GetPositionX() > 1)
     {
         Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() - 1, GetPositionY());
         grid->forceLoad();
         nearGrids.push_back(grid);
 
         // Near at left top corner
-        if (gridY < 35 && GetPositionY() > 1)
+        if (gridY < losRange && GetPositionY() > 1)
         {
             Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() - 1, GetPositionY() - 1);
             grid->forceLoad();
@@ -89,7 +91,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
         }
 
         // Near at left bottom corner
-        if (gridY > UNITS_PER_CELL - 35 && GetPositionY() < 0xFF)
+        if (gridY > UNITS_PER_CELL - losRange && GetPositionY() < 0xFF)
         {
             Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() - 1, GetPositionY() + 1);
             grid->forceLoad();
@@ -98,7 +100,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
     }
 
     // Near at top
-    if (gridY < 35 && GetPositionY() > 1)
+    if (gridY < losRange && GetPositionY() > 1)
     {
         Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX(), GetPositionY() - 1);
         grid->forceLoad();
@@ -106,14 +108,14 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
     }
 
     // Near at right
-    if (gridX > UNITS_PER_CELL - 35 && GetPositionX() < 0xFF)
+    if (gridX > UNITS_PER_CELL - losRange && GetPositionX() < 0xFF)
     {
         Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() + 1, GetPositionY());
         grid->forceLoad();
         nearGrids.push_back(grid);
 
         // Near at right top corner
-        if (gridY < 35 && GetPositionY() > 1)
+        if (gridY < losRange && GetPositionY() > 1)
         {
             Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() + 1, GetPositionY() - 1);
             grid->forceLoad();
@@ -121,7 +123,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
         }
 
         // Near at right bottom corner
-        if (gridY > UNITS_PER_CELL - 35 && GetPositionY() < 0xFF)
+        if (gridY > UNITS_PER_CELL - losRange && GetPositionY() < 0xFF)
         {
             Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() + 1, GetPositionY() + 1);
             grid->forceLoad();
@@ -130,7 +132,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
     }
 
     // Near at bottom
-    if (gridY > UNITS_PER_CELL - 35 && GetPositionY() < 0xFF)
+    if (gridY > UNITS_PER_CELL - losRange && GetPositionY() < 0xFF)
     {
         Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX(), GetPositionY() + 1);
         grid->forceLoad();
@@ -152,7 +154,7 @@ static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector
     Poco::UInt32 x = it.second->GetPosition().x;
     Poco::UInt32 z = it.second->GetPosition().z;
 
-    return (_max(x, 20) - 20 <= c.x && c.x <= x + 20 && _max(z, 20) - 20 <= c.z && c.z <= z + 20);
+    return (_max(x, Grid::losRange) - Grid::losRange <= c.x && c.x <= x + Grid::losRange && _max(z, Grid::losRange) - Grid::losRange <= c.z && c.z <= z + Grid::losRange);
 }
 
 /**
@@ -317,6 +319,14 @@ GridLoader::GridLoader():
     for (Poco::UInt16 x = 0; x < MAX_X; x++)
         for (Poco::UInt16 y = 0; y < MAX_Y; y++)
             _isGridLoaded[x][y] = false;
+
+    // Set LoS range
+    Grid::losRange = sConfig.getIntConfig("LoSRange");
+    sLog.out(Message::PRIO_TRACE, "\t[OK] LoS Range set to: %d", Grid::losRange);
+
+    // Check for correct grid size
+    ASSERT((MAP_MAX_X - MAP_MIN_X) / UNITS_PER_CELL < MAX_X)
+    ASSERT((MAP_MAX_Z - MAP_MIN_Z) / UNITS_PER_CELL < MAX_Y)
 }
 
 /**
