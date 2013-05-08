@@ -97,18 +97,23 @@ void doInitialize()
 
 int main(int argc, char** argv)
 {
+    // Read configuration file
+    sLog.out(Message::PRIO_INFORMATION, "[*] Reading Configuration File\n");
+    sConfig.readConfiguration();
+        
     // Set log level to TRACE
-    sLog.setLogLevel(Message::PRIO_TRACE);
+    sLog.out(Message::PRIO_INFORMATION, "[*] Setting LogLevel to %d\n", sConfig.getIntConfig("LogLevel"));
+    sLog.setLogLevel(Message::Priority(sConfig.getIntConfig("LogLevel")));
 
     // Initialize the Error Handler and MySQL
     MyErrorHandler eh;
     Poco::ErrorHandler* oldErrorHandler = Poco::ErrorHandler::set(&eh);    
-    MySQL::Connector::registerConnector();
     
     sLog.out(Message::PRIO_INFORMATION, "[*] Initializing MySQL");
-
+    MySQL::Connector::registerConnector();
+    
     // Read database configuration
-    Config::DatabaseConnectionsMap connectionStrings = Config::readDatabaseInformation();
+    Config::StringConfigsMap connectionStrings = sConfig.getDatabaseInformation();
 
     // Databases
     bool dbAuth = AuthDatabase.Open(connectionStrings["auth"]);

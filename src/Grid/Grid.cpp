@@ -3,6 +3,7 @@
 #include "Object.h"
 #include "Player.h"
 #include "Tools.h"
+#include "Config.h"
 #include "Log.h"
 
 #include "debugging.h"

@@ -175,7 +175,7 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
     *packet << from->GetHighGUID();
     *packet << Tools::getU32(from->GetPosition().x);
     *packet << Tools::getU32(from->GetPosition().y);
-        
+            
     switch (from->GetHighGUID())
     {
         case HIGH_GUID_CREATURE:
@@ -245,9 +245,6 @@ void Server::sendPlayerStats(Client* client, SharedPtr<Object> object)
     encryptPacket(client, packet);
     setPacketHMAC(client, packet);
     client->addWritePacket(packet);
-
-    // Send an spawn packet of ourself
-    UpdateVisibilityOf(object, object);
 }
 
 bool Server::parsePacket(Client* client, Packet* packet, Poco::UInt8 securityByte)
@@ -454,7 +451,7 @@ bool Server::handleCharacterSelect(Client* client, Packet* packet)
 {
     Poco::UInt32 characterID;
     *packet >> characterID;
-
+    
     Packet* resp = new Packet(OPCODE_SC_SELECT_CHARACTER_RESULT, 1);
     Characters* character = client->FindCharacter(characterID);
     if (character)
@@ -487,6 +484,9 @@ void Server::OnEnterToWorld(Client* client, Poco::UInt32 characterID)
             
         // Add the player to the GridLoader system
         sGridLoader.addObject(player);
+
+        // Send an spawn packet of itself
+        UpdateVisibilityOf(player, player);
     }
     else
     {
