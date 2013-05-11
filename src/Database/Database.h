@@ -65,39 +65,39 @@ public:
         return 1;
     }
 
-    static void bind(std::size_t pos, const PreparedStatementData& obj, AbstractBinder* pBinder)
+    static void bind(std::size_t pos, const PreparedStatementData& obj, AbstractBinder* binder, AbstractBinder::Direction dir)
     {
-        poco_assert_dbg (pBinder != 0);
+        poco_assert_dbg (binder != 0);
 
         switch (obj.dataType)
         {
-            case DATA_STRING:   TypeHandler<std::string>::bind(pos++, obj.str, pBinder);    break;
-            case DATA_UINT8:    TypeHandler<Poco::UInt8>::bind(pos++, obj.u8, pBinder);     break;
-            case DATA_UINT16:   TypeHandler<Poco::UInt16>::bind(pos++, obj.u16, pBinder);   break;
-            case DATA_UINT32:   TypeHandler<Poco::UInt32>::bind(pos++, obj.u32, pBinder);   break;
-            case DATA_UINT64:   TypeHandler<Poco::UInt64>::bind(pos++, obj.u64, pBinder);   break;
-            case DATA_INT8:     TypeHandler<Poco::Int8>::bind(pos++, obj.i8, pBinder);      break;
-            case DATA_INT16:    TypeHandler<Poco::Int16>::bind(pos++, obj.i16, pBinder);    break;
-            case DATA_INT32:    TypeHandler<Poco::Int32>::bind(pos++, obj.i32, pBinder);    break;
-            case DATA_INT64:    TypeHandler<Poco::Int64>::bind(pos++, obj.i64, pBinder);    break;
+            case DATA_STRING:   TypeHandler<std::string>::bind(pos++, obj.str, binder, dir);    break;
+            case DATA_UINT8:    TypeHandler<Poco::UInt8>::bind(pos++, obj.u8, binder, dir);     break;
+            case DATA_UINT16:   TypeHandler<Poco::UInt16>::bind(pos++, obj.u16, binder, dir);   break;
+            case DATA_UINT32:   TypeHandler<Poco::UInt32>::bind(pos++, obj.u32, binder, dir);   break;
+            case DATA_UINT64:   TypeHandler<Poco::UInt64>::bind(pos++, obj.u64, binder, dir);   break;
+            case DATA_INT8:     TypeHandler<Poco::Int8>::bind(pos++, obj.i8, binder, dir);      break;
+            case DATA_INT16:    TypeHandler<Poco::Int16>::bind(pos++, obj.i16, binder, dir);    break;
+            case DATA_INT32:    TypeHandler<Poco::Int32>::bind(pos++, obj.i32, binder, dir);    break;
+            case DATA_INT64:    TypeHandler<Poco::Int64>::bind(pos++, obj.i64, binder, dir);    break;
         }
     }
 
-    static void prepare(std::size_t pos, const PreparedStatementData& obj, AbstractPreparation* pPrepare)
+    static void prepare(std::size_t pos, const PreparedStatementData& obj, AbstractPreparator* prepare)
     {
-        poco_assert_dbg (pPrepare != 0);
+        poco_assert_dbg (prepare != 0);
 
         switch (obj.dataType)
         {
-            case DATA_STRING:   TypeHandler<std::string>::prepare(pos++, obj.str, pPrepare);    break;
-            case DATA_UINT8:    TypeHandler<Poco::UInt8>::prepare(pos++, obj.u8, pPrepare);     break;
-            case DATA_UINT16:   TypeHandler<Poco::UInt16>::prepare(pos++, obj.u16, pPrepare);   break;
-            case DATA_UINT32:   TypeHandler<Poco::UInt32>::prepare(pos++, obj.u32, pPrepare);   break;
-            case DATA_UINT64:   TypeHandler<Poco::UInt64>::prepare(pos++, obj.u64, pPrepare);   break;
-            case DATA_INT8:     TypeHandler<Poco::Int8>::prepare(pos++, obj.i8, pPrepare);      break;
-            case DATA_INT16:    TypeHandler<Poco::Int16>::prepare(pos++, obj.i16, pPrepare);    break;
-            case DATA_INT32:    TypeHandler<Poco::Int32>::prepare(pos++, obj.i32, pPrepare);    break;
-            case DATA_INT64:    TypeHandler<Poco::Int64>::prepare(pos++, obj.i64, pPrepare);    break;
+            case DATA_STRING:   TypeHandler<std::string>::prepare(pos++, obj.str, prepare);    break;
+            case DATA_UINT8:    TypeHandler<Poco::UInt8>::prepare(pos++, obj.u8, prepare);     break;
+            case DATA_UINT16:   TypeHandler<Poco::UInt16>::prepare(pos++, obj.u16, prepare);   break;
+            case DATA_UINT32:   TypeHandler<Poco::UInt32>::prepare(pos++, obj.u32, prepare);   break;
+            case DATA_UINT64:   TypeHandler<Poco::UInt64>::prepare(pos++, obj.u64, prepare);   break;
+            case DATA_INT8:     TypeHandler<Poco::Int8>::prepare(pos++, obj.i8, prepare);      break;
+            case DATA_INT16:    TypeHandler<Poco::Int16>::prepare(pos++, obj.i16, prepare);    break;
+            case DATA_INT32:    TypeHandler<Poco::Int32>::prepare(pos++, obj.i32, prepare);    break;
+            case DATA_INT64:    TypeHandler<Poco::Int64>::prepare(pos++, obj.i64, prepare);    break;
         }
     }
 };

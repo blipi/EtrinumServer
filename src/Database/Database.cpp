@@ -7,7 +7,7 @@ PreparedStatement::PreparedStatement(Statement stmt):
     data.resize(std::count(query.begin(), query.end(), '?'));
 
     for (Poco::UInt8 i = 0; i < data.size(); i++)
-        _stmt, use(data[i]);
+        _stmt, data[i];
 }
     
 void PreparedStatement::bindString(Poco::UInt8 pos, std::string str)
