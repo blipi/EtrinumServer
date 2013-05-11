@@ -12,9 +12,11 @@
 #include "Log.h"
 #include "debugging.h"
 
-#include "Poco/Net/TCPServerParams.h"
-#include "Poco/Net/TCPServerConnectionFactory.h"
-#include "Poco/Net/Socket.h"
+#include "Poco/Net/SocketAcceptor.h"
+#include "Poco/Net/ServerSocket.h"
+
+using Poco::Net::SocketAcceptor;
+using Poco::Net::ServerSocket;
 
 // Crypting
 #include <iostream>
@@ -98,8 +100,8 @@ OpcodeHash OpcodesMap;
 *
 * @param port The port where the servers binds
 */
-Server::Server(Poco::UInt16 port):
-    _serverRunning(true)
+Server::Server():
+    _serverRunning(false)
 {
     // Create the Opcodes Map
     for (int i = 0; ; i++)
@@ -113,24 +115,33 @@ Server::Server(Poco::UInt16 port):
     // Reset all players online state
     PreparedStatement* stmt = AuthDatabase.getPreparedStatement(QUERY_AUTH_UPDATE_ONLINE_ONSTART);
     stmt->execute();
-
-    //Create a server socket to listen.
-    Poco::Net::ServerSocket svs(port);
-    
-    //Configure some server params.
-    Poco::Net::TCPServerParams* pParams = new Poco::Net::TCPServerParams();
-    pParams->setMaxThreads(1000);   // Max clients
-    pParams->setMaxQueued(1000);    // Max login queue
-    pParams->setThreadIdleTime(100);
-
-    //Create your server
-    server = new Poco::Net::TCPServer(new Poco::Net::TCPServerConnectionFactoryImpl<Client>(), svs, pParams);
-    server->start();
 }
 
 Server::~Server()
 {
-    delete server;
+    
+}
+
+void Server::start(Poco::UInt16 port)
+{
+    // Create a server socket to listen.
+    ServerSocket svs(port);
+    
+    // Stablish parameters
+    _reactor.setTimeout(Poco::Timespan(15000000));
+	
+    // Create a SocketAcceptor
+	SocketAcceptor<Client> acceptor(svs, _reactor);
+
+	// Run the reactor in its own thread so that we can wait for a termination request
+    _reactorThread.start(_reactor);
+
+    _serverRunning = true;
+    while (_serverRunning)
+        Thread::sleep(200);
+
+    _reactor.stop();
+    _reactorThread.join();
 }
 
 // Server -> Client packets

@@ -7,10 +7,14 @@
 //@ Mutex and Locking
 #include "Poco/RWLock.h"
 #include "Poco/SharedPtr.h"
+#include "Poco/AutoPtr.h"
 
 //@ Basic Net connections
-#include "Poco/Net/TCPServerConnection.h"
 #include "Poco/Net/NetException.h"
+#include "Poco/Net/SocketReactor.h"
+#include "Poco/Net/SocketNotification.h"
+#include "Poco/Net/StreamSocket.h"
+#include "Poco/NObserver.h"
 
 // Crypting
 #include <iostream>
@@ -25,6 +29,13 @@
 #include <filters.h>
 
 using Poco::SharedPtr;
+using Poco::AutoPtr;
+using Poco::Net::SocketReactor;
+using Poco::Net::ReadableNotification;
+using Poco::Net::ShutdownNotification;
+using Poco::Net::TimeoutNotification;
+using Poco::Net::StreamSocket;
+using Poco::NObserver;
 
 class Server;
 class Player;
@@ -46,13 +57,16 @@ struct Characters
     std::string name;
 };
 
-class Client: public Poco::Net::TCPServerConnection 
+class Client
 {
 public:
-    Client(const Poco::Net::StreamSocket& s);
+    Client(StreamSocket& socket, SocketReactor& reactor);
     ~Client();
 
-    void run();
+    void onReadable(const AutoPtr<ReadableNotification>& pNf);
+    void onShutdown(const AutoPtr<ShutdownNotification>& pNf);
+    void onTimeout(const AutoPtr<TimeoutNotification>& pNf);
+    void cleanupBeforeDelete();
 
     SharedPtr<Player> onEnterToWorld(Poco::UInt32 characterID);
     void addWritePacket(Packet* packet);
@@ -144,7 +158,6 @@ private:
     Poco::UInt64 _logicFlags;    
 	std::list<Packet*> _writePackets;
     Poco::RWLock _writeLock;
-    bool _stop;
 
     struct PacketData
     {
@@ -167,6 +180,14 @@ private:
         }
     };
     PacketData _packetData;
+    
+    // Client connection
+	StreamSocket   _socket;
+	SocketReactor& _reactor;
+
+    // Packet reading
+    Packet* _packet;
+    Poco::UInt8 _packetStep;
 };
 
 #endif

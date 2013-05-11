@@ -59,8 +59,7 @@ public:
 void doInitialize()
 {
     sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing server");
-    Server server(1616);
-    sServer = &server;
+    sServer = new Server();
     sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
     
     // --------------------- //
@@ -68,7 +67,7 @@ void doInitialize()
     // --------------------- //
     {
         sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing GridLoader");
-        sGridLoader.initialize(&server);
+        sGridLoader.initialize(sServer);
         sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
     }
 
@@ -84,15 +83,13 @@ void doInitialize()
         SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
         sGridLoader.addObject(plr);
         //MotionMaster::StartAngleMovement(plr, 0.5f, 0.5f);
-        MotionMaster::StartSimpleMovement(plr, Vector2D(400.0f, 200.0f), 15.0f);
+        //MotionMaster::StartSimpleMovement(plr, Vector2D(400.0f, 200.0f), 15.0f);
 
     #endif
 
-    while (server.isRunning())
-    {
-        // Parse CLI (Console Input)
-        Thread::sleep(200);
-    }
+    sServer->start(1616);
+
+    delete sServer;
 }
 
 int main(int argc, char** argv)

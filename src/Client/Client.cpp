@@ -9,20 +9,39 @@
 #include "CharactersDatabase.h"
 #include "Log.h"
 
+    
+// Packet reading steps
+enum PACKET_READING_STEPS
+{
+    STEP_NEW_PACKET = 0,
+    STEP_READ_LENGTH,
+    STEP_READ_OPCODE,
+    STEP_READ_SEC,
+    STEP_READ_DIGEST,
+    STEP_READ_DATA,
+    STEP_END_PACKET,
+};
+
 /**
 * Client class constructor
 *
 * @param s Socket used by the client to connect
 */
-Client::Client(const Poco::Net::StreamSocket& s):
+Client::Client(StreamSocket& socket, SocketReactor& reactor):
+	_socket(socket), _reactor(reactor),
+    _packet(NULL), _packetStep(STEP_NEW_PACKET),
     _player(NULL),
-    _stop(false),
     _logicFlags(0),
-    _logged(false),
-    _inWorld(false),
-    _id(0),
-    Poco::Net::TCPServerConnection(s)
+    _logged(false), _inWorld(false), _id(0)
 {
+    sLog.out(Message::PRIO_INFORMATION, "Connection from " + socket.peerAddress().toString());
+
+    _reactor.addEventHandler(_socket, NObserver<Client, ReadableNotification>(*this, &Client::onReadable));
+	_reactor.addEventHandler(_socket, NObserver<Client, ShutdownNotification>(*this, &Client::onShutdown));
+	_reactor.addEventHandler(_socket, NObserver<Client, TimeoutNotification>(*this, &Client::onTimeout));
+    
+    // Send the handshake to the player
+    sServer->SendPlayerEHLO(this);
 }
 
 /**
@@ -31,6 +50,15 @@ Client::Client(const Poco::Net::StreamSocket& s):
 Client::~Client()
 {
     _player = NULL;
+    if (_packetStep != Poco::UInt8(STEP_NEW_PACKET))
+        delete _packet;
+
+    _reactor.removeEventHandler(_socket, NObserver<Client, ReadableNotification>(*this, &Client::onReadable));
+	_reactor.removeEventHandler(_socket, NObserver<Client, ShutdownNotification>(*this, &Client::onShutdown));
+	_reactor.removeEventHandler(_socket, NObserver<Client, TimeoutNotification>(*this, &Client::onTimeout));
+
+    _socket.shutdown();
+    _socket.close();
 }
 
 /**
@@ -88,118 +116,36 @@ SharedPtr<Player> Client::onEnterToWorld(Poco::UInt32 characterID)
 /**
 * TCP Socket thread, sends and receives packets
 */
-void Client::run()
+void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
 {
-    // Send the handshake to the player
-    sServer->SendPlayerEHLO(this);
-    
-    // Packet reading steps
-    enum PACKET_READING_STEPS
+    if (!(_logicFlags & DISCONNECT_ON_EMPTY_QUEUE))
     {
-        STEP_NEW_PACKET = 0,
-        STEP_READ_LENGTH,
-        STEP_READ_OPCODE,
-        STEP_READ_SEC,
-        STEP_READ_DIGEST,
-        STEP_READ_DATA,
-        STEP_END_PACKET,
-    };
-    Poco::UInt8 packetStep = STEP_NEW_PACKET;
-    Packet* packet = NULL;
+        if (_packetStep == STEP_NEW_PACKET)
+        {
+            _packet = new Packet();
+            _packetStep = STEP_READ_LENGTH;
+        }
 
-    Poco::UInt8 lastRead = 0;
-    Poco::Timespan timeOut(1, 0);
-    while (!_stop)
-    {
+        int nBytes = -1;
         try
         {
-            _writeLock.readLock();
-            if (!_writePackets.empty())
+            switch (_packetStep)
             {
-                _writeLock.unlock();
-
-                if (socket().poll(timeOut, Poco::Net::Socket::SELECT_WRITE))
-                {
-                    _writeLock.writeLock();
-                    while (!_writePackets.empty())
-                    {
-                        Packet* packet = _writePackets.front();
-                        sLog.out(Message::PRIO_DEBUG, "[%d]\t[S->C] %.4X", GetId(), packet->opcode);
-                        socket().sendBytes(&packet->len, sizeof(packet->len));
-                        socket().sendBytes(&packet->opcode, sizeof(packet->opcode));
-                        socket().sendBytes(&packet->sec, sizeof(packet->sec));
-                        socket().sendBytes(packet->digest, sizeof(packet->digest));
-                        socket().sendBytes(packet->rawdata, packet->getLength());
-                        delete packet;
-
-                        _writePackets.pop_front();
-                    }
-                    _writeLock.unlock();
-                }
-            }
-            else
-                _writeLock.unlock();
-
-            if (socket().poll(timeOut, Poco::Net::Socket::SELECT_READ) == false)
-            {
-                // TODO: Config: Timeout interval
-                lastRead++;
-                if (lastRead == 15)
-                    _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_TIME_OUT;
-            }
-            else
-            {
-                int nBytes = -1;
-
-                if (packetStep == STEP_NEW_PACKET)
-                {
-                    packet = new Packet();
-                    packetStep = STEP_READ_LENGTH;
-                }
-
-                switch (packetStep)
-                {
-                    case STEP_READ_LENGTH:
-                        nBytes = socket().receiveBytes(&packet->len, sizeof(packet->len));
-                        break;
-                    case STEP_READ_OPCODE:
-                        nBytes = socket().receiveBytes(&packet->opcode, sizeof(packet->opcode));
-                        break;
-                    case STEP_READ_SEC:
-                        nBytes = socket().receiveBytes(&packet->sec, sizeof(packet->sec));
-                        break;
-                    case STEP_READ_DIGEST:
-                        nBytes = socket().receiveBytes(packet->digest, sizeof(packet->digest));
-                        break;
-                    case STEP_READ_DATA:
-                        nBytes = socket().receiveBytes(packet->rawdata, packet->getLength());
-                        break;
-                }
-
-                packetStep++;
-
-                if (packetStep == STEP_READ_DATA)
-                {
-                    packet->rawdata = new Poco::UInt8[packet->getLength() + 1];
-
-                    if (packet->getLength() == 0)
-                        packetStep = STEP_END_PACKET;
-                }
-
-                if (packetStep == STEP_END_PACKET)
-                {
-                    lastRead = 0;
-                    generateSecurityByte();
-                    if (!sServer->parsePacket(this, packet, (Poco::UInt8)(_packetData.securityByte & 0xFF)))
-                        _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_INCORRECT_DATA;
-
-                    packetStep = STEP_NEW_PACKET;
-                    delete packet;
-                }
-
-                // If bytes read are 0 and we are not already disconnecting, flag it
-                if (nBytes == 0 && !(_logicFlags & DISCONNECT_ON_EMPTY_QUEUE))
-                    _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_CONNECTION_CLOSED;
+                case STEP_READ_LENGTH:
+                    nBytes = _socket.receiveBytes(&_packet->len, sizeof(_packet->len));
+                    break;
+                case STEP_READ_OPCODE:
+                    nBytes = _socket.receiveBytes(&_packet->opcode, sizeof(_packet->opcode));
+                    break;
+                case STEP_READ_SEC:
+                    nBytes = _socket.receiveBytes(&_packet->sec, sizeof(_packet->sec));
+                    break;
+                case STEP_READ_DIGEST:
+                    nBytes = _socket.receiveBytes(_packet->digest, sizeof(_packet->digest));
+                    break;
+                case STEP_READ_DATA:
+                    nBytes = _socket.receiveBytes(_packet->rawdata, _packet->getLength());
+                    break;
             }
         }
         catch (Poco::Net::ConnectionResetException ex)
@@ -208,58 +154,94 @@ void Client::run()
             _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_NETWORK_ERROR;
         }
 
-        #if defined(SERVER_FRAMEWORK_TESTING)
-            if ((_logicFlags & DISCONNECT_ON_EMPTY_QUEUE) && (_logicFlags & ~DISCONNECT_ON_EMPTY_QUEUE))
-                printf("Disconnect flags: %d\n", _logicFlags & ~DISCONNECT_ON_EMPTY_QUEUE);
-        #endif
-		
-        if ((_logicFlags & DISCONNECTED_INCORRECT_DATA) || (_logicFlags & DISCONNECTED_TIME_OUT))
+        // If bytes read are 0 and we are not already disconnecting, flag it
+        if (nBytes <= 0 && !(_logicFlags & DISCONNECT_ON_EMPTY_QUEUE))
+            _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_CONNECTION_CLOSED;
+        else
         {
-            sServer->SendClientDisconnected(this);
-            _logicFlags &= ~DISCONNECTED_INCORRECT_DATA;
-            _logicFlags &= ~DISCONNECTED_TIME_OUT;
-        }
 
-        _writeLock.readLock();
-        // Cleanups are done after all packet sending, so that everything can get updated before logging off ;)
-	    if(_writePackets.empty() && (_logicFlags & DISCONNECT_ON_EMPTY_QUEUE))
-	    {
-            if (_inWorld)
+            _packetStep++;
+            if (_packetStep == STEP_READ_DATA)
             {
-                // Stop movement if any
-                _player->motionMaster.clear();
-                _player->clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
+                _packet->rawdata = new Poco::UInt8[_packet->getLength() + 1];
 
-                // Save GUID for further usage
-                Poco::UInt64 GUID = _player->GetGUID();
-
-                // If we are on a Grid (it is spawned), remove us
-                if (_player->IsOnGrid())
-                    _player->GetGrid()->removeObject(_player->GetGUID());
-
-                // Send despawn packet to all nearby objects
-                _player->Despawn();
-
-                // Delete from the server object list
-                sObjectManager.removeObject(_player->GetGUID());
-
-                // Flag it as not in world and not logged
-                setInWorld(false);
-                setLogged(false);
+                if (_packet->getLength() == 0)
+                    _packetStep = STEP_END_PACKET;
             }
 
-		    _stop = true;
-	    }
-	    _writeLock.unlock();
-    }
+            if (_packetStep == STEP_END_PACKET)
+            {
+                generateSecurityByte();
 
+                // @todo: Should we do this here? I believe we should do a queue and read them on a thread
+                if (!sServer->parsePacket(this, _packet, (Poco::UInt8)(_packetData.securityByte & 0xFF)))
+                    _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_INCORRECT_DATA;
+
+                _packetStep = STEP_NEW_PACKET;
+                delete _packet;
+            }
+        }
+    }
+    else
+	{
+        sLog.out(Message::PRIO_DEBUG, "Disconnect flags: %d\n", _logicFlags & ~DISCONNECT_ON_EMPTY_QUEUE);
+
+        if (_logicFlags & DISCONNECTED_INCORRECT_DATA)
+            sServer->SendClientDisconnected(this);
+
+        cleanupBeforeDelete();
+        _socket.close();
+        
+        delete this;
+	}
+}
+
+void Client::onShutdown(const AutoPtr<ShutdownNotification>& pNf)
+{
+    cleanupBeforeDelete();
+    delete this;
+}
+
+void Client::onTimeout(const AutoPtr<TimeoutNotification>& pNf)
+{
+    sServer->SendClientDisconnected(this);
+    sLog.out(Message::PRIO_DEBUG, "Disconnect flags: %d\n", DISCONNECTED_TIME_OUT);
+
+    cleanupBeforeDelete();
+    delete this;
+}
+
+void Client::cleanupBeforeDelete()
+{
+    if (_inWorld)
+    {
+        // Stop movement if any
+        _player->motionMaster.clear();
+        _player->clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
+
+        // Save GUID for further usage
+        Poco::UInt64 GUID = _player->GetGUID();
+
+        // If we are on a Grid (it is spawned), remove us
+        if (_player->IsOnGrid())
+            _player->GetGrid()->removeObject(_player->GetGUID());
+
+        // Send despawn packet to all nearby objects
+        _player->Despawn();
+
+        // Delete from the server object list
+        sObjectManager.removeObject(_player->GetGUID());
+
+        // Flag it as not in world and not logged
+        setInWorld(false);
+        setLogged(false);
+    }
+        
     // Reset online status
     PreparedStatement* stmt = AuthDatabase.getPreparedStatement(QUERY_AUTH_UPDATE_ONLINE);
     stmt->bindInt8(0, 0);
     stmt->bindUInt32(1, GetId());
     stmt->execute();
-
-    socket().close();
 }
 
 /**
@@ -269,9 +251,14 @@ void Client::run()
 */
 void Client::addWritePacket(Packet* packet)
 {
-	_writeLock.writeLock();
-	_writePackets.push_back(packet);
-	_writeLock.unlock();
+	sLog.out(Message::PRIO_DEBUG, "[%d]\t[S->C] %.4X", GetId(), packet->opcode);
+    _socket.sendBytes(&packet->len, sizeof(packet->len));
+    _socket.sendBytes(&packet->opcode, sizeof(packet->opcode));
+    _socket.sendBytes(&packet->sec, sizeof(packet->sec));
+    _socket.sendBytes(packet->digest, sizeof(packet->digest));
+    _socket.sendBytes(packet->rawdata, packet->getLength());
+
+    delete packet;
 }
 
 /**

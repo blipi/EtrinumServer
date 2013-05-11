@@ -7,22 +7,19 @@
 
 //@ Basic Poco Types and Threading
 #include "Poco/Poco.h"
-#include "Poco/Runnable.h"
-#include "Poco/RWLock.h"
+#include "Poco/Thread.h"
 
 //@ Shared Pointers to save objects
 #include "Poco/SharedPtr.h"
 
-//@ Basic Net connections
-#include "Poco/Net/TCPServer.h"
+//@ Net basic headers
+#include "Poco/Net/SocketReactor.h"
 
 #include "defines.h"
 
 using Poco::SharedPtr;
-using Poco::Net::Socket;
-using Poco::Net::StreamSocket;
-using Poco::Net::SocketAddress;
-
+using Poco::Thread;
+using Poco::Net::SocketReactor;
 
 class Object;
 class Client;
@@ -30,12 +27,13 @@ class Packet;
 
 struct OpcodeHandleType;
 
-
 class Server
 {
 public:
-    Server(Poco::UInt16 port);
+    Server();
     ~Server();
+
+    void start(Poco::UInt16 port);
 
     inline bool isRunning()
     {
@@ -73,7 +71,9 @@ private:
     void OnEnterToWorld(Client* client, Poco::UInt32 characterID);
 
 private:
-    Poco::Net::TCPServer* server;
+    SocketReactor _reactor;
+	Thread _reactorThread;
+
     bool _serverRunning;
 
     static const OpcodeHandleType OpcodeTable[];
