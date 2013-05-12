@@ -1,5 +1,8 @@
 #include "Database.h"
 
+using namespace Poco::Data;
+using namespace Poco::Data::Keywords;
+
 PreparedStatement::PreparedStatement(Statement stmt):
     _stmt(stmt)
 {
@@ -7,7 +10,7 @@ PreparedStatement::PreparedStatement(Statement stmt):
     data.resize(std::count(query.begin(), query.end(), '?'));
 
     for (Poco::UInt8 i = 0; i < data.size(); i++)
-        _stmt, data[i];
+        _stmt, use(data[i]);
 }
     
 void PreparedStatement::bindString(Poco::UInt8 pos, std::string str)

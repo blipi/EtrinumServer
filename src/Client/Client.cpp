@@ -9,7 +9,7 @@
 #include "CharactersDatabase.h"
 #include "Log.h"
 
-    
+
 // Packet reading steps
 enum PACKET_READING_STEPS
 {
@@ -32,10 +32,12 @@ Client::Client(StreamSocket& socket, SocketReactor& reactor):
     _packet(NULL), _packetStep(STEP_NEW_PACKET),
     _player(NULL),
     _logicFlags(0),
-    _logged(false), _inWorld(false), _id(0)
+    _logged(false), _inWorld(false), _id(0),
+	_writeBufferOut(BUFFER_SIZE, true)
 {
     sLog.out(Message::PRIO_INFORMATION, "Connection from " + socket.peerAddress().toString());
 
+    // Set reactor handlers
     _reactor.addEventHandler(_socket, NObserver<Client, ReadableNotification>(*this, &Client::onReadable));
 	_reactor.addEventHandler(_socket, NObserver<Client, ShutdownNotification>(*this, &Client::onShutdown));
 	_reactor.addEventHandler(_socket, NObserver<Client, TimeoutNotification>(*this, &Client::onTimeout));
@@ -211,6 +213,11 @@ void Client::onTimeout(const AutoPtr<TimeoutNotification>& pNf)
     delete this;
 }
 
+void Client::onWritable(const AutoPtr<WritableNotification>& pNf)
+{
+    _socket.sendBytes(_writeBufferOut);
+}
+
 void Client::cleanupBeforeDelete()
 {
     if (_inWorld)
@@ -252,11 +259,18 @@ void Client::cleanupBeforeDelete()
 void Client::addWritePacket(Packet* packet)
 {
 	sLog.out(Message::PRIO_DEBUG, "[%d]\t[S->C] %.4X", GetId(), packet->opcode);
-    _socket.sendBytes(&packet->len, sizeof(packet->len));
+    /*_socket.sendBytes(&packet->len, sizeof(packet->len));
     _socket.sendBytes(&packet->opcode, sizeof(packet->opcode));
     _socket.sendBytes(&packet->sec, sizeof(packet->sec));
     _socket.sendBytes(packet->digest, sizeof(packet->digest));
     _socket.sendBytes(packet->rawdata, packet->getLength());
+    */
+    _writeBufferOut.write((const char*)&packet->len, sizeof(packet->len));
+    _writeBufferOut.write((const char*)&packet->opcode, sizeof(packet->opcode));
+    _writeBufferOut.write((const char*)&packet->sec, sizeof(packet->sec));
+    _writeBufferOut.write((const char*)packet->digest, sizeof(packet->digest));
+    _writeBufferOut.write((const char*)packet->rawdata, packet->getLength());
+    _writeBufferOut.drain(packet->getLength() + sizeof(packet->len) + sizeof(packet->opcode) + sizeof(packet->sec) + sizeof(packet->digest));
 
     delete packet;
 }

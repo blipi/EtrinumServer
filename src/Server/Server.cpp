@@ -12,11 +12,18 @@
 #include "Log.h"
 #include "debugging.h"
 
+//@ Net basic headers
+#include "Poco/Net/ParallelSocketReactor.h"
+#include "Poco/Net/SocketReactor.h"
+#include "Poco/Net/ParallelSocketAcceptor.h"
 #include "Poco/Net/SocketAcceptor.h"
 #include "Poco/Net/ServerSocket.h"
 
+using Poco::Net::SocketReactor;
 using Poco::Net::SocketAcceptor;
 using Poco::Net::ServerSocket;
+using Poco::Net::ParallelSocketReactor;
+using Poco::Net::ParallelSocketAcceptor;
 
 // Crypting
 #include <iostream>
@@ -127,21 +134,22 @@ void Server::start(Poco::UInt16 port)
     // Create a server socket to listen.
     ServerSocket svs(port);
     
-    // Stablish parameters
-    _reactor.setTimeout(Poco::Timespan(15000000));
+    // Create the reactor
+    SocketReactor reactor(Poco::Timespan(15000000));
 	
     // Create a SocketAcceptor
-	SocketAcceptor<Client> acceptor(svs, _reactor);
+	SocketAcceptor<Client> acceptor(svs, reactor);
 
 	// Run the reactor in its own thread so that we can wait for a termination request
-    _reactorThread.start(_reactor);
+	Thread reactorThread;
+    reactorThread.start(reactor);
 
     _serverRunning = true;
     while (_serverRunning)
         Thread::sleep(200);
 
-    _reactor.stop();
-    _reactorThread.join();
+    reactor.stop();
+    reactorThread.join();
 }
 
 // Server -> Client packets

@@ -12,14 +12,10 @@
 //@ Shared Pointers to save objects
 #include "Poco/SharedPtr.h"
 
-//@ Net basic headers
-#include "Poco/Net/SocketReactor.h"
-
 #include "defines.h"
 
 using Poco::SharedPtr;
 using Poco::Thread;
-using Poco::Net::SocketReactor;
 
 class Object;
 class Client;
@@ -71,9 +67,6 @@ private:
     void OnEnterToWorld(Client* client, Poco::UInt32 characterID);
 
 private:
-    SocketReactor _reactor;
-	Thread _reactorThread;
-
     bool _serverRunning;
 
     static const OpcodeHandleType OpcodeTable[];

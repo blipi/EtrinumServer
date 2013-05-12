@@ -5,6 +5,7 @@
 #include "Poco/Data/Column.h"
 #include "Poco/Data/SessionPool.h"
 #include "Poco/Data/RecordSet.h"
+#include "Poco/Data/MySQL/MySQL.h"
 #include "Poco/Data/MySQL/Connector.h"
 #include "Poco/Data/MySQL/MySQLException.h"
 

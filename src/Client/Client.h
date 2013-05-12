@@ -15,6 +15,7 @@
 #include "Poco/Net/SocketNotification.h"
 #include "Poco/Net/StreamSocket.h"
 #include "Poco/NObserver.h"
+#include "Poco/FIFOBuffer.h"
 
 // Crypting
 #include <iostream>
@@ -34,8 +35,10 @@ using Poco::Net::SocketReactor;
 using Poco::Net::ReadableNotification;
 using Poco::Net::ShutdownNotification;
 using Poco::Net::TimeoutNotification;
+using Poco::Net::WritableNotification;
 using Poco::Net::StreamSocket;
 using Poco::NObserver;
+using Poco::FIFOBuffer;
 
 class Server;
 class Player;
@@ -66,6 +69,9 @@ public:
     void onReadable(const AutoPtr<ReadableNotification>& pNf);
     void onShutdown(const AutoPtr<ShutdownNotification>& pNf);
     void onTimeout(const AutoPtr<TimeoutNotification>& pNf);
+    void onWritable(const AutoPtr<WritableNotification>& pNf);
+    void onWriteOut(bool& b);
+    //void onWriteIn(bool& b);
     void cleanupBeforeDelete();
 
     SharedPtr<Player> onEnterToWorld(Poco::UInt32 characterID);
@@ -188,6 +194,14 @@ private:
     // Packet reading
     Packet* _packet;
     Poco::UInt8 _packetStep;
+
+    // Packet writing
+    enum
+    {
+        BUFFER_SIZE = 1024
+    };
+
+    FIFOBuffer _writeBufferOut;
 };
 
 #endif
