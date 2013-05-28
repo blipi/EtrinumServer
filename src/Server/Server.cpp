@@ -192,8 +192,8 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
     Packet* packet = new Packet(OPCODE_SC_SPAWN_OBJECT, 2048, true);
     *packet << from->GetLowGUID();
     *packet << from->GetHighGUID();
-    *packet << Tools::getU32(from->GetPosition().x);
-    *packet << Tools::getU32(from->GetPosition().z);
+    *packet << from->GetPosition().x;
+    *packet << from->GetPosition().z;
 
     switch (from->GetHighGUID())
     {
@@ -203,8 +203,8 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
             Character* character = from->ToCharacter();
 
             *packet << character->GetName();
-            *packet << Tools::getU32(character->GetSpeed(MOVEMENT_RUN));
-            *packet << Tools::getU32(character->GetSpeed(MOVEMENT_WALK));
+            *packet << character->GetSpeed(MOVEMENT_RUN);
+            *packet << character->GetSpeed(MOVEMENT_WALK);
             *packet << character->MovementTypeSpeed();
 
             if (character->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
@@ -214,11 +214,11 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
 
                 if (character->motionMaster.getMovementType() == MOVEMENT_TO_POINT)
                 {
-                    *packet << Tools::getU32(character->motionMaster.next().x);
-                    *packet << Tools::getU32(character->motionMaster.next().z);
+                    *packet << character->motionMaster.next().x;
+                    *packet << character->motionMaster.next().z;
                 }
                 else if (character->motionMaster.getMovementType() == MOVEMENT_BY_ANGLE)
-                    *packet << Tools::getU32(character->getFacingTo());
+                    *packet << character->getFacingTo();
             }
             else
                 *packet << Poco::UInt8(0x00);

@@ -39,6 +39,8 @@ public:
     {
         append<T>(val);
     }
+
+    void operator << (float val);
 	
 	void operator >> (std::string& value);
     void readAsHex(std::string& value, Poco::UInt8 len);

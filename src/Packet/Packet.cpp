@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <string.h>
 
+#include "Tools.h"
+
 Packet::Packet()
 {
 	clear();
@@ -44,6 +46,11 @@ void Packet::operator << (std::string str)
 		append<Poco::UInt8>((Poco::UInt8)*it);
 }
 
+void Packet::operator << (float val)
+{
+    append<Poco::UInt32>(Tools::getU32(val));
+}
+
 void Packet::operator >> (std::string& value)
 {
 	Poco::UInt16 _len; 
@@ -51,11 +58,7 @@ void Packet::operator >> (std::string& value)
 	value.resize(_len);
 
 	for (int i = 0; i < _len; i++)
-	{
-		char c;
-		*this >> c;
-		value[i] = c;
-	}
+		*this >> value[i];
 }
 
 void Packet::readAsHex(std::string& value, Poco::UInt8 len)
