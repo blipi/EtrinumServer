@@ -256,21 +256,42 @@ void Client::cleanupBeforeDelete()
 *
 * @param packet The packet to be sent
 */
-void Client::addWritePacket(Packet* packet)
+void Client::sendPacket(Packet* packet, bool encrypt, bool hmac)
 {
 	sLog.out(Message::PRIO_DEBUG, "[%d]\t[S->C] %.4X", GetId(), packet->opcode);
-    /*_socket.sendBytes(&packet->len, sizeof(packet->len));
-    _socket.sendBytes(&packet->opcode, sizeof(packet->opcode));
-    _socket.sendBytes(&packet->sec, sizeof(packet->sec));
-    _socket.sendBytes(packet->digest, sizeof(packet->digest));
-    _socket.sendBytes(packet->rawdata, packet->getLength());
-    */
+
+    if (encrypt && _packetData.AESEnc)
+    {
+        CryptoPP::StreamTransformationFilter enc(*_packetData.AESEnc);
+        for(Poco::UInt16 i = 0; i < packet->len; i++)
+            enc.Put(packet->rawdata[i]);
+        enc.MessageEnd();
+
+        packet->len = (Poco::UInt16)(enc.MaxRetrievable() | 0xA000);
+    
+        delete [] packet->rawdata;
+        packet->rawdata = new Poco::UInt8[(Poco::UInt32)enc.MaxRetrievable()];
+        enc.Get(packet->rawdata, (size_t)enc.MaxRetrievable());
+
+        packet->len |= 0xA000;
+    }
+    
+    if (hmac && _packetData.verifier)
+        _packetData.verifier->CalculateDigest(packet->digest, packet->rawdata, packet->getLength());
+
     _writeBufferOut.write((const char*)&packet->len, sizeof(packet->len));
     _writeBufferOut.write((const char*)&packet->opcode, sizeof(packet->opcode));
     _writeBufferOut.write((const char*)&packet->sec, sizeof(packet->sec));
     _writeBufferOut.write((const char*)packet->digest, sizeof(packet->digest));
     _writeBufferOut.write((const char*)packet->rawdata, packet->getLength());
     _writeBufferOut.drain(packet->getLength() + sizeof(packet->len) + sizeof(packet->opcode) + sizeof(packet->sec) + sizeof(packet->digest));
+    
+    /*_socket.sendBytes(&packet->len, sizeof(packet->len));
+    _socket.sendBytes(&packet->opcode, sizeof(packet->opcode));
+    _socket.sendBytes(&packet->sec, sizeof(packet->sec));
+    _socket.sendBytes(packet->digest, sizeof(packet->digest));
+    _socket.sendBytes(packet->rawdata, packet->getLength());
+    */
 
     delete packet;
 }

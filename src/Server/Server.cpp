@@ -175,14 +175,13 @@ void Server::SendPlayerEHLO(Client* client)
     client->SetSecurityByte(sec);
     client->SetHMACKeyLow(packet->rawdata);
 
-    client->addWritePacket(packet);
+    client->sendPacket(packet, false, false);
 }
 
 void Server::SendClientDisconnected(Client* client)
 {
     Packet* packet = new Packet(OPCODE_SC_TIME_OUT);
-    setPacketHMAC(client, packet);
-    client->addWritePacket(packet);
+    client->sendPacket(packet);
 }
 
 void Server::UpdateVisibilityOf(Object* from, Object* to)
@@ -232,10 +231,7 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
     }
 
     if (Client* client = to->getClient())
-    {
-        setPacketHMAC(client, packet);
-        client->addWritePacket(packet);
-    }
+        client->sendPacket(packet);
 }
 
 void Server::sendDespawnPacket(Poco::UInt64 GUID, Object* to)
@@ -247,10 +243,7 @@ void Server::sendDespawnPacket(Poco::UInt64 GUID, Object* to)
     *packet << HIGUID(GUID);
     
     if (Client* client = to->getClient())
-    {
-        setPacketHMAC(client, packet);
-        client->addWritePacket(packet);
-    }
+        client->sendPacket(packet);
 }
 
 void Server::sendPlayerStats(Client* client, SharedPtr<Object> object)
@@ -261,9 +254,7 @@ void Server::sendPlayerStats(Client* client, SharedPtr<Object> object)
     *packet << object->GetLowGUID();
     *packet << object->GetHighGUID();
 
-    encryptPacket(client, packet);
-    setPacketHMAC(client, packet);
-    client->addWritePacket(packet);
+    client->sendPacket(packet, true);
 }
 
 bool Server::parsePacket(Client* client, Packet* packet, Poco::UInt8 securityByte)
@@ -321,36 +312,11 @@ bool Server::parsePacket(Client* client, Packet* packet, Poco::UInt8 securityByt
     return (this->*OpcodesMap[opcode].handler)(client, packet);
 }
 
-void Server::setPacketHMAC(Client* client, Packet* packet)
-{
-    if (CryptoPP::HMAC<CryptoPP::SHA1>* verifier = client->getHMACVerifier())
-        verifier->CalculateDigest(packet->digest, packet->rawdata, packet->getLength());
-}
-
 bool Server::checkPacketHMAC(Client* client, Packet* packet)
 {
     if (CryptoPP::HMAC<CryptoPP::SHA1>* verifier = client->getHMACVerifier())
         return verifier->VerifyDigest(packet->digest, packet->rawdata, packet->getLength());
     return false;
-}
-
-void Server::encryptPacket(Client* client, Packet* packet)
-{
-    if (CryptoPP::ECB_Mode<CryptoPP::AES>::Encryption* decryptor = client->getAESEncryptor())
-    {
-        CryptoPP::StreamTransformationFilter enc(*client->getAESEncryptor());
-        for(Poco::UInt16 i = 0; i < packet->len; i++)
-            enc.Put(packet->rawdata[i]);
-        enc.MessageEnd();
-
-        packet->len = (Poco::UInt16)(enc.MaxRetrievable() | 0xA000);
-    
-        delete [] packet->rawdata;
-        packet->rawdata = new Poco::UInt8[(Poco::UInt32)enc.MaxRetrievable()];
-        enc.Get(packet->rawdata, (size_t)enc.MaxRetrievable());
-
-        packet->len |= 0xA000;
-    }
 }
 
 void Server::decryptPacket(Client* client, Packet* packet)
@@ -408,8 +374,7 @@ bool Server::handlePlayerLogin(Client* client, Packet* packet)
         *resp << Poco::UInt8(0x00);
 
     // Write back
-    setPacketHMAC(client, resp);
-    client->addWritePacket(resp);
+    client->sendPacket(resp);
     return true;
 }
 
@@ -478,9 +443,7 @@ bool Server::sendCharactersList(Client* client)
         while (rs.moveNext());
     }
 
-    encryptPacket(client, resp);
-    setPacketHMAC(client, resp);
-    client->addWritePacket(resp);
+    client->sendPacket(resp, true);
 
     return true;
 }
@@ -497,8 +460,7 @@ bool Server::handleCharacterSelect(Client* client, Packet* packet)
     else
         *resp << Poco::UInt8(0x00);
 
-    setPacketHMAC(client, resp);
-    client->addWritePacket(resp);
+    client->sendPacket(resp);
 
     if (character)
     {

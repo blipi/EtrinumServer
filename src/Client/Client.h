@@ -75,7 +75,7 @@ public:
     void cleanupBeforeDelete();
 
     SharedPtr<Player> onEnterToWorld(Poco::UInt32 characterID);
-    void addWritePacket(Packet* packet);
+    void sendPacket(Packet* packet, bool encrypt = false, bool hmac = true);
 
     inline Poco::UInt32 GetId()
     {
@@ -140,10 +140,7 @@ public:
     {
         return _packetData.verifier;
     }
-    inline CryptoPP::ECB_Mode<CryptoPP::AES>::Encryption* getAESEncryptor()
-    {
-        return _packetData.AESEnc;
-    }
+
     inline CryptoPP::ECB_Mode<CryptoPP::AES>::Decryption* getAESDecryptor()
     {
         return _packetData.AESDec;

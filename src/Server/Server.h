@@ -50,9 +50,7 @@ public:
     bool parsePacket(Client* client, Packet* packet, Poco::UInt8 securityByte);
 
 private:
-    void setPacketHMAC(Client* client, Packet* packet);
     bool checkPacketHMAC(Client* client, Packet* packet);
-    void encryptPacket(Client* client, Packet* packet);
     void decryptPacket(Client* client, Packet* packet);
 
     bool handlePlayerEHLO(Client* client, Packet* packet);
