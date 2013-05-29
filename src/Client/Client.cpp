@@ -226,10 +226,7 @@ void Client::cleanupBeforeDelete()
         // Stop movement if any
         _player->motionMaster.clear();
         _player->clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
-
-        // Save GUID for further usage
-        Poco::UInt64 GUID = _player->GetGUID();
-
+        
         // If we are on a Grid (it is spawned), remove us
         if (_player->IsOnGrid())
             _player->GetGrid()->removeObject(_player->GetGUID());
