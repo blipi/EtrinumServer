@@ -143,10 +143,10 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
 }
 
 /**
- * Finds an object in the Grid near to a given position
+ * Finds an object in radius in a Grid given a centre 
  *
  * @param it dense_hash_map element
- * @param c Position taken as center
+ * @param c Position taken as centre
  * @return true if it's the searched object
  */
 static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector2D c)
@@ -172,9 +172,18 @@ void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
         // Update the object, if it fails, it means it is in a new grid
         SharedPtr<Object> obj = it->second;
         // Find next near object now, avoid issues
-        it = rde::find_if(++it, _objects.end(),c, findObjectsIf);
+        it = rde::find_if(++it, _objects.end(), c, findObjectsIf);
 
-        if (!obj->update(clock() - _lastTick))
+        // Find out the update time for the object
+        Poco::UInt32 diff = clock() - obj->getLastUpdate(clock());
+        Poco::UInt32 loopDiff = clock() - _lastTick;
+        
+        // The smaller, the better
+        if (diff > loopDiff)
+            diff = loopDiff;
+ 
+        // Update the object and erase it from the grid if we have to
+        if (!obj->update(diff))
             _objects.erase(obj->GetGUID());
         else
             objects.insert(obj->GetGUID());
@@ -186,7 +195,9 @@ void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
         if (it->first != object->GetGUID())
             objects.insert(it->first);
 
-        it = rde::find_if(++it, _players.end(),c, findObjectsIf);
+        it = rde::find_if(++it, _players.end(), c, findObjectsIf);
+        
+        // We don't update players, as that is done by the grid itself!!
     }
 }
 

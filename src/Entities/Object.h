@@ -25,6 +25,8 @@ enum OBJECT_MOVEMENT_FLAGS
     FLAG_FLYING = 2,
 };
 
+#define MIN_UPDATE_TIME     100
+
 class Player;
 class Creature;
 class Character;
@@ -89,6 +91,13 @@ public:
     {
         return _client;
     }
+    
+    inline Poco::UInt32 getLastUpdate(Poco::UInt32 update)
+    {
+        Poco::UInt32 r = _lastUpdate;
+        _lastUpdate = update;
+        return r;
+    }
 
     MotionMaster motionMaster;
 
@@ -103,6 +112,7 @@ protected:
 private:
     Poco::UInt64 _GUID;
     Poco::UInt64 _flags[MAX_FLAGS_TYPES];
+    Poco::UInt32 _lastUpdate;
     Vector2D _position;
     Grid* _grid;
     Client* _client;

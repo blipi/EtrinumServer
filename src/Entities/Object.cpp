@@ -20,6 +20,7 @@ Object::Object(Client* client):
     _position.x = 0;
     _position.z = 0;
     _grid = NULL;
+    _lastUpdate = 0;
 }
 
 Object::~Object()
