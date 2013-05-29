@@ -151,8 +151,8 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
  */
 static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector2D c)
 {
-    Poco::UInt32 x = it.second->GetPosition().x;
-    Poco::UInt32 z = it.second->GetPosition().z;
+    float x = it.second->GetPosition().x;
+    float z = it.second->GetPosition().z;
 
     return (_max(x, Grid::losRange) - Grid::losRange <= c.x && c.x <= x + Grid::losRange && _max(z, Grid::losRange) - Grid::losRange <= c.z && c.z <= z + Grid::losRange);
 }
