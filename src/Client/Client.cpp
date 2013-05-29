@@ -51,6 +51,8 @@ Client::Client(StreamSocket& socket, SocketReactor& reactor):
 */
 Client::~Client()
 {
+    sLog.out(Message::PRIO_DEBUG, "Disconnect flags: %d", _logicFlags & ~DISCONNECT_READY);
+
     _player = NULL;
     if (_packetStep != Poco::UInt8(STEP_NEW_PACKET))
         delete _packet;
@@ -121,22 +123,13 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
 {
     if (_logicFlags & DISCONNECT_SEND_FLAGS)
     {
-        if (_logicFlags & DISCONNECTED_INCORRECT_DATA)
-            sServer->SendClientDisconnected(this);
-
-        cleanupBeforeDelete();
-        
         _logicFlags &= ~DISCONNECT_SEND_FLAGS;
-        _logicFlags |= DISCONNECT_READY;
-    }
-    else if (_logicFlags & DISCONNECT_READY)
-    {
-        // Wait for all packets to be sent first!
-        if (!_reactor.hasEventHandler(_socket, NObserver<Client, WritableNotification>(*this, &Client::onWritable)))
-        {
-            sLog.out(Message::PRIO_DEBUG, "Disconnect flags: %d\n", _logicFlags & ~DISCONNECT_READY);
+        cleanupBeforeDelete();
+
+        if (_logicFlags & DISCONNECTED_INCORRECT_DATA)
+            sServer->SendClientDisconnected(this); // Will cause the disconnection
+        else
             delete this;
-        }
     }
     else
     {
@@ -212,17 +205,18 @@ void Client::onShutdown(const AutoPtr<ShutdownNotification>& pNf)
 
 void Client::onTimeout(const AutoPtr<TimeoutNotification>& pNf)
 {
-    sServer->SendClientDisconnected(this);
-    sLog.out(Message::PRIO_DEBUG, "Disconnect flags: %d\n", DISCONNECTED_TIME_OUT);
-
+    _logicFlags |= DISCONNECTED_TIME_OUT;
     cleanupBeforeDelete();
-    delete this;
+    sServer->SendClientDisconnected(this);
 }
 
 void Client::onWritable(const AutoPtr<WritableNotification>& pNf)
 {
     _reactor.removeEventHandler(_socket, NObserver<Client, WritableNotification>(*this, &Client::onWritable));
     _socket.sendBytes(_writeBufferOut);
+
+    if (_logicFlags & DISCONNECT_READY)
+        delete this;
 }
 
 void Client::cleanupBeforeDelete()
@@ -253,6 +247,8 @@ void Client::cleanupBeforeDelete()
     stmt->bindInt8(0, 0);
     stmt->bindUInt32(1, GetId());
     stmt->execute();
+
+    _logicFlags |= DISCONNECT_READY;
 }
 
 /**
