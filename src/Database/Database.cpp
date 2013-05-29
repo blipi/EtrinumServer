@@ -83,6 +83,11 @@ bool Database::Open(std::string connectionString)
         if (!_pool->get().isConnected())
             return false;
     }
+    catch (Poco::Data::ConnectionFailedException ex)
+    {
+        printf("%s\n", ex.message().c_str());
+        ASSERT(false);
+    }
     catch (Poco::Data::MySQL::ConnectionException ex)
     {
         printf("%s\n", ex.message().c_str());
