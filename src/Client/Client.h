@@ -46,11 +46,12 @@ class Packet;
 
 enum LogicFlags
 {
-    DISCONNECT_ON_EMPTY_QUEUE           = 1,
-    DISCONNECTED_TIME_OUT               = 2,
-    DISCONNECTED_NETWORK_ERROR          = 4,
-    DISCONNECTED_INCORRECT_DATA         = 8,
-    DISCONNECTED_CONNECTION_CLOSED      = 16,
+    DISCONNECT_READY                    = 1,
+    DISCONNECT_SEND_FLAGS               = 2,
+    DISCONNECTED_TIME_OUT               = 4,
+    DISCONNECTED_NETWORK_ERROR          = 8,
+    DISCONNECTED_INCORRECT_DATA         = 16,
+    DISCONNECTED_CONNECTION_CLOSED      = 32,
 };
 
 struct Characters

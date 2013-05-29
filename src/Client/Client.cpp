@@ -58,8 +58,7 @@ Client::~Client()
     _reactor.removeEventHandler(_socket, NObserver<Client, ReadableNotification>(*this, &Client::onReadable));
 	_reactor.removeEventHandler(_socket, NObserver<Client, ShutdownNotification>(*this, &Client::onShutdown));
 	_reactor.removeEventHandler(_socket, NObserver<Client, TimeoutNotification>(*this, &Client::onTimeout));
-
-    _socket.shutdown();
+    
     _socket.close();
 }
 
@@ -120,7 +119,26 @@ SharedPtr<Player> Client::onEnterToWorld(Poco::UInt32 characterID)
 */
 void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
 {
-    if (!(_logicFlags & DISCONNECT_ON_EMPTY_QUEUE))
+    if (_logicFlags & DISCONNECT_SEND_FLAGS)
+    {
+        if (_logicFlags & DISCONNECTED_INCORRECT_DATA)
+            sServer->SendClientDisconnected(this);
+
+        cleanupBeforeDelete();
+        
+        _logicFlags &= ~DISCONNECT_SEND_FLAGS;
+        _logicFlags |= DISCONNECT_READY;
+    }
+    else if (_logicFlags & DISCONNECT_READY)
+    {
+        // Wait for all packets to be sent first!
+        if (!_reactor.hasEventHandler(_socket, NObserver<Client, WritableNotification>(*this, &Client::onWritable)))
+        {
+            sLog.out(Message::PRIO_DEBUG, "Disconnect flags: %d\n", _logicFlags & ~DISCONNECT_READY);
+            delete this;
+        }
+    }
+    else
     {
         if (_packetStep == STEP_NEW_PACKET)
         {
@@ -153,12 +171,12 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
         catch (Poco::Net::ConnectionResetException ex)
         {
             printf("Client exception: %s\n", ex.what());
-            _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_NETWORK_ERROR;
+            _logicFlags |= DISCONNECT_SEND_FLAGS | DISCONNECTED_NETWORK_ERROR;
         }
 
         // If bytes read are 0 and we are not already disconnecting, flag it
-        if (nBytes <= 0 && !(_logicFlags & DISCONNECT_ON_EMPTY_QUEUE))
-            _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_CONNECTION_CLOSED;
+        if (nBytes <= 0 && !(_logicFlags & DISCONNECT_SEND_FLAGS))
+            _logicFlags |= DISCONNECT_SEND_FLAGS | DISCONNECTED_CONNECTION_CLOSED;
         else
         {
 
@@ -177,25 +195,13 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
 
                 // @todo: Should we do this here? I believe we should do a queue and read them on a thread
                 if (!sServer->parsePacket(this, _packet, (Poco::UInt8)(_packetData.securityByte & 0xFF)))
-                    _logicFlags |= DISCONNECT_ON_EMPTY_QUEUE | DISCONNECTED_INCORRECT_DATA;
+                    _logicFlags |= DISCONNECT_SEND_FLAGS | DISCONNECTED_INCORRECT_DATA;
 
                 _packetStep = STEP_NEW_PACKET;
                 delete _packet;
             }
         }
     }
-    else
-	{
-        sLog.out(Message::PRIO_DEBUG, "Disconnect flags: %d\n", _logicFlags & ~DISCONNECT_ON_EMPTY_QUEUE);
-
-        if (_logicFlags & DISCONNECTED_INCORRECT_DATA)
-            sServer->SendClientDisconnected(this);
-
-        cleanupBeforeDelete();
-        _socket.close();
-        
-        delete this;
-	}
 }
 
 void Client::onShutdown(const AutoPtr<ShutdownNotification>& pNf)
