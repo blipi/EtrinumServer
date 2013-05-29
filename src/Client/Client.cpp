@@ -215,6 +215,7 @@ void Client::onTimeout(const AutoPtr<TimeoutNotification>& pNf)
 
 void Client::onWritable(const AutoPtr<WritableNotification>& pNf)
 {
+    _reactor.removeEventHandler(_socket, NObserver<Client, WritableNotification>(*this, &Client::onWritable));
     _socket.sendBytes(_writeBufferOut);
 }
 
@@ -284,14 +285,7 @@ void Client::sendPacket(Packet* packet, bool encrypt, bool hmac)
     _writeBufferOut.write((const char*)&packet->sec, sizeof(packet->sec));
     _writeBufferOut.write((const char*)packet->digest, sizeof(packet->digest));
     _writeBufferOut.write((const char*)packet->rawdata, packet->getLength());
-    _writeBufferOut.drain(packet->getLength() + sizeof(packet->len) + sizeof(packet->opcode) + sizeof(packet->sec) + sizeof(packet->digest));
-    
-    /*_socket.sendBytes(&packet->len, sizeof(packet->len));
-    _socket.sendBytes(&packet->opcode, sizeof(packet->opcode));
-    _socket.sendBytes(&packet->sec, sizeof(packet->sec));
-    _socket.sendBytes(packet->digest, sizeof(packet->digest));
-    _socket.sendBytes(packet->rawdata, packet->getLength());
-    */
+    _reactor.addEventHandler(_socket, NObserver<Client, WritableNotification>(*this, &Client::onWritable));
 
     delete packet;
 }
