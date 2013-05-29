@@ -161,7 +161,7 @@ void Server::SendPlayerEHLO(Client* client)
     for (Poco::UInt8 i = 0; i < 10; i++)
         *packet << rng.GenerateByte();
    
-    Poco::UInt32 sec = rng.GenerateByte() ;
+    Poco::UInt32 sec = rng.GenerateByte();
     *packet << (Poco::UInt8)(sec & 0xFF);
 
     Poco::UInt8* key = client->GetAESKey();
