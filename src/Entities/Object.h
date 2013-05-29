@@ -12,7 +12,6 @@
 
 using Poco::SharedPtr;
 
-
 enum OBJECT_FLAGS_TYPES
 {
     FLAGS_TYPE_MOVEMENT,
@@ -24,8 +23,6 @@ enum OBJECT_MOVEMENT_FLAGS
     FLAG_MOVING = 1,
     FLAG_FLYING = 2,
 };
-
-#define MIN_UPDATE_TIME     100
 
 class Player;
 class Creature;
