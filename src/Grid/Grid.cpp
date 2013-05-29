@@ -41,7 +41,15 @@ bool Grid::update()
 
             // Update AI, movement, everything if there is any or we have to
             // If update returns false, that means the object is no longer in this grid!
-            if (!object->update(clock() - _lastTick))
+            // Find out the update time for the object
+            Poco::UInt32 diff = clock() - object->getLastUpdate(clock());
+            Poco::UInt32 loopDiff = clock() - _lastTick;
+        
+            // The smaller, the better
+            if (diff > loopDiff)
+                diff = loopDiff;
+
+            if (!object->update(diff))
                 _players.erase(object->GetGUID());
 
             // Update near mobs
