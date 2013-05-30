@@ -91,15 +91,7 @@ private:
 
 class GridLoader: public Poco::Runnable
 {
-private:
-    struct GridCompare
-    {
-        bool operator() (Poco::UInt32 hash1, Poco::UInt32 hash2) const
-        {
-            return hash1 == hash2;
-        }
-    };
-    
+private:    
     typedef rde::hash_map<Poco::UInt32 /*hash*/, Grid* /*object*/> GridsMap;
 
 public:
