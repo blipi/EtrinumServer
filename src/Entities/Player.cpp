@@ -4,15 +4,26 @@
 #include "Creature.h"
 #include "ObjectManager.h"
 
+/**
+ * Player constructor
+ */
 Player::Player(std::string name, Client* client):
     Character(name, client)
 {
 }
 
+/**
+ * Player destructor
+ */
 Player::~Player()
 {
 }
 
+/**
+ * Updates the objects in LoS with the player
+ *
+ * @param newObjectsInSight A list containing the new objects in sight
+ */
 void Player::UpdateLoS(GuidsSet newObjectsInSight)
 {
     // Send spawn packets

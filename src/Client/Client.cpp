@@ -23,10 +23,10 @@ enum PACKET_READING_STEPS
 };
 
 /**
-* Client class constructor
-*
-* @param s Socket used by the client to connect
-*/
+ * Client class constructor
+ *
+ * @param s Socket used by the client to connect
+ */
 Client::Client(StreamSocket& socket, SocketReactor& reactor):
 	_socket(socket), _reactor(reactor),
     _packet(NULL), _packetStep(STEP_NEW_PACKET),
@@ -47,8 +47,8 @@ Client::Client(StreamSocket& socket, SocketReactor& reactor):
 }
 
 /**
-* Client destructor
-*/
+ * Client destructor
+ */
 Client::~Client()
 {
     sLog.out(Message::PRIO_DEBUG, "Disconnect flags: %d", _logicFlags & ~DISCONNECT_READY);
@@ -65,13 +65,13 @@ Client::~Client()
 }
 
 /**
-* Called when a client connects and enters the world. The player (entity) is
-* created at this step
-*
-* @param GUID User unique online ID
-* @param characterID Which of the users in the character list is selected
-* @return Player created entity
-*/
+ * Called when a client connects and enters the world. The player (entity) is
+ * created at this step
+ *
+ * @param GUID User unique online ID
+ * @param characterID Which of the users in the character list is selected
+ * @return Player created entity
+ */
 SharedPtr<Player> Client::onEnterToWorld(Poco::UInt32 characterID)
 {
     Characters* character = FindCharacter(characterID);
@@ -117,15 +117,20 @@ SharedPtr<Player> Client::onEnterToWorld(Poco::UInt32 characterID)
 }
 
 /**
-* TCP Socket thread, sends and receives packets
-*/
-void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
+ * Reactor reciver
+ *
+ * @param nf Event notification
+ */
+void Client::onReadable(const AutoPtr<ReadableNotification>& /*nf*/)
 {
+    // If we have to desconnect, do it now
     if (_logicFlags & DISCONNECT_SEND_FLAGS)
     {
+        // Remove flag and do cleanups
         _logicFlags &= ~DISCONNECT_SEND_FLAGS;
         cleanupBeforeDelete();
 
+        // If flags must be sent, do it now, otherwise delete ourselves
         if (_logicFlags & DISCONNECTED_INCORRECT_DATA)
             sServer->SendClientDisconnected(this); // Will cause the disconnection
         else
@@ -133,6 +138,7 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
     }
     else
     {
+        // If we must create the packet, do it
         if (_packetStep == STEP_NEW_PACKET)
         {
             _packet = new Packet();
@@ -142,6 +148,7 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
         int nBytes = -1;
         try
         {
+            // Read whatever we have to
             switch (_packetStep)
             {
                 case STEP_READ_LENGTH:
@@ -172,18 +179,22 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
             _logicFlags |= DISCONNECT_SEND_FLAGS | DISCONNECTED_CONNECTION_CLOSED;
         else
         {
-
+            // Do increment de step
             _packetStep++;
+            // If next step is to read data, create the buffers
             if (_packetStep == STEP_READ_DATA)
             {
                 _packet->rawdata = new Poco::UInt8[_packet->getLength() + 1];
 
+                // If it has no data, flag it as finished
                 if (_packet->getLength() == 0)
                     _packetStep = STEP_END_PACKET;
             }
 
+            // Packet reading has finished
             if (_packetStep == STEP_END_PACKET)
             {
+                // Generate the security byte
                 generateSecurityByte();
 
                 // @todo: Should we do this here? I believe we should do a queue and read them on a thread
@@ -197,20 +208,35 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& pNf)
     }
 }
 
-void Client::onShutdown(const AutoPtr<ShutdownNotification>& pNf)
+/**
+ * Notifies the client of a socket shutdown
+ *
+ * @param nf Shutdown event notification
+ */
+void Client::onShutdown(const AutoPtr<ShutdownNotification>& /*nf*/)
 {
     cleanupBeforeDelete();
     delete this;
 }
 
-void Client::onTimeout(const AutoPtr<TimeoutNotification>& pNf)
+/**
+ * Notifies the client it has been disconnected due to time out
+ *
+ * @param nf Timeout event notification
+ */
+void Client::onTimeout(const AutoPtr<TimeoutNotification>& /*nf*/)
 {
     _logicFlags |= DISCONNECTED_TIME_OUT;
     cleanupBeforeDelete();
     sServer->SendClientDisconnected(this);
 }
 
-void Client::onWritable(const AutoPtr<WritableNotification>& pNf)
+/**
+ * Notifies the client it can write to the socket
+ *
+ * @param nf Write event notification
+ */
+void Client::onWritable(const AutoPtr<WritableNotification>& /*nf*/)
 {
     _reactor.removeEventHandler(_socket, NObserver<Client, WritableNotification>(*this, &Client::onWritable));
     _socket.sendBytes(_writeBufferOut);
@@ -219,6 +245,10 @@ void Client::onWritable(const AutoPtr<WritableNotification>& pNf)
         delete this;
 }
 
+/**
+ * Cleans and resets everything before deleting the client or
+ * players objects
+ */
 void Client::cleanupBeforeDelete()
 {
     if (_inWorld)
@@ -249,14 +279,18 @@ void Client::cleanupBeforeDelete()
 }
 
 /**
-* Adds a packet to the send list of the client
-*
-* @param packet The packet to be sent
-*/
+ * Adds a packet to the send list of the client
+ *
+ * @param packet The packet to be sent
+ * @param encrypt Whether the packet must or not be encrypted
+ * @param hmac Whether the HMAC Hash must be set or not
+ */
 void Client::sendPacket(Packet* packet, bool encrypt, bool hmac)
 {
+    // Log out the opcode
 	sLog.out(Message::PRIO_DEBUG, "[%d]\t[S->C] %.4X", GetId(), packet->opcode);
 
+    // Encrypt if we have to and can
     if (encrypt && _packetData.AESEnc)
     {
         CryptoPP::StreamTransformationFilter enc(*_packetData.AESEnc);
@@ -273,23 +307,28 @@ void Client::sendPacket(Packet* packet, bool encrypt, bool hmac)
         packet->len |= 0xA000;
     }
     
+    // Set HMAC Hash
     if (hmac && _packetData.verifier)
         _packetData.verifier->CalculateDigest(packet->digest, packet->rawdata, packet->getLength());
 
+    // Write to the buffer
     _writeBufferOut.write((const char*)&packet->len, sizeof(packet->len));
     _writeBufferOut.write((const char*)&packet->opcode, sizeof(packet->opcode));
     _writeBufferOut.write((const char*)&packet->sec, sizeof(packet->sec));
     _writeBufferOut.write((const char*)packet->digest, sizeof(packet->digest));
     _writeBufferOut.write((const char*)packet->rawdata, packet->getLength());
+
+    // Add a write handler to the reactor
     _reactor.addEventHandler(_socket, NObserver<Client, WritableNotification>(*this, &Client::onWritable));
 
+    // Delete memory
     delete packet;
 }
 
 /**
-* Generates a security byte for the client, it's updated at each
-* packet, and it's used to check if there's been any injected packet
-*/
+ * Generates a security byte for the client, it's updated at each
+ * packet, and it's used to check if there's been any injected packet
+ */
 void Client::generateSecurityByte()
 {
     Poco::UInt32 result = (0x3F * (~_packetData.securityByte + 0x34));
@@ -299,41 +338,41 @@ void Client::generateSecurityByte()
 }
 
 /**
-* Resets the characters list
-*/
+ * Resets the characters list
+ */
 void Client::ClearCharacters()
 {
     _characters.clear();
 }
 
 /**
-* Uppon load from DB, stores the client character
-*
-* @param character Character to be stored to the list
-*/
+ * Uppon load from DB, stores the client character
+ *
+ * @param character Character to be stored to the list
+ */
 void Client::AddCharacter(Characters character)
 {
     _characters.push_back(character);
 }
 
 /**
-* Static method used to find the searched packet
-*
-* @param character std::find passed argument
-* @param ID character to be found ID
-* @return true if it's the searched character
-*/
+ * Static method used to find the searched packet
+ *
+ * @param character std::find passed argument
+ * @param ID character to be found ID
+ * @return true if it's the searched character
+ */
 static bool findCharacterByID(Characters character, Poco::UInt32 ID)
 {
     return character.id == ID;
 }
 
 /**
-* Finds a character given an ID
-*
-* @param ID character ID to be found
-* @return The character if found
-*/
+ * Finds a character given an ID
+ *
+ * @param ID character ID to be found
+ * @return The character if found
+ */
 Characters* Client::FindCharacter(Poco::UInt32 ID)
 {
     std::list<Characters>::iterator itr = std::find_if(_characters.begin(), _characters.end(), std::bind2nd(std::ptr_fun(findCharacterByID), ID));
@@ -344,20 +383,20 @@ Characters* Client::FindCharacter(Poco::UInt32 ID)
 }
 
 /**
-* Sets the security byte when a connection and handshake packet is stablished
-*
-* @param sec Security DWORD, only a BYTE is stored
-*/
+ * Sets the security byte when a connection and handshake packet is stablished
+ *
+ * @param sec Security DWORD, only a BYTE is stored
+ */
 void Client::SetSecurityByte(Poco::UInt32 sec)
 {
     _packetData.securityByte = sec;
 }
 
 /**
-* Sets the low part of the HMAC key
-*
-* @param low 10 bytes array containing the low part
-*/
+ * Sets the low part of the HMAC key
+ *
+ * @param low 10 bytes array containing the low part
+ */
 void Client::SetHMACKeyLow(Poco::UInt8* low)
 {
     for (Poco::UInt8 i = 0; i < 10; i++)
@@ -365,10 +404,10 @@ void Client::SetHMACKeyLow(Poco::UInt8* low)
 }
 
 /**
-* Sets the high part of the HMAC key
-*
-* @param low 10 bytes array containing the high part
-*/
+ * Sets the high part of the HMAC key
+ *
+ * @param low 10 bytes array containing the high part
+ */
 void Client::SetHMACKeyHigh(Poco::UInt8* high)
 {
     for (Poco::UInt8 i = 0; i < 10; i++)
@@ -376,8 +415,8 @@ void Client::SetHMACKeyHigh(Poco::UInt8* high)
 }
 
 /**
-* Sets the security handlers once the whole authentification has been done
-*/
+ * Sets the security handlers once the whole authentification has been done
+ */
 void Client::SetupSecurity()
 {
     _packetData.verifier = new CryptoPP::HMAC<CryptoPP::SHA1>(_packetData.HMACKey, PACKET_HMAC_SIZE); 
