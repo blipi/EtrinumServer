@@ -37,7 +37,6 @@ public:
     virtual ~Object();
     
     bool update(const Poco::UInt32 diff);
-    void Despawn();
 
     void SetGUID(Poco::UInt64 GUID);
     Poco::UInt64 GetGUID();

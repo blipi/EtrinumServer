@@ -230,10 +230,7 @@ void Client::cleanupBeforeDelete()
         // If we are on a Grid (it is spawned), remove us
         if (_player->IsOnGrid())
             _player->GetGrid()->removeObject(_player->GetGUID());
-
-        // Send despawn packet to all nearby objects
-        _player->Despawn();
-
+        
         // Delete from the server object list
         sObjectManager.removeObject(_player->GetGUID());
 

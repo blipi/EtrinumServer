@@ -2,6 +2,7 @@
 #include "Server.h"
 #include "Object.h"
 #include "Player.h"
+#include "Creature.h"
 #include "Tools.h"
 #include "ServerConfig.h"
 #include "Log.h"
@@ -182,18 +183,32 @@ void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
         // Find next near object now, avoid issues
         it = rde::find_if(++it, _objects.end(), c, findObjectsIf);
 
-        // Find out the update time for the object
-        Poco::UInt32 diff = clock() - obj->getLastUpdate(clock());
-        Poco::UInt32 loopDiff = clock() - _lastTick;
+        // Only if the visitor is a player will we update the other objects
+        if (object->GetHighGUID() & HIGH_GUID_PLAYER)
+        {
+            // Find out the update time for the object
+            Poco::UInt32 diff = clock() - obj->getLastUpdate(clock());
+            Poco::UInt32 loopDiff = clock() - _lastTick;
         
-        // The smaller, the better
-        if (diff > loopDiff)
-            diff = loopDiff;
+            // The smaller, the better
+            if (diff > loopDiff)
+                diff = loopDiff;
  
-        // Update the object and erase it from the grid if we have to
-        if (!obj->update(diff))
-            _objects.erase(obj->GetGUID());
-        else
+            // Update the object and erase it from the grid if we have to
+            if (!obj->update(diff))
+                _objects.erase(obj->GetGUID());
+            else
+                objects.insert(obj->GetGUID());
+
+            // If the object being updated is a creature, make it aware of other nearby entities
+            if (Creature* creature = obj->ToCreature())
+            {
+                GuidsSet mobUpdater;
+                visit(obj, mobUpdater);
+                creature->UpdateLoS(mobUpdater);
+            }
+        }
+        else if (obj->GetGUID() != object->GetGUID())
             objects.insert(obj->GetGUID());
     }
 

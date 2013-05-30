@@ -21,13 +21,13 @@ void Player::UpdateLoS(GuidsSet newObjectsInSight)
         // Is the object already in the LOS list? If not, send an update packet
         if (_objectsInSight.find(*itr) == _objectsInSight.end())
         {
-            // Send update packet to players only
             SharedPtr<Object> object = sObjectManager.getObject(*itr);
             if (object.isNull())
                 continue;
-
+            
+            // Send update packet to players only
             if (object->GetHighGUID() != HIGH_GUID_PLAYER)
-                object->ToCreature()->UpdateVisibilityOf(GetGUID(), true);
+                continue;
             
             sServer->UpdateVisibilityOf(object, ToObject());
         }
@@ -42,10 +42,8 @@ void Player::UpdateLoS(GuidsSet newObjectsInSight)
             // Send update packet to players only
             // Even if we don't find the object, we should notify its despawn
             // Not finding it means it is not longer in the server!
-            SharedPtr<Object> object = sObjectManager.getObject(*itr);
-            if (!object.isNull())
-                if (object->GetHighGUID() != HIGH_GUID_PLAYER)
-                    object->ToCreature()->UpdateVisibilityOf(GetGUID(), false);
+            if (HIGUID(*itr) != HIGH_GUID_PLAYER)
+                continue;
             
             sServer->sendDespawnPacket(*itr, ToObject());
         }

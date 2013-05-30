@@ -60,23 +60,6 @@ bool Object::update(const Poco::UInt32 diff)
     return !updatedGrid;
 }
 
-void Object::Despawn()
-{
-    // Send despawn packets
-    for (GuidsSet::iterator itr = _objectsInSight.begin(); itr != _objectsInSight.end(); itr++)
-    {
-        // We should only update creatures, players will get notified through the grid
-        if (!(*itr & HIGH_GUID_CREATURE))
-            continue;
-
-        SharedPtr<Object> object = sObjectManager.getObject(*itr);
-        if (object.isNull())
-            continue;
-
-        object->ToCreature()->UpdateVisibilityOf(GetGUID(), false);
-    }
-}
-
 void Object::SetGUID(Poco::UInt64 GUID)
 {
     _GUID = GUID;
