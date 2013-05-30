@@ -11,6 +11,7 @@ public:
     Creature();
     virtual ~Creature();
 
+    void UpdateLoS(GuidsSet newObjectsInSight);
     void UpdateVisibilityOf(Poco::UInt64 GUID, bool visible);
 
 private:

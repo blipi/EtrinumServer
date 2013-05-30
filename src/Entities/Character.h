@@ -11,6 +11,8 @@ public:
     Character(std::string name, Client* client = NULL);
     virtual ~Character();
 
+    virtual void UpdateLoS(GuidsSet newObjectsInSight) = 0;
+
     inline std::string GetName()
     {
         return _name;
