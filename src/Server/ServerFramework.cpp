@@ -127,7 +127,7 @@ int main(int argc, char** argv)
     MySQL::Connector::unregisterConnector();
     Poco::ErrorHandler::set(oldErrorHandler);
 
-    printf("\n");
+    sLog.out(Message::PRIO_INFORMATION, "");
     system("pause");
     return 0;
 }
