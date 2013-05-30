@@ -93,7 +93,7 @@ SharedPtr<Player> Client::onEnterToWorld(Poco::UInt32 characterID)
         //  0     1    2       3       4      5      6
         // c.x, c.y, c.maxhp, c.hp, c.maxmp, c.mp, c.lvl        
 
-        _player->Relocate(Vector2D(rs[0].convert<Poco::UInt32>(), rs[1].convert<Poco::UInt32>()));
+        _player->Relocate(Vector2D(rs[0].convert<float>(), rs[1].convert<float>()));
         _player->SetMaxHP(rs[2].convert<Poco::UInt32>());
         _player->SetHP(rs[3].convert<Poco::UInt32>());
         _player->SetMaxMP(rs[4].convert<Poco::UInt32>());
