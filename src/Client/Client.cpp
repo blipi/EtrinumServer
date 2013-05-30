@@ -179,7 +179,7 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& /*nf*/)
             _logicFlags |= DISCONNECT_SEND_FLAGS | DISCONNECTED_CONNECTION_CLOSED;
         else
         {
-            // Do increment de step
+            // Do increment the reading step
             _packetStep++;
             // If next step is to read data, create the buffers
             if (_packetStep == STEP_READ_DATA)
