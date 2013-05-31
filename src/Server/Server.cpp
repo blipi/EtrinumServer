@@ -176,6 +176,8 @@ void Server::run()
         // Update all grids now
         sGridLoader.update(diff);
         
+        sLog.out(Message::PRIO_DEBUG, "Diff time: %d", diff);
+
         // Wait for a constant update time
         if (diff <= WORLD_HEART_BEAT + prevSleepTime)
         {   
@@ -221,8 +223,6 @@ void Server::SendClientDisconnected(Client* client)
 
 void Server::UpdateVisibilityOf(Object* from, Object* to)
 {
-    sLog.out(Message::PRIO_TRACE, "Spawning %s to %s", Poco::NumberFormatter::formatHex(from->GetGUID()).c_str(), Poco::NumberFormatter::formatHex(to->GetGUID()).c_str());
-
     Packet* packet = new Packet(OPCODE_SC_SPAWN_OBJECT, 2048, true);
     *packet << from->GetLowGUID();
     *packet << from->GetHighGUID();
@@ -271,8 +271,6 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
 
 void Server::sendDespawnPacket(Poco::UInt64 GUID, Object* to)
 {
-    sLog.out(Message::PRIO_TRACE, "Despawning %s to %s", Poco::NumberFormatter::formatHex(GUID).c_str(), Poco::NumberFormatter::formatHex(to->GetGUID()).c_str());
-
     Packet* packet = new Packet(OPCODE_SC_DESPAWN_OBJECT, 8);
     *packet << LOGUID(GUID);
     *packet << HIGUID(GUID);

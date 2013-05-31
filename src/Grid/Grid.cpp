@@ -11,6 +11,16 @@
 Poco::UInt8 Grid::losRange;
 Poco::UInt32 Grid::gridRemove;
 
+
+
+
+void Sector::update(Poco::UInt64 diff)
+{
+
+}
+
+
+
 /**
  * Initializes a Grid object
  *
@@ -33,6 +43,8 @@ Grid::~Grid()
  */
 bool Grid::update(Poco::UInt64 diff)
 {
+    Poco::Mutex::ScopedLock lock(_mutex);
+
     // Update all objects
     for (ObjectMap::iterator itr = _objects.begin(); itr != _objects.end(); )
     {
@@ -44,10 +56,6 @@ bool Grid::update(Poco::UInt64 diff)
             if (!object->hasNearPlayers())
                 continue;
 
-        // Find near grids
-        // Must be done before moving, other we may run into LoS problems
-        GridsList nearGrids = findNearGrids(object);
-
         // Get last update time (in case the object switches grid)
         Poco::UInt64 objectDiff = object->getLastUpdate();
         if (objectDiff > diff)
@@ -57,22 +65,28 @@ bool Grid::update(Poco::UInt64 diff)
         // If update returns false, that means the object is no longer in this grid!
         bool updateResult = object->update(objectDiff);
 
-        // Visit near objects as to update LoS
-        GuidsSet objects;
-        visit(object, objects);
+        if (object->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
+        {
+            // Visit near objects as to update LoS
+            GuidsSet objects;
+            visit(object, objects);
 
-        // Update other grids near objects
-        for (GridsList::iterator nGrid = nearGrids.begin(); nGrid != nearGrids.end(); nGrid++)
-            (*nGrid)->visit(object, objects);
+            /*
+            GridsList nearGrids = findNearGrids(object);
 
-        // Object the object LoS if it's a player or a creature
-        if (Character* character = object->ToCharacter())
-            character->UpdateLoS(objects);
+            for (GridsList::iterator nGrid = nearGrids.begin(); nGrid != nearGrids.end(); nGrid++)
+                (*nGrid)->visit(object, objects);
+            */
+
+            // Object the object LoS if it's a player or a creature
+            if (Character* character = object->ToCharacter())
+                character->UpdateLoS(objects);
+        }
 
         if (!updateResult)
         {
             sGridLoader.addObject(object);
-            removeObject(object->GetGUID());
+            removeObject_i(object->GetGUID());
 
             if (!hasPlayers())
                 forceLoad();
@@ -255,6 +269,8 @@ SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
  */
 bool Grid::addObject(SharedPtr<Object> object)
 {
+    Poco::Mutex::ScopedLock lock(_mutex);
+
     bool inserted = _objects.insert(rde::make_pair(object->GetGUID(), object)).second;
     if (inserted)
     {
@@ -272,6 +288,12 @@ bool Grid::addObject(SharedPtr<Object> object)
  *
  */
 void Grid::removeObject(Poco::UInt64 GUID)
+{
+    Poco::Mutex::ScopedLock lock(_mutex);
+    removeObject_i(GUID);
+}
+
+void Grid::removeObject_i(Poco::UInt64 GUID)
 {
     _objects.erase(GUID);
     if (HIGUID(GUID) & HIGH_GUID_PLAYER)

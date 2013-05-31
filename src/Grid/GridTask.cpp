@@ -3,13 +3,15 @@
 
 GridTask::GridTask(Grid* grid, Poco::UInt64 diff):
     Task(""),
-    _grid(grid), _diff(diff)
+    _grid(grid), _diff(diff),
+    _result(true)
 {
 }
 
 void GridTask::runTask()
 {
-    _result = _grid->update(_diff);
+    if (_grid->hasPlayers())
+        _result = _grid->update(_diff);
 }
 
 bool GridTask::getResult()

@@ -187,6 +187,17 @@ void GridLoader::update(Poco::UInt64 diff)
 
     // Wait for all map updates to end
     _gridManager->wait();
+
+    for (GridsSet::iterator itr = _remove.begin(); itr != _remove.end(); itr++)
+    {
+        Grid* grid = *itr;
+        sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
+
+        _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
+        _grids.erase(grid->hashCode());
+        delete grid;
+    }
+    _remove.clear();
 }
 
 void GridLoader::gridUpdated(Poco::TaskFinishedNotification* nf)
@@ -199,11 +210,7 @@ void GridLoader::gridUpdated(Poco::TaskFinishedNotification* nf)
     if (!task->getResult())
     {
         Grid* grid = task->getGrid();
-        sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
-
-        _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
-        _grids.erase(grid->hashCode());
-        delete grid;
+        _remove.insert(grid);
     }
 
     _gridManager->dequeue();

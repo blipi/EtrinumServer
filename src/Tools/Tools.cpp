@@ -45,4 +45,14 @@ namespace Tools
     {
         return Poco::UInt16(std::abs(((cell - 1) * UNITS_PER_CELL) - (z - MAP_MIN_Z)));
     }
+
+    Poco::UInt16 GetSector(Poco::UInt16 cellX, Poco::UInt16 cellY, Poco::UInt8 losRange)
+    {
+        return ((cellX / losRange) << 8) | (Poco::UInt8)(cellY / losRange);
+    }
+
+    Poco::UInt16 GetSector(Vector2D position, Poco::UInt8 losRange)
+    {
+        return GetSector(GetPositionInXCell(GetXCellFromPos(position.x), position.x), GetPositionInYCell(GetYCellFromPos(position.z), position.z), losRange);
+    }
 }

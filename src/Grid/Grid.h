@@ -17,6 +17,42 @@ using Poco::Timestamp;
 
 class Object;
 
+class Sector
+{
+private:
+    typedef rde::hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object>> ObjectsMap;
+
+    enum SECTOR_STATES
+    {
+        SECTOR_NOT_INITIALIZED  = 0,
+        SECTOR_ACTIVE,
+        SECTOR_IDLE,
+        SECTOR_INACTIVE
+    };
+
+public:
+    Sector(Poco::UInt16 hash):
+        _hash(hash),
+        _state(SECTOR_NOT_INITIALIZED)
+    {
+
+    }
+
+    void add(SharedPtr<Object> object)
+    {
+        Poco::Mutex::ScopedLock lock(_mutex);
+        _objects.insert(rde::make_pair(object->GetGUID(), object));
+    }
+
+    void update(Poco::UInt64 diff);
+
+private:
+    Poco::UInt16 _hash;
+    Poco::UInt8 _state;
+    ObjectsMap _objects;
+    Poco::Mutex _mutex;
+};
+
 class Grid
 {
 private:
@@ -61,6 +97,9 @@ public:
     void forceLoad();
     bool isForceLoaded();
 
+private:
+    void removeObject_i(Poco::UInt64 GUID);
+
 public:
     static Poco::UInt8 losRange;
     static Poco::UInt32 gridRemove;
@@ -68,6 +107,7 @@ public:
 private:
     ObjectMap _objects;
     Poco::UInt32 _playersCount;
+    Poco::Mutex _mutex;
     Timestamp _forceLoad;
     Poco::UInt16 _x;
     Poco::UInt16 _y;

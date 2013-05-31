@@ -23,6 +23,7 @@ class GridLoader
 {
 private:    
     typedef rde::hash_map<Poco::UInt32 /*hash*/, Grid* /*object*/> GridsMap;
+    typedef std::set<Grid*> GridsSet;
 
 public:
     GridLoader();
@@ -49,6 +50,7 @@ private:
 private:    
     GridManager* _gridManager;
     GridsMap _grids;
+    GridsSet _remove;
     bool _isGridLoaded[MAX_X][MAX_Y];
 };
 
