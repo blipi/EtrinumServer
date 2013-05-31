@@ -15,3 +15,12 @@ Character::Character(std::string name, Client* client):
 Character::~Character()
 {
 }
+
+bool Character::hasNearPlayers()
+{
+    for (GuidsSet::iterator it = _objectsInSight.begin(); it != _objectsInSight.end(); it++)
+        if (HIGUID(*it) & HIGH_GUID_PLAYER)
+            return true;
+
+    return false;
+}

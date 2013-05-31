@@ -19,7 +19,8 @@ Poco::UInt8 Grid::losRange;
  *
  */
 Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
-    _x(x), _y(y)
+    _x(x), _y(y),
+    _playersCount(0)
 {
 }
 
@@ -30,31 +31,42 @@ Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
  */
 bool Grid::update(Poco::UInt64 diff)
 {
-    for (ObjectMap::const_iterator itr = _players.begin(); itr != _players.end(); )
+    // Update all objects
+    for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
     {
         SharedPtr<Object> object = itr->second;
         ++itr;
+
+        // For non players, update only if a player is near
+        if (!(object->GetHighGUID() & HIGH_GUID_PLAYER))
+            if (!object->hasNearPlayers())
+                continue;
 
         // Find near grids
         // Must be done before moving, other we may run into LoS problems
         GridsList nearGrids = findNearGrids(object);
 
+        // Get last update time (in case the object switches grid)
+        Poco::UInt64 objectDiff = object->getLastUpdate();
+        if (objectDiff > diff)
+            objectDiff = diff;
+
         // Update AI, movement, everything if there is any or we have to
         // If update returns false, that means the object is no longer in this grid!
-        if (!object->update(diff))
-            _players.erase(object->GetGUID());
+        if (!object->update(objectDiff))
+            removeObject(object->GetGUID());
 
-        // Update near mobs
+        // Visit near objects as to update LoS
         GuidsSet objects;
-        visit(object, objects, diff);
+        visit(object, objects);
 
-        // Update other grids near mobs
+        // Update other grids near objects
         for (GridsList::iterator nGrid = nearGrids.begin(); nGrid != nearGrids.end(); nGrid++)
-            (*nGrid)->visit(object, objects, diff);
+            (*nGrid)->visit(object, objects);
 
-        // Update players LoS
-        // Players will update mobs LoS in its method
-        object->ToPlayer()->UpdateLoS(objects);
+        // Object the object LoS if it's a player or a creature
+        if (Character* character = object->ToCharacter())
+            character->UpdateLoS(objects);
     }
 
     return true;
@@ -161,7 +173,7 @@ static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector
  * @param object Visiting object
  * @param objets List where near objects are included
  */
-void Grid::visit(SharedPtr<Object> object, GuidsSet& objects, Poco::UInt64 diff)
+void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
 {
     Vector2D c(object->GetPosition().x, object->GetPosition().z);
     ObjectMap::iterator it = rde::find_if(_objects.begin(), _objects.end(), c, findObjectsIf);
@@ -172,36 +184,17 @@ void Grid::visit(SharedPtr<Object> object, GuidsSet& objects, Poco::UInt64 diff)
         // Find next near object now, avoid issues
         it = rde::find_if(++it, _objects.end(), c, findObjectsIf);
 
-        // Only if the visitor provides a diff time
-        if (diff > 0)
-        { 
-            // Update the object and erase it from the grid if we have to
-            if (!obj->update(diff))
-                _objects.erase(obj->GetGUID());
-            else
-                objects.insert(obj->GetGUID());
+        // Don't add the object to itself list
+        if (object->GetGUID() == obj->GetGUID())
+            continue;
 
-            // If the object being updated is a creature, make it aware of other nearby entities
+        // Add the object to the seen objects list
+        objects.insert(obj->GetGUID());
+
+        // If the visitor is a player and the object seen is a creature, tell the creature there is a player
+        if ((object->GetHighGUID() & HIGH_GUID_PLAYER) && (obj->GetHighGUID() & HIGH_GUID_CREATURE))
             if (Creature* creature = obj->ToCreature())
-            {
-                GuidsSet mobUpdater;
-                visit(obj, mobUpdater);
-                creature->UpdateLoS(mobUpdater);
-            }
-        }
-        else if (obj->GetGUID() != object->GetGUID())
-            objects.insert(obj->GetGUID());
-    }
-
-    it = rde::find_if(_players.begin(), _players.end(), c, findObjectsIf);
-    while (it != _players.end())
-    {
-        if (it->first != object->GetGUID())
-            objects.insert(it->first);
-
-        it = rde::find_if(++it, _players.end(), c, findObjectsIf);
-        
-        // We don't update players, as that is done by the grid itself!!
+                creature->addPlayerToLoS(object->GetGUID());
     }
 }
 
@@ -215,26 +208,13 @@ GuidsSet Grid::getObjects(Poco::UInt32 highGUID)
 {
     GuidsSet objects;
 
-    if (highGUID & HIGH_GUID_PLAYER)
+    for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
     {
-        for (ObjectMap::const_iterator itr = _players.begin(); itr != _players.end(); )
-        {
-            Poco::UInt64 GUID = itr->first;
-            itr++;
+        Poco::UInt64 GUID = itr->first;
+        itr++;
+
+        if (GUID & highGUID)
             objects.insert(GUID);
-        }
-    }
-
-    if (highGUID & ~HIGH_GUID_PLAYER)
-    {
-        for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
-        {
-            Poco::UInt64 GUID = itr->first;
-            itr++;
-
-            if (GUID & highGUID)
-                objects.insert(GUID);
-        }
     }
 
     return objects;
@@ -250,18 +230,9 @@ SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
 {
     SharedPtr<Object> object = NULL;
     
-    if (HIGUID(GUID) & HIGH_GUID_PLAYER)
-    {
-        ObjectMap::iterator itr = _players.find(GUID);
-        if (itr != _players.end())
-            object = itr->second;
-    }
-    else
-    {
-        ObjectMap::iterator itr = _objects.find(GUID);
-        if (itr != _objects.end())
-            object = itr->second;
-    }
+    ObjectMap::iterator itr = _objects.find(GUID);
+    if (itr != _objects.end())
+        object = itr->second;
 
     return object;
 }
@@ -274,15 +245,14 @@ SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
  */
 bool Grid::addObject(SharedPtr<Object> object)
 {
-    bool inserted = false;
-    
-    if (object->GetHighGUID() & HIGH_GUID_PLAYER)
-        inserted = _players.insert(rde::make_pair(object->GetGUID(), object)).second;
-    else
-        inserted = _objects.insert(rde::make_pair(object->GetGUID(), object)).second;    
-
+    bool inserted = _objects.insert(rde::make_pair(object->GetGUID(), object)).second;
     if (inserted)
+    {
         object->SetGrid(this);
+        
+        if (object->GetHighGUID() & HIGH_GUID_PLAYER)
+            _playersCount++;
+    }
 
     return inserted;
 }
@@ -293,10 +263,9 @@ bool Grid::addObject(SharedPtr<Object> object)
  */
 void Grid::removeObject(Poco::UInt64 GUID)
 {
+    _objects.erase(GUID);
     if (HIGUID(GUID) & HIGH_GUID_PLAYER)
-        _players.erase(GUID);
-    else
-        _objects.erase(GUID);
+        _playersCount--;
 }
 
 

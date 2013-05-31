@@ -12,6 +12,7 @@ public:
     virtual ~Creature();
 
     void UpdateLoS(GuidsSet newObjectsInSight);
+    void addPlayerToLoS(Poco::UInt64 GUID);
 
 private:
 

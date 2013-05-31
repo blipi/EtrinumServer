@@ -12,6 +12,7 @@ public:
     virtual ~Character();
 
     virtual void UpdateLoS(GuidsSet newObjectsInSight) = 0;
+    bool hasNearPlayers();
 
     inline std::string GetName()
     {

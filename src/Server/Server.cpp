@@ -176,7 +176,7 @@ void Server::run()
         // Wait for a constant update time
         if (diff <= WORLD_HEART_BEAT + prevSleepTime)
         {   
-            prevSleepTime = WORLD_HEART_BEAT + prevSleepTime - diff;
+            prevSleepTime = WORLD_HEART_BEAT + prevSleepTime - (Poco::UInt32)diff;
             Thread::sleep(prevSleepTime);
         }
         else

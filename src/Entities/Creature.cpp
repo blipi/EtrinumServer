@@ -13,3 +13,8 @@ void Creature::UpdateLoS(GuidsSet newObjectsInSight)
 {
     _objectsInSight = newObjectsInSight;
 }
+
+void Creature::addPlayerToLoS(Poco::UInt64 GUID)
+{
+    _objectsInSight.insert(GUID);
+}

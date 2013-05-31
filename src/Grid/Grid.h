@@ -58,7 +58,7 @@ public:
     void removeObject(Poco::UInt64 GUID);
 
     GridsList findNearGrids(SharedPtr<Object> object);
-    void visit(SharedPtr<Object> object, GuidsSet& objects, Poco::UInt64 diff = 0);
+    void visit(SharedPtr<Object> object, GuidsSet& objects);
     
     inline Poco::UInt16 GetPositionX()
     {
@@ -77,7 +77,7 @@ public:
     
     inline bool hasPlayers()
     {
-        return !_players.empty();
+        return _playersCount > 0;
     }
 
     void forceLoad();
@@ -88,7 +88,7 @@ public:
 
 private:
     ObjectMap _objects;
-    ObjectMap _players;
+    Poco::UInt32 _playersCount;
     Poco::UInt32 _forceLoad;
     Poco::UInt16 _x;
     Poco::UInt16 _y;

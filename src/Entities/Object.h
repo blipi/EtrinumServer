@@ -6,6 +6,7 @@
 
 #include "Poco/Poco.h"
 #include "Poco/SharedPtr.h"
+#include "Poco/Timestamp.h"
 
 #include "defines.h"
 #include "MotionMaster.h"
@@ -37,6 +38,7 @@ public:
     virtual ~Object();
     
     bool update(const Poco::UInt64 diff);
+    virtual bool hasNearPlayers() = 0;
 
     void SetGUID(Poco::UInt64 GUID);
     Poco::UInt64 GetGUID();
@@ -88,11 +90,11 @@ public:
         return _client;
     }
     
-    inline Poco::UInt32 getLastUpdate(Poco::UInt32 update)
+    inline Poco::UInt64 getLastUpdate()
     {
-        Poco::UInt32 r = _lastUpdate;
-        _lastUpdate = update;
-        return r;
+        Poco::UInt64 elapsed = _lastUpdate.elapsed();
+        _lastUpdate.update();
+        return elapsed;
     }
 
     MotionMaster motionMaster;
@@ -100,15 +102,15 @@ public:
     Player* ToPlayer();
     Creature* ToCreature();
     Character* ToCharacter();
-    Object* ToObject();    
-
+    Object* ToObject();
+    
 protected:
     GuidsSet _objectsInSight;
 
 private:
     Poco::UInt64 _GUID;
     Poco::UInt64 _flags[MAX_FLAGS_TYPES];
-    Poco::UInt32 _lastUpdate;
+    Poco::Timestamp _lastUpdate;
     Vector2D _position;
     Grid* _grid;
     Client* _client;
