@@ -70,7 +70,7 @@ bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
     bool inserted = _grids.insert(rde::make_pair(grid->hashCode(), grid)).second;
     _isGridLoaded[x][y] = inserted;
 
-    sLog.out(Message::PRIO_TRACE, "Grid (%d, %d) has been created (%d)", x, y, inserted);
+    sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been created (%d)", x, y, inserted);
     return inserted;
 }
 
@@ -193,12 +193,12 @@ void GridLoader::gridUpdated(Poco::TaskFinishedNotification* nf)
     if (!task->getResult())
     {
         Grid* grid = task->getGrid();
-        sLog.out(Message::PRIO_TRACE, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
+        sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
 
         _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
         _grids.erase(grid->hashCode());
         delete grid;
     }
-    
+
     _gridManager->dequeue();
 }
