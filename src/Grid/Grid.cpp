@@ -512,7 +512,6 @@ void GridLoader::gridUpdated(Poco::TaskFinishedNotification* nf)
         delete grid;
     }
 
-    //printf("[%d] Threads: %d\n", task->getResult(), _gridManager.count());
     _gridManager.dequeue();
 }
 
