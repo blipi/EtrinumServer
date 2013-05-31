@@ -74,12 +74,12 @@ void Config::readConfiguration()
 
 int Config::getIntConfig(std::string configName)
 {
-    return _intConfigs[configName];
+    return getDefaultInt(configName, 0);
 }
 
 bool Config::getBoolConfig(std::string configName)
 {
-    return _boolConfigs[configName];
+    return getDefaultBool(configName, false);
 }
 
 int Config::getDefaultInt(std::string configName, int _default)
