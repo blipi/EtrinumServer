@@ -1,1 +1,1 @@
-install(FILES Config.xml DESTINATION "${CMAKE_INSTALL_PREFIX}")
+install(FILES Config.xml.dist DESTINATION "${CMAKE_INSTALL_PREFIX}")
