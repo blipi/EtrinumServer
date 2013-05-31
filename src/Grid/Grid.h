@@ -63,6 +63,7 @@ public:
 
 public:
     static Poco::UInt8 losRange;
+    static Poco::UInt32 gridRemove;
 
 private:
     ObjectMap _objects;

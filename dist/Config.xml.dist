@@ -49,6 +49,15 @@
         <LoSRange type="int">35</LoSRange>
         
         <!--
+            GridRemove
+            Time interval for a grid to be removed when no players are
+            in it, in miliseconds:
+                Default: 15000
+                Recommended: 5000+
+        -->
+        <GridRemove type="int">15000</GridRemove>
+        
+        <!--
             MapThreads
             Number of threads updating maps
                 Default: 2

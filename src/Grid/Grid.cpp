@@ -9,6 +9,7 @@
 #include "Tools.h"
 
 Poco::UInt8 Grid::losRange;
+Poco::UInt32 Grid::gridRemove;
 
 /**
  * Initializes a Grid object

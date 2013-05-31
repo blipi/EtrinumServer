@@ -33,7 +33,9 @@ GridLoader::GridLoader()
 
     // Set LoS range
     Grid::losRange = sConfig.getIntConfig("LoSRange");
-    sLog.out(Message::PRIO_TRACE, "\t[OK] LoS Range set to: %d", Grid::losRange);
+    Grid::gridRemove = sConfig.getIntConfig("GridRemove");
+    sLog.out(Message::PRIO_TRACE, "\t[OK] LoS Range set to: %d", Grid::gridRemove);
+    sLog.out(Message::PRIO_TRACE, "\t[OK] Grid Remove interval set to: %d", Grid::losRange);
     sLog.out(Message::PRIO_TRACE, "\t[OK] Map threads set to: %d", sConfig.getIntConfig("MapThreads"));
 
     // Check for correct grid size
