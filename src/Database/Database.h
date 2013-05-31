@@ -150,7 +150,7 @@ public:
     Database();
     ~Database();
     
-    bool Open(std::string connectionString);
+    void Open(std::string connectionString);
 
     virtual void DoPreparedStatements() = 0;
     PreparedStatement* getPreparedStatement(Poco::UInt8 index);

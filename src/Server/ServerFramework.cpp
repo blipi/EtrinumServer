@@ -109,17 +109,10 @@ int main(int argc, char** argv)
     Config::StringConfigsMap connectionStrings = sConfig.getDatabaseInformation();
 
     // Databases
-    bool dbAuth = AuthDatabase.Open(connectionStrings["auth"]);
-    bool dbChars = CharactersDatabase.Open(connectionStrings["characters"]);
-
-    if (!dbAuth || !dbChars)
-        sLog.out(Message::PRIO_FATAL, "\t[Fail] Auth (%d) - Characters (%d)", dbAuth, dbChars);
-    else
-    {
-        sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
-        doInitialize();
-    }
-    
+    AuthDatabase.Open(connectionStrings["auth"]);
+    CharactersDatabase.Open(connectionStrings["characters"]);
+    sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
+        
     MySQL::Connector::unregisterConnector();
     Poco::ErrorHandler::set(oldErrorHandler);
 

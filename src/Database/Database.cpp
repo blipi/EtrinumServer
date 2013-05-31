@@ -75,13 +75,13 @@ Database::~Database()
 {
 }
 
-bool Database::Open(std::string connectionString)
+void Database::Open(std::string connectionString)
 {
     try
     {
         _pool = new SessionPool("MySQL", connectionString, 1, 32);
         if (!_pool->get().isConnected())
-            return false;
+           ASSERT(false);
     }
     catch (Poco::Data::ConnectionFailedException ex)
     {
@@ -95,7 +95,6 @@ bool Database::Open(std::string connectionString)
     }
 
     DoPreparedStatements();
-    return true;
 }
 
 PreparedStatement* Database::getPreparedStatement(Poco::UInt8 index)
