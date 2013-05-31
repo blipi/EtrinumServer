@@ -90,6 +90,9 @@ bool MotionMaster::evaluate(Poco::UInt64 diff, Vector2D& pos)
         pos.x = c.x + _movement.dx * _elapsed / _time;
         pos.z = c.z + _movement.dz * _elapsed / _time;
 
+        if (evaluatePosition(pos))
+            return true;
+
         if (r >= _time)
         {
             _movement.points.erase(_movement.points.begin());
@@ -104,7 +107,7 @@ bool MotionMaster::evaluate(Poco::UInt64 diff, Vector2D& pos)
         pos.x = c.x + (_movement.speed * _elapsed * std::cos(_movement.angle));
         pos.z = c.z + (_movement.speed * _elapsed * std::sin(_movement.angle));
 
-        return false;
+        return evaluatePosition(pos);
     }
 
     return true;
@@ -122,4 +125,33 @@ void MotionMaster::clear()
     _movement.dx = _movement.dz = 0;
     _movement.angle = 0;
     _movement.speed = 0;
+}
+
+bool MotionMaster::evaluatePosition(Vector2D& pos)
+{
+    if (pos.x < MAP_MIN_X)
+    {
+        pos.x = MAP_MIN_X;
+        return true;
+    }
+
+    if (pos.x > MAP_MAX_X)
+    {
+        pos.x = MAP_MAX_X;
+        return true;
+    }
+
+    if (pos.z < MAP_MIN_Z)
+    {
+        pos.z = MAP_MIN_Z;
+        return true;
+    }
+
+    if (pos.z > MAP_MAX_Z)
+    {
+        pos.z = MAP_MAX_Z;
+        return true;
+    }
+
+    return false;
 }

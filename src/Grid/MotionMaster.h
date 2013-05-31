@@ -49,6 +49,8 @@ public:
     void clear();
 
 private:
+    bool evaluatePosition(Vector2D& pos);
+
     struct MovementVector
     {
         Poco::UInt8 movementType;
@@ -58,7 +60,6 @@ private:
         float dx;
         float dz;
     };
-
 
 private:
     MovementVector _movement;
