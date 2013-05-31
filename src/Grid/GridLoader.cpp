@@ -201,7 +201,7 @@ void GridLoader::gridUpdated(Poco::TaskFinishedNotification* nf)
 
         _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
         _grids.erase(grid->hashCode());
-        //delete grid;
+        delete grid;
     }
 
     _gridManager->dequeue();
