@@ -62,7 +62,7 @@ void Config::readConfiguration()
                 if(atribs->getNamedItem("type")->nodeValue().compare("int") == 0)
                     _intConfigs[configNode->nodeName()] = std::atoi(configNode->innerText().c_str());
                 else if(atribs->getNamedItem("type")->nodeValue().compare("bool") == 0)
-                    _boolConfigs[configNode->nodeName()] = bool(std::atoi(configNode->innerText().c_str()));
+                    _boolConfigs[configNode->nodeName()] = std::atoi(configNode->innerText().c_str()) != 0;
 
                 configNode = nextNode(configNode);
             }

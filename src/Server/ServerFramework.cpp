@@ -82,7 +82,7 @@ void doInitialize()
 
         SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
         sGridLoader.addObject(plr);
-        //MotionMaster::StartAngleMovement(plr, 0.5f, 0.5f);
+        MotionMaster::StartAngleMovement(plr, 0.5f, 100.5f);
         //MotionMaster::StartSimpleMovement(plr, Vector2D(400.0f, 200.0f), 15.0f);
 
     #endif

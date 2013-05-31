@@ -36,7 +36,7 @@ public:
     Object(Client* client = NULL);
     virtual ~Object();
     
-    bool update(const Poco::UInt32 diff);
+    bool update(const Poco::UInt64 diff);
 
     void SetGUID(Poco::UInt64 GUID);
     Poco::UInt64 GetGUID();

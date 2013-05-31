@@ -18,12 +18,14 @@
 #include "Poco/Net/ParallelSocketAcceptor.h"
 #include "Poco/Net/SocketAcceptor.h"
 #include "Poco/Net/ServerSocket.h"
+#include "Poco/Timestamp.h"
 
 using Poco::Net::SocketReactor;
 using Poco::Net::SocketAcceptor;
 using Poco::Net::ServerSocket;
 using Poco::Net::ParallelSocketReactor;
 using Poco::Net::ParallelSocketAcceptor;
+using Poco::Timestamp;
 
 // Crypting
 #include <iostream>
@@ -101,6 +103,7 @@ typedef std::map<OPCODES, OpcodeHandleType::_Handler> OpcodeHash;
 typedef std::pair<OPCODES, OpcodeHandleType::_Handler> OpcodeHashInserter;
 OpcodeHash OpcodesMap;
 
+#define WORLD_HEART_BEAT 50
 
 /**
 * Creates a new Server and binds to the port
@@ -144,12 +147,41 @@ void Server::start(Poco::UInt16 port)
 	Thread reactorThread;
     reactorThread.start(reactor);
 
+    // Flag that the server is running
     _serverRunning = true;
-    while (_serverRunning)
-        Thread::sleep(200);
 
+    // Create a processor thread and wait for it
+    Thread updater;
+    updater.start(*this);
+    updater.join();
+
+    // Close network acceptors
     reactor.stop();
     reactorThread.join();
+}
+
+void Server::run()
+{
+    Timestamp lastUpdate;
+    Poco::UInt32 prevSleepTime = 0;
+    while (_serverRunning)
+    {
+        // Microseconds to miliseconds, as we have no usleep function
+        Timestamp::TimeDiff diff = lastUpdate.elapsed() / 1000;
+        lastUpdate.update();
+
+        // Update all grids now
+        sGridLoader.update(diff);
+        
+        // Wait for a constant update time
+        if (diff <= WORLD_HEART_BEAT + prevSleepTime)
+        {   
+            prevSleepTime = WORLD_HEART_BEAT + prevSleepTime - diff;
+            Thread::sleep(prevSleepTime);
+        }
+        else
+            prevSleepTime = 0;
+    }
 }
 
 // Server -> Client packets

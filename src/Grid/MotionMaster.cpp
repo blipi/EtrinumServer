@@ -76,7 +76,7 @@ void MotionMaster::set(float speed, Poco::UInt8 movementType, float elapsed)
         _elapsed = 0;
 }
 
-bool MotionMaster::evaluate(Poco::UInt32 diff, Vector2D& pos)
+bool MotionMaster::evaluate(Poco::UInt64 diff, Vector2D& pos)
 {
     _elapsed += diff/1000.0f;
     Vector2D c = current();

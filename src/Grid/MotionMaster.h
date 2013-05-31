@@ -42,7 +42,7 @@ public:
 
     inline void angle(float angle);
     void set(float speed, Poco::UInt8 movementType, float elapsed = 0);
-    bool evaluate(Poco::UInt32 diff, Vector2D& pos);
+    bool evaluate(Poco::UInt64 diff, Vector2D& pos);
 
     Poco::UInt8 getMovementType();
 

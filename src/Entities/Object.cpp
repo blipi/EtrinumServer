@@ -41,7 +41,7 @@ Object::~Object()
  *
  * @param diff Time difference from last tick
  */
-bool Object::update(const Poco::UInt32 diff)
+bool Object::update(const Poco::UInt64 diff)
 {
     bool updatedGrid = false;
     if (hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))

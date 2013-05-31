@@ -8,6 +8,7 @@
 //@ Basic Poco Types and Threading
 #include "Poco/Poco.h"
 #include "Poco/Thread.h"
+#include "Poco/Runnable.h"
 
 //@ Shared Pointers to save objects
 #include "Poco/SharedPtr.h"
@@ -23,13 +24,14 @@ class Packet;
 
 struct OpcodeHandleType;
 
-class Server
+class Server : public Poco::Runnable
 {
 public:
     Server();
     ~Server();
 
     void start(Poco::UInt16 port);
+    void run();
 
     inline bool isRunning()
     {

@@ -6,8 +6,11 @@
 #include "Tools.h"
 #include "ServerConfig.h"
 #include "Log.h"
-
 #include "debugging.h"
+
+#include "Poco/Timestamp.h"
+
+using Poco::Timestamp;
 
 Poco::UInt8 Grid::losRange;
 
@@ -18,7 +21,6 @@ Poco::UInt8 Grid::losRange;
 Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
     _x(x), _y(y)
 {
-    _lastTick = clock();
 }
 
 /**
@@ -26,48 +28,35 @@ Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
  *
  * @return false if the grid must be deleted, true otherwise
  */
-bool Grid::update()
+bool Grid::update(Poco::UInt64 diff)
 {
-    // Update only if it's more than 1ms since last tick
-    if (clock() - _lastTick > 0)
+    for (ObjectMap::const_iterator itr = _players.begin(); itr != _players.end(); )
     {
-        for (ObjectMap::const_iterator itr = _players.begin(); itr != _players.end(); )
-        {
-            SharedPtr<Object> object = itr->second;
-            ++itr;
+        SharedPtr<Object> object = itr->second;
+        ++itr;
 
-            // Find near grids
-            // Must be done before moving, other we may run into LoS problems
-            GridsList nearGrids = findNearGrids(object);
+        // Find near grids
+        // Must be done before moving, other we may run into LoS problems
+        GridsList nearGrids = findNearGrids(object);
 
-            // Update AI, movement, everything if there is any or we have to
-            // If update returns false, that means the object is no longer in this grid!
-            // Find out the update time for the object
-            Poco::UInt32 diff = clock() - object->getLastUpdate(clock());
-            Poco::UInt32 loopDiff = clock() - _lastTick;
-        
-            // The smaller, the better
-            if (diff > loopDiff)
-                diff = loopDiff;
+        // Update AI, movement, everything if there is any or we have to
+        // If update returns false, that means the object is no longer in this grid!
+        if (!object->update(diff))
+            _players.erase(object->GetGUID());
 
-            if (!object->update(diff))
-                _players.erase(object->GetGUID());
+        // Update near mobs
+        GuidsSet objects;
+        visit(object, objects, diff);
 
-            // Update near mobs
-            GuidsSet objects;
-            visit(object, objects);
+        // Update other grids near mobs
+        for (GridsList::iterator nGrid = nearGrids.begin(); nGrid != nearGrids.end(); nGrid++)
+            (*nGrid)->visit(object, objects, diff);
 
-            // Update other grids near mobs
-            for (GridsList::iterator nGrid = nearGrids.begin(); nGrid != nearGrids.end(); nGrid++)
-                (*nGrid)->visit(object, objects);
-
-            // Update players LoS
-            // Players will update mobs LoS in its method
-            object->ToPlayer()->UpdateLoS(objects);
-        }
-
-        _lastTick = clock();
+        // Update players LoS
+        // Players will update mobs LoS in its method
+        object->ToPlayer()->UpdateLoS(objects);
     }
+
     return true;
 }
 
@@ -172,7 +161,7 @@ static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector
  * @param object Visiting object
  * @param objets List where near objects are included
  */
-void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
+void Grid::visit(SharedPtr<Object> object, GuidsSet& objects, Poco::UInt64 diff)
 {
     Vector2D c(object->GetPosition().x, object->GetPosition().z);
     ObjectMap::iterator it = rde::find_if(_objects.begin(), _objects.end(), c, findObjectsIf);
@@ -183,17 +172,9 @@ void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
         // Find next near object now, avoid issues
         it = rde::find_if(++it, _objects.end(), c, findObjectsIf);
 
-        // Only if the visitor is a player will we update the other objects
-        if (object->GetHighGUID() & HIGH_GUID_PLAYER)
-        {
-            // Find out the update time for the object
-            Poco::UInt32 diff = clock() - obj->getLastUpdate(clock());
-            Poco::UInt32 loopDiff = clock() - _lastTick;
-        
-            // The smaller, the better
-            if (diff > loopDiff)
-                diff = loopDiff;
- 
+        // Only if the visitor provides a diff time
+        if (diff > 0)
+        { 
             // Update the object and erase it from the grid if we have to
             if (!obj->update(diff))
                 _objects.erase(obj->GetGUID());
@@ -345,10 +326,8 @@ bool Grid::isForceLoaded()
 GridLoader::GridLoader():
     _server(NULL)
 {
-    //@todo: We should be able to have more than one grid handler
-    // and they should all balance themselves, in order to keep
-    // update rate really low (in ms)
-    _gridsPool = new Poco::ThreadPool(1, 1);
+    // Adds a Grid finished update callback
+    _gridManager.addObserver(Observer<GridLoader, Poco::TaskFinishedNotification>(*this, &GridLoader::gridUpdated));
 
     for (Poco::UInt16 x = 0; x < MAX_X; x++)
         for (Poco::UInt16 y = 0; y < MAX_Y; y++)
@@ -369,7 +348,7 @@ GridLoader::GridLoader():
  */
 GridLoader::~GridLoader()
 {
-    delete _gridsPool;
+    _gridManager.joinAll();
 }
 
 /**
@@ -380,7 +359,6 @@ GridLoader::~GridLoader()
 void GridLoader::initialize(Server* server)
 {
     _server = server;
-    _gridsPool->start(*this);
 }
 
 /**
@@ -500,28 +478,94 @@ bool GridLoader::removeObject(Object* object)
  * Thread where the Grids are updating
  *
  */
-void GridLoader::run_impl()
+void GridLoader::update(Poco::UInt64 diff)
 {
-    while (sServer->isRunning())
+    // Update all current grids, new grids shouldn't be updated now
+    GridsMap safeGrids = _grids;
+
+    for (GridsMap::const_iterator itr = safeGrids.begin(); itr != safeGrids.end(); )
     {
-        // Update all Grids
-        for (GridsMap::const_iterator itr = _grids.begin(); itr != _grids.end(); )
-        {
-            Grid* grid = itr->second;
-            itr++;
+        Grid* grid = itr->second;
+        itr++;
 
-            // If update fails, something went really wrong, delete this grid
-            // If the grid has no players in it, check for nearby grids, if they are not loaded or have no players, remove it
-            if (!grid->update() || (!grid->hasPlayers() && !grid->isForceLoaded()))
-            {
-                sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
-                
-                _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
-                _grids.erase(grid->hashCode());
-                delete grid;
-            }
-        }
-
-        Poco::Thread::sleep(1);
+        // Start a task to update the grid
+        _gridManager.start(new GridTask(grid, diff));
     }
+
+    // Wait for all map updates to end
+    _gridManager.wait();
+}
+
+void GridLoader::gridUpdated(Poco::TaskFinishedNotification* nf)
+{
+    GridTask* task = (GridTask*)nf->task();
+
+    // If update fails, something went really wrong, delete this grid
+    // If the grid has no players in it, check for nearby grids, if they are not loaded or have no players, remove it
+    if (!task->getResult())
+    {
+        Grid* grid = task->getGrid();
+        sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
+                
+        _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
+        _grids.erase(grid->hashCode());
+        delete grid;
+    }
+
+    //printf("[%d] Threads: %d\n", task->getResult(), _gridManager.count());
+    _gridManager.dequeue();
+}
+
+GridManager::GridManager():
+    TaskManager()
+{
+}
+
+void GridManager::start(Poco::Task* task)
+{
+    // @todo MAX Threads Configurable
+    if (count() < 4)
+        TaskManager::start(task);
+    else
+    {
+        Poco::Mutex::ScopedLock lock(_mutex);
+        _queue.push(task);
+    }
+}
+
+void GridManager::dequeue()
+{
+    _mutex.lock();
+    if (!_queue.empty())
+    {
+        Poco::Task* task = _queue.front();
+        _queue.pop();
+        _mutex.unlock();
+
+        start(task);
+    }
+    else
+        _mutex.unlock();
+}
+
+void GridManager::wait()
+{
+    while (count())
+        Poco::Thread::sleep(1);
+}
+
+GridTask::GridTask(Grid* grid, Poco::UInt64 diff):
+    Task(""),
+    _grid(grid), _diff(diff)
+{
+}
+
+void GridTask::runTask()
+{
+    _result = _grid->update(_diff);
+}
+
+bool GridTask::getResult()
+{
+    return _result && !(!_grid->hasPlayers() && !_grid->isForceLoaded());
 }
