@@ -52,8 +52,32 @@ public:
     }
 };
 
-void doInitialize()
+int main(int argc, char** argv)
 {
+    // Read configuration file
+    sLog.out(Message::PRIO_INFORMATION, "[*] Reading Configuration File");
+    sConfig.readConfiguration();
+        
+    // Set log level
+    sLog.out(Message::PRIO_INFORMATION, "\t[OK] Setting LogLevel to %d\n", sConfig.getIntConfig("LogLevel"));
+    sLog.setLogLevel(Message::Priority(sConfig.getIntConfig("LogLevel")));
+
+    // Initialize the Error Handler and MySQL
+    MyErrorHandler eh;
+    Poco::ErrorHandler* oldErrorHandler = Poco::ErrorHandler::set(&eh);    
+    
+    sLog.out(Message::PRIO_INFORMATION, "[*] Initializing MySQL");
+    MySQL::Connector::registerConnector();
+    
+    // Read database configuration
+    Config::StringConfigsMap connectionStrings = sConfig.getDatabaseInformation();
+
+    // Databases
+    AuthDatabase.Open(connectionStrings["auth"]);
+    CharactersDatabase.Open(connectionStrings["characters"]);
+    sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
+
+    // Initialize the server
     sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing server");
     sServer = new Server();
     sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
@@ -86,37 +110,10 @@ void doInitialize()
     sServer->start(1616);
 
     delete sServer;
-}
 
-int main(int argc, char** argv)
-{
-    // Read configuration file
-    sLog.out(Message::PRIO_INFORMATION, "[*] Reading Configuration File");
-    sConfig.readConfiguration();
-        
-    // Set log level
-    sLog.out(Message::PRIO_INFORMATION, "\t[OK] Setting LogLevel to %d\n", sConfig.getIntConfig("LogLevel"));
-    sLog.setLogLevel(Message::Priority(sConfig.getIntConfig("LogLevel")));
-
-    // Initialize the Error Handler and MySQL
-    MyErrorHandler eh;
-    Poco::ErrorHandler* oldErrorHandler = Poco::ErrorHandler::set(&eh);    
-    
-    sLog.out(Message::PRIO_INFORMATION, "[*] Initializing MySQL");
-    MySQL::Connector::registerConnector();
-    
-    // Read database configuration
-    Config::StringConfigsMap connectionStrings = sConfig.getDatabaseInformation();
-
-    // Databases
-    AuthDatabase.Open(connectionStrings["auth"]);
-    CharactersDatabase.Open(connectionStrings["characters"]);
-    sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
-        
     MySQL::Connector::unregisterConnector();
     Poco::ErrorHandler::set(oldErrorHandler);
 
-    sLog.out(Message::PRIO_INFORMATION, "");
     system("pause");
     return 0;
 }
