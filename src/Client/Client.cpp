@@ -121,8 +121,10 @@ SharedPtr<Player> Client::onEnterToWorld(Poco::UInt32 characterID)
  *
  * @param nf Event notification
  */
-void Client::onReadable(const AutoPtr<ReadableNotification>& /*nf*/)
+void Client::onReadable(const AutoPtr<ReadableNotification>& nf)
 {
+    nf->release();
+
     // If we have to desconnect, do it now
     if (_logicFlags & DISCONNECT_SEND_FLAGS)
     {
@@ -213,8 +215,9 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& /*nf*/)
  *
  * @param nf Shutdown event notification
  */
-void Client::onShutdown(const AutoPtr<ShutdownNotification>& /*nf*/)
+void Client::onShutdown(const AutoPtr<ShutdownNotification>& nf)
 {
+    nf->release();
     cleanupBeforeDelete();
     delete this;
 }
@@ -224,8 +227,9 @@ void Client::onShutdown(const AutoPtr<ShutdownNotification>& /*nf*/)
  *
  * @param nf Timeout event notification
  */
-void Client::onTimeout(const AutoPtr<TimeoutNotification>& /*nf*/)
+void Client::onTimeout(const AutoPtr<TimeoutNotification>& nf)
 {
+    nf->release();
     _logicFlags |= DISCONNECTED_TIME_OUT;
     cleanupBeforeDelete();
     sServer->SendClientDisconnected(this);
@@ -236,8 +240,9 @@ void Client::onTimeout(const AutoPtr<TimeoutNotification>& /*nf*/)
  *
  * @param nf Write event notification
  */
-void Client::onWritable(const AutoPtr<WritableNotification>& /*nf*/)
+void Client::onWritable(const AutoPtr<WritableNotification>& nf)
 {
+    nf->release();
     _reactor.removeEventHandler(_socket, NObserver<Client, WritableNotification>(*this, &Client::onWritable));
     _socket.sendBytes(_writeBufferOut);
 
