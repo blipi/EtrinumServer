@@ -38,6 +38,11 @@ struct Vector2D
     float x;
     float z;
 };
+
+//@ Avoid MSV defining max/min and overriding numeric_limits
+#if defined(_WIN32) || defined(_WIN64)
+    #define NOMINMAX
+#endif
     
 #include <set>
 typedef std::set<Poco::UInt64> GuidsSet;

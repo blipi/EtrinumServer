@@ -3,7 +3,7 @@
 #include "Player.h"
 #include "Character.h"
 #include "Creature.h"
-#include "Grid.h"
+#include "GridLoader.h"
 #include "Server.h"
 #include "Tools.h"
 #include "Log.h"

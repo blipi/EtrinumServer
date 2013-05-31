@@ -1,17 +1,13 @@
 #include <stdio.h>
-#include <iostream>
-#include <limits>
-#include <map>
-#include <list>
 
-#include "Server.h"
-#include "defines.h"
-#include "Grid.h"
 #include "AuthDatabase.h"
 #include "CharactersDatabase.h"
-#include "ServerConfig.h"
-#include "Log.h"
 #include "debugging.h"
+#include "defines.h"
+#include "GridLoader.h"
+#include "Log.h"
+#include "Server.h"
+#include "ServerConfig.h"
 
 //@ Basic server information
 // >> Server runs on multiple threads, grids are in a thread pool

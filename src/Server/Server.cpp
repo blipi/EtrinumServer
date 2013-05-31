@@ -1,30 +1,28 @@
 #include "Server.h"
-#include "defines.h"
-#include "ObjectManager.h"
-#include "Object.h"
-#include "Player.h"
-#include "Client.h"
-#include "Packet.h"
-#include "Grid.h"
-#include "Tools.h"
-#include "AuthDatabase.h"
-#include "CharactersDatabase.h"
-#include "Log.h"
-#include "debugging.h"
 
 //@ Net basic headers
-#include "Poco/Net/ParallelSocketReactor.h"
+// Including poco before is important, as it gives errors on Windows otherwise
 #include "Poco/Net/SocketReactor.h"
-#include "Poco/Net/ParallelSocketAcceptor.h"
 #include "Poco/Net/SocketAcceptor.h"
 #include "Poco/Net/ServerSocket.h"
 #include "Poco/Timestamp.h"
 
+#include "AuthDatabase.h"
+#include "debugging.h"
+#include "CharactersDatabase.h"
+#include "Client.h"
+#include "defines.h"
+#include "GridLoader.h"
+#include "Log.h"
+#include "ObjectManager.h"
+#include "Object.h"
+#include "Packet.h"
+#include "Player.h"
+#include "Tools.h"
+
 using Poco::Net::SocketReactor;
 using Poco::Net::SocketAcceptor;
 using Poco::Net::ServerSocket;
-using Poco::Net::ParallelSocketReactor;
-using Poco::Net::ParallelSocketAcceptor;
 using Poco::Timestamp;
 
 // Crypting
