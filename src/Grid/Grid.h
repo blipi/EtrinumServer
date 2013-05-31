@@ -5,6 +5,7 @@
 
 //@ Poco includes
 #include "Poco/SharedPtr.h"
+#include "Poco/Timestamp.h"
 
 //@ List and Hash Map
 #include <list>
@@ -12,6 +13,7 @@
 #include "stack_allocator.h"
 
 using Poco::SharedPtr;
+using Poco::Timestamp;
 
 class Object;
 
@@ -65,7 +67,7 @@ public:
 private:
     ObjectMap _objects;
     Poco::UInt32 _playersCount;
-    Poco::UInt32 _forceLoad;
+    Timestamp _forceLoad;
     Poco::UInt16 _x;
     Poco::UInt16 _y;
 };

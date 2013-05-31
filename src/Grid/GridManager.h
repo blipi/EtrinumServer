@@ -13,11 +13,14 @@ public:
     GridManager(Poco::UInt8 maxThreads);
 
     void start(Poco::Task* task);
+    void queue(Poco::UInt32 pending);
     void dequeue();
     void wait();
 
 private:
     Poco::UInt8 _maxThreads;
+    Poco::UInt32 _pendingThreads;
+    Poco::UInt32 _dequeuedThreads;
     std::queue<Poco::Task*> _queue;
     Poco::Mutex _mutex;
 };

@@ -170,7 +170,11 @@ bool GridLoader::removeObject(Object* object)
  */
 void GridLoader::update(Poco::UInt64 diff)
 {
-    for (GridsMap::const_iterator itr = _grids.begin(); itr != _grids.end(); )
+    // Do NOT, never, iterate the list, iterate a safe copy!
+    GridsMap grids = _grids;
+    
+    _gridManager->queue(grids.size());
+    for (GridsMap::const_iterator itr = grids.begin(); itr != grids.end(); )
     {
         Grid* grid = itr->second;
         itr++;
@@ -197,7 +201,7 @@ void GridLoader::gridUpdated(Poco::TaskFinishedNotification* nf)
 
         _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
         _grids.erase(grid->hashCode());
-        delete grid;
+        //delete grid;
     }
 
     _gridManager->dequeue();

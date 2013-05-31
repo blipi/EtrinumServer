@@ -18,6 +18,7 @@ Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
     _x(x), _y(y),
     _playersCount(0)
 {
+    forceLoad();
 }
 
 Grid::~Grid()
@@ -283,7 +284,7 @@ void Grid::removeObject(Poco::UInt64 GUID)
  */
 void Grid::forceLoad()   
 {
-    _forceLoad = clock();
+    _forceLoad.update();
 }
 
 /**
@@ -293,5 +294,5 @@ void Grid::forceLoad()
  */
 bool Grid::isForceLoaded()
 {
-    return (clock() - _forceLoad) < 5000;
+    return (_forceLoad.elapsed() / 1000) < 5000;
 }
