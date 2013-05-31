@@ -59,8 +59,8 @@ int main(int argc, char** argv)
     sConfig.readConfiguration();
         
     // Set log level
-    sLog.out(Message::PRIO_INFORMATION, "\t[OK] Setting LogLevel to %d\n", sConfig.getIntConfig("LogLevel"));
-    sLog.setLogLevel(Message::Priority(sConfig.getIntConfig("LogLevel")));
+    sLog.out(Message::PRIO_INFORMATION, "\t[OK] Setting LogLevel to %d\n", sConfig.getDefaultInt("LogLevel", 4));
+    sLog.setLogLevel(Message::Priority(sConfig.getDefaultInt("LogLevel", 4)));
 
     // Initialize the Error Handler and MySQL
     MyErrorHandler eh;
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
     #endif
 
     // Will wait until the server stops
-    sServer->start(sConfig.getIntConfig("ServerPort"));
+    sServer->start(sConfig.getDefaultInt("ServerPort", 1616));
 
     delete sServer;
 

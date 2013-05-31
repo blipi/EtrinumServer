@@ -17,6 +17,11 @@ public:
     void dequeue();
     void wait();
 
+    inline Poco::UInt8 getMaxThreads()
+    {
+        return _maxThreads;
+    }
+
 private:
     Poco::UInt8 _maxThreads;
     Poco::UInt32 _pendingThreads;

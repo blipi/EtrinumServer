@@ -24,7 +24,7 @@ using Poco::Timestamp;
 GridLoader::GridLoader()
 {
     // Create the GridManager and add a grid finished update callback
-    _gridManager = new GridManager(sConfig.getIntConfig("MapThreads"));
+    _gridManager = new GridManager(sConfig.getDefaultInt("MapThreads", 1));
     _gridManager->addObserver(Observer<GridLoader, Poco::TaskFinishedNotification>(*this, &GridLoader::gridUpdated));
 
     for (Poco::UInt16 x = 0; x < MAX_X; x++)
@@ -32,11 +32,11 @@ GridLoader::GridLoader()
             _isGridLoaded[x][y] = false;
 
     // Set LoS range
-    Grid::losRange = sConfig.getIntConfig("LoSRange");
-    Grid::gridRemove = sConfig.getIntConfig("GridRemove");
+    Grid::losRange = sConfig.getDefaultInt("LoSRange", 35);
+    Grid::gridRemove = sConfig.getDefaultInt("GridRemove", 15000);
     sLog.out(Message::PRIO_TRACE, "\t[OK] LoS Range set to: %d", Grid::gridRemove);
     sLog.out(Message::PRIO_TRACE, "\t[OK] Grid Remove interval set to: %d", Grid::losRange);
-    sLog.out(Message::PRIO_TRACE, "\t[OK] Map threads set to: %d", sConfig.getIntConfig("MapThreads"));
+    sLog.out(Message::PRIO_TRACE, "\t[OK] Map threads set to: %d", _gridManager->getMaxThreads());
 
     // Check for correct grid size
     ASSERT((MAP_MAX_X - MAP_MIN_X) / UNITS_PER_CELL < MAX_X)
