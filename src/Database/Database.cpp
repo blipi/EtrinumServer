@@ -16,7 +16,7 @@ void Database::Open(std::string connectionString)
     {
         _pool = new SessionPool("MySQL", connectionString, 1, 32);
         if (!_pool->get().isConnected())
-           ASSERT(false);
+            ASSERT(false);
     }
     catch (Poco::Data::ConnectionFailedException ex)
     {
