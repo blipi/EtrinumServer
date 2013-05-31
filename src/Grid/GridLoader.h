@@ -50,7 +50,6 @@ private:
     GridManager* _gridManager;
     GridsMap _grids;
     bool _isGridLoaded[MAX_X][MAX_Y];
-    Poco::UInt32 _mapsCount;
 };
 
 #define sGridLoader GridLoader::instance()

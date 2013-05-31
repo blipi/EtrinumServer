@@ -21,8 +21,7 @@ using Poco::Timestamp;
  * Initializes the grid loader, which manages and handles all grids
  *
  */
-GridLoader::GridLoader():
-    _mapsCount(0)
+GridLoader::GridLoader()
 {
     // Create the GridManager and add a grid finished update callback
     _gridManager = new GridManager(sConfig.getIntConfig("MapThreads"));
@@ -177,7 +176,6 @@ void GridLoader::update(Poco::UInt64 diff)
         itr++;
 
         // Start a task to update the grid
-        _mapsCount++;
         _gridManager->start(new GridTask(grid, diff));
     }
 
