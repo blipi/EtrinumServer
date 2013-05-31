@@ -82,6 +82,21 @@ bool Config::getBoolConfig(std::string configName)
     return _boolConfigs[configName];
 }
 
+int Config::getDefaultInt(std::string configName, int _default)
+{
+    if (_intConfigs.find(configName) != _intConfigs.end())
+        return _intConfigs[configName];
+    return _default;
+}
+    
+bool Config::getDefaultBool(std::string configName, int _default)
+{
+    if (_boolConfigs.find(configName) != _boolConfigs.end())
+        return _boolConfigs[configName];
+    return _default;
+}
+
+
 Poco::XML::Node* Config::firstChild(Poco::XML::Node* node)
 {
     if (!node)
