@@ -10,13 +10,14 @@
 class GridManager: public Poco::TaskManager
 {
 public:
-    GridManager();
+    GridManager(Poco::UInt8 maxThreads);
 
     void start(Poco::Task* task);
     void dequeue();
     void wait();
 
 private:
+    Poco::UInt8 _maxThreads;
     std::queue<Poco::Task*> _queue;
     Poco::Mutex _mutex;
 };

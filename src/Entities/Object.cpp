@@ -43,7 +43,7 @@ Object::~Object()
  */
 bool Object::update(const Poco::UInt64 diff)
 {
-    bool updatedGrid = false;
+    bool updateGrid = false;
     if (hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
     {
         // Check if movement has finalized, in which case, remove flag
@@ -56,21 +56,13 @@ bool Object::update(const Poco::UInt64 diff)
 
         // Update grid if we have to
         Vector2D currentPos = GetPosition();
-        bool updateGrid = (Tools::GetXCellFromPos(newPos.x) != Tools::GetXCellFromPos(currentPos.x) || Tools::GetYCellFromPos(newPos.z) != Tools::GetYCellFromPos(currentPos.z));
+        updateGrid = (Tools::GetXCellFromPos(newPos.x) != Tools::GetXCellFromPos(currentPos.x) || Tools::GetYCellFromPos(newPos.z) != Tools::GetYCellFromPos(currentPos.z));
 
         // We must relocate the object before doing anything else
         Relocate(newPos);
-
-        // Insert us to the new grid if we have to
-        if (updateGrid)
-        {
-            _grid = NULL;
-            sGridLoader.addObject(sObjectManager.getObject(GetGUID()));
-            updatedGrid = true;
-        }
     }
 
-    return !updatedGrid;
+    return !updateGrid;
 }
 
 /**

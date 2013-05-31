@@ -24,6 +24,7 @@ public:
     typedef std::list<Grid*> GridsList;
 
     Grid(Poco::UInt16 x, Poco::UInt16 y);
+    ~Grid();
     bool update(Poco::UInt64 diff);
 
     GuidsSet getObjects(Poco::UInt32 highGUID);

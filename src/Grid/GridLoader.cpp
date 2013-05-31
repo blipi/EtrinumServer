@@ -22,10 +22,10 @@ using Poco::Timestamp;
  *
  */
 GridLoader::GridLoader():
-    _server(NULL)
+    _mapsCount(0)
 {
     // Create the GridManager and add a grid finished update callback
-    _gridManager = new GridManager();
+    _gridManager = new GridManager(sConfig.getIntConfig("MapThreads"));
     _gridManager->addObserver(Observer<GridLoader, Poco::TaskFinishedNotification>(*this, &GridLoader::gridUpdated));
 
     for (Poco::UInt16 x = 0; x < MAX_X; x++)
@@ -35,6 +35,7 @@ GridLoader::GridLoader():
     // Set LoS range
     Grid::losRange = sConfig.getIntConfig("LoSRange");
     sLog.out(Message::PRIO_TRACE, "\t[OK] LoS Range set to: %d", Grid::losRange);
+    sLog.out(Message::PRIO_TRACE, "\t[OK] Map threads set to: %d", sConfig.getIntConfig("MapThreads"));
 
     // Check for correct grid size
     ASSERT((MAP_MAX_X - MAP_MIN_X) / UNITS_PER_CELL < MAX_X)
@@ -52,16 +53,6 @@ GridLoader::~GridLoader()
 }
 
 /**
- * Initializes the grid loader, called uppon server start
- *
- * @param server Server reference, to keep this alive
- */
-void GridLoader::initialize(Server* server)
-{
-    _server = server;
-}
-
-/**
  * Checks if a grid is loaded, and if it's not, it loads it
  *
  * @param x X position of the grid
@@ -70,17 +61,17 @@ void GridLoader::initialize(Server* server)
  */
 bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
 {
-    ASSERT(x >= 0 && x <= MAX_X)
-    ASSERT(y >= 0 && y <= MAX_Y)
+    ASSERT(x > 0 && x <= MAX_X)
+    ASSERT(y > 0 && y <= MAX_Y)
 
     if (_isGridLoaded[x][y])
         return true;
 
     Grid* grid = new Grid(x, y);
     bool inserted = _grids.insert(rde::make_pair(grid->hashCode(), grid)).second;
-    _isGridLoaded[x][y] = true;
+    _isGridLoaded[x][y] = inserted;
 
-    sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been created (%d)", x, y, inserted);
+    sLog.out(Message::PRIO_TRACE, "Grid (%d, %d) has been created (%d)", x, y, inserted);
     return inserted;
 }
 
@@ -180,15 +171,13 @@ bool GridLoader::removeObject(Object* object)
  */
 void GridLoader::update(Poco::UInt64 diff)
 {
-    // Update all current grids, new grids shouldn't be updated now
-    GridsMap safeGrids = _grids;
-
-    for (GridsMap::const_iterator itr = safeGrids.begin(); itr != safeGrids.end(); )
+    for (GridsMap::const_iterator itr = _grids.begin(); itr != _grids.end(); )
     {
         Grid* grid = itr->second;
         itr++;
 
         // Start a task to update the grid
+        _mapsCount++;
         _gridManager->start(new GridTask(grid, diff));
     }
 
@@ -199,18 +188,19 @@ void GridLoader::update(Poco::UInt64 diff)
 void GridLoader::gridUpdated(Poco::TaskFinishedNotification* nf)
 {
     GridTask* task = (GridTask*)nf->task();
+    nf->release();
 
     // If update fails, something went really wrong, delete this grid
     // If the grid has no players in it, check for nearby grids, if they are not loaded or have no players, remove it
     if (!task->getResult())
     {
         Grid* grid = task->getGrid();
-        sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
-                
+        sLog.out(Message::PRIO_TRACE, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
+
         _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
         _grids.erase(grid->hashCode());
         delete grid;
     }
-
+    
     _gridManager->dequeue();
 }

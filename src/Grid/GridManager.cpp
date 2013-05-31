@@ -2,15 +2,15 @@
 
 #include "Poco/Thread.h"
 
-GridManager::GridManager():
-    TaskManager()
+GridManager::GridManager(Poco::UInt8 maxThreads):
+    TaskManager(),
+    _maxThreads(maxThreads)
 {
 }
 
 void GridManager::start(Poco::Task* task)
 {
-    // @todo MAX Threads Configurable
-    if (count() < 4)
+    if (count() < _maxThreads)
         TaskManager::start(task);
     else
     {
@@ -21,21 +21,18 @@ void GridManager::start(Poco::Task* task)
 
 void GridManager::dequeue()
 {
-    _mutex.lock();
+    Poco::Mutex::ScopedLock lock(_mutex);
+
     if (!_queue.empty())
     {
         Poco::Task* task = _queue.front();
         _queue.pop();
-        _mutex.unlock();
-
-        start(task);
+        TaskManager::start(task);
     }
-    else
-        _mutex.unlock();
 }
 
 void GridManager::wait()
 {
-    while (count())
+    while (count() || !_queue.empty())
         Poco::Thread::sleep(1);
 }

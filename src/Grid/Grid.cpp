@@ -1,6 +1,7 @@
 #include "Grid.h"
 #include "GridLoader.h"
 
+#include "debugging.h"
 #include "Creature.h"
 #include "Log.h"
 #include "Object.h"
@@ -19,6 +20,10 @@ Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
 {
 }
 
+Grid::~Grid()
+{
+}
+
 /**
  * Updates the Grid and its objects
  *
@@ -27,7 +32,7 @@ Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
 bool Grid::update(Poco::UInt64 diff)
 {
     // Update all objects
-    for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
+    for (ObjectMap::iterator itr = _objects.begin(); itr != _objects.end(); )
     {
         SharedPtr<Object> object = itr->second;
         ++itr;
@@ -48,8 +53,7 @@ bool Grid::update(Poco::UInt64 diff)
 
         // Update AI, movement, everything if there is any or we have to
         // If update returns false, that means the object is no longer in this grid!
-        if (!object->update(objectDiff))
-            removeObject(object->GetGUID());
+        bool updateResult = object->update(objectDiff);
 
         // Visit near objects as to update LoS
         GuidsSet objects;
@@ -62,6 +66,15 @@ bool Grid::update(Poco::UInt64 diff)
         // Object the object LoS if it's a player or a creature
         if (Character* character = object->ToCharacter())
             character->UpdateLoS(objects);
+
+        if (!updateResult)
+        {
+            sGridLoader.addObject(object);
+            removeObject(object->GetGUID());
+
+            if (!hasPlayers())
+                forceLoad();
+        }
     }
 
     return true;

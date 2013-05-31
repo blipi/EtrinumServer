@@ -87,27 +87,21 @@ int main(int argc, char** argv)
     // --------------------- //
     {
         sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing GridLoader");
-        sGridLoader.initialize(sServer);
+        sGridLoader.instance();
         sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
-    }
-
-    // --------------- //
-    // Server is ready //
-    // --------------- //
-    {
-        sLog.out(Message::PRIO_INFORMATION, "\n[OK] Server is running\n");
     }
 
     #ifdef SERVER_FRAMEWORK_TEST_SUITE
 
         SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
         sGridLoader.addObject(plr);
-        //MotionMaster::StartAngleMovement(plr, 0.5f, 500.5f);
+        MotionMaster::StartAngleMovement(plr, 0.5f, 500.5f);
         //MotionMaster::StartSimpleMovement(plr, Vector2D(400.0f, 200.0f), 15.0f);
 
     #endif
 
-    sServer->start(1616);
+    // Will wait until the server stops
+    sServer->start(sConfig.getIntConfig("ServerPort"));
 
     delete sServer;
 

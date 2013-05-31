@@ -148,6 +148,11 @@ void Server::start(Poco::UInt16 port)
     // Flag that the server is running
     _serverRunning = true;
 
+    // --------------- //
+    // Server is ready //
+    // --------------- //
+    sLog.out(Message::PRIO_INFORMATION, "\n[OK] Server is running [Port: %d]\n", port);
+
     // Create a processor thread and wait for it
     Thread updater;
     updater.start(*this);

@@ -32,7 +32,6 @@ public:
         static Poco::SingletonHolder<GridLoader> sh;
         return *sh.get();
     }
-    void initialize(Server* server);
     
     bool checkAndLoad(Poco::UInt16 x, Poco::UInt16 y);
     Grid* GetGrid(Poco::UInt16 x, Poco::UInt16 y);
@@ -47,12 +46,11 @@ public:
 private:
     Grid* addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> object);
 
-private:
-    Server* _server;
-    
+private:    
     GridManager* _gridManager;
     GridsMap _grids;
     bool _isGridLoaded[MAX_X][MAX_Y];
+    Poco::UInt32 _mapsCount;
 };
 
 #define sGridLoader GridLoader::instance()
