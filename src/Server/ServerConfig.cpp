@@ -89,7 +89,7 @@ int Config::getDefaultInt(std::string configName, int _default)
     return _default;
 }
     
-bool Config::getDefaultBool(std::string configName, int _default)
+bool Config::getDefaultBool(std::string configName, bool _default)
 {
     if (_boolConfigs.find(configName) != _boolConfigs.end())
         return _boolConfigs[configName];

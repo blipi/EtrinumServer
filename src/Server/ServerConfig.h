@@ -31,7 +31,7 @@ public:
     bool getBoolConfig(std::string configName);
 
     int getDefaultInt(std::string configName, int _default);
-    bool getDefaultBool(std::string configName, int _default);
+    bool getDefaultBool(std::string configName, bool _default);
 
 private:
     Poco::XML::Node* firstChild(Poco::XML::Node* node);
