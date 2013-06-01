@@ -182,7 +182,8 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& nf)
         else
         {
             // Do increment the reading step
-            _packetStep++;
+            ++_packetStep;
+
             // If next step is to read data, create the buffers
             if (_packetStep == STEP_READ_DATA)
             {
@@ -299,7 +300,7 @@ void Client::sendPacket(Packet* packet, bool encrypt, bool hmac)
     if (encrypt && _packetData.AESEnc)
     {
         CryptoPP::StreamTransformationFilter enc(*_packetData.AESEnc);
-        for(Poco::UInt16 i = 0; i < packet->len; i++)
+        for(Poco::UInt16 i = 0; i < packet->len; ++i)
             enc.Put(packet->rawdata[i]);
         enc.MessageEnd();
 
@@ -405,7 +406,7 @@ void Client::SetSecurityByte(Poco::UInt32 sec)
  */
 void Client::SetHMACKeyLow(Poco::UInt8* low)
 {
-    for (Poco::UInt8 i = 0; i < 10; i++)
+    for (Poco::UInt8 i = 0; i < 10; ++i)
         _packetData.HMACKey[i] = low[i];
 }
 
@@ -416,8 +417,8 @@ void Client::SetHMACKeyLow(Poco::UInt8* low)
  */
 void Client::SetHMACKeyHigh(Poco::UInt8* high)
 {
-    for (Poco::UInt8 i = 0; i < 10; i++)
-        _packetData.HMACKey[i+10] = high[i];
+    for (Poco::UInt8 i = 0; i < 10; ++i)
+        _packetData.HMACKey[i + 10] = high[i];
 }
 
 /**

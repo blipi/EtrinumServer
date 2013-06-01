@@ -27,7 +27,7 @@ void GridManager::queue(Poco::UInt32 queue)
 
 void GridManager::dequeue()
 {
-    _dequeuedThreads++;
+    ++_dequeuedThreads;
     Poco::Mutex::ScopedLock lock(_mutex);
 
     if (!_queue.empty())

@@ -66,7 +66,7 @@ public:
         {
             Thread::sleep(5000);
 
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 1000; ++i)
             {
                 SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
                 plr->Relocate(Vector2D(std::min(i * 3, MAP_MAX_X), std::min(i * 2, MAP_MAX_Z)));
@@ -76,7 +76,7 @@ public:
                 Thread::sleep(10);
             }
         
-            for (int i = 0; i < 900; i++)
+            for (int i = 0; i < 900; ++i)
             {
                 SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
                 obj->Relocate(Vector2D(std::min(i * 3, MAP_MAX_X), std::min(i * 2, MAP_MAX_Z)));

@@ -112,7 +112,7 @@ Server::Server():
     _serverRunning(false)
 {
     // Create the Opcodes Map
-    for (int i = 0; ; i++)
+    for (int i = 0; ; ++i)
     {
         if (OpcodeTable[i].Opcode == OPCODE_NULL && OpcodeTable[i].Handler.HandleIf == TYPE_NULL && OpcodeTable[i].Handler.handler == NULL)
             break;
@@ -195,7 +195,7 @@ void Server::SendPlayerEHLO(Client* client)
     CryptoPP::AutoSeededRandomPool rng;
     Packet* packet = new Packet(OPCODE_SC_EHLO, 27); // 10 HMAC, 1 SEC, 16 AES Key
 
-    for (Poco::UInt8 i = 0; i < 10; i++)
+    for (Poco::UInt8 i = 0; i < 10; ++i)
         *packet << rng.GenerateByte();
    
     Poco::UInt32 sec = rng.GenerateByte();
@@ -203,7 +203,7 @@ void Server::SendPlayerEHLO(Client* client)
 
     Poco::UInt8* key = client->GetAESKey();
     
-    for (Poco::UInt8 i = 0; i < 16; i++)
+    for (Poco::UInt8 i = 0; i < 16; ++i)
     {
         key[i] = rng.GenerateByte();
         *packet << key[i];
@@ -272,7 +272,7 @@ void Server::sendPacketTo(Packet* packet, Object* to)
 {
     if (Client* client = to->getClient())
         client->sendPacket(packet);
-    else if(packet->DeleteOnSend)
+    else if (packet->DeleteOnSend)
         delete packet;
 }
 

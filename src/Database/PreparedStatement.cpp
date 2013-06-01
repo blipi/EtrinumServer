@@ -12,7 +12,7 @@ PreparedStatement::PreparedStatement(Statement stmt):
     std::string query = _stmt.toString();
     data.resize(std::count(query.begin(), query.end(), '?'));
 
-    for (Poco::UInt8 i = 0; i < data.size(); i++)
+    for (Poco::UInt8 i = 0; i < data.size(); ++i)
         _stmt, use(data[i]);
 }
     

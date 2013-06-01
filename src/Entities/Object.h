@@ -7,8 +7,6 @@
 #include "Poco/Poco.h"
 #include "Poco/SharedPtr.h"
 #include "Poco/Timestamp.h"
-#include "hash_map.h"
-#include "stack_allocator.h"
 
 #include "defines.h"
 #include "Grid.h"
@@ -33,8 +31,6 @@ class Creature;
 class Character;
 class Grid;
 class Client;
-
-typedef rde::hash_map<Poco::UInt64, Poco::UInt8> TypeObjectsLosMap;
 
 class Object
 {

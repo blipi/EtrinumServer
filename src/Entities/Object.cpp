@@ -17,7 +17,7 @@ Object::Object(Client* client):
     _GUID(ObjectManager::MAX_GUID)
 {
     // Reset all flags
-    for (Poco::UInt8 i = 0; i < MAX_FLAGS_TYPES; i++)
+    for (Poco::UInt8 i = 0; i < MAX_FLAGS_TYPES; ++i)
         _flags[i] = 0;
 
     // Reset Position

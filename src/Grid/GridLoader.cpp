@@ -27,8 +27,8 @@ GridLoader::GridLoader()
     _gridManager = new GridManager(sConfig.getDefaultInt("MapThreads", 1));
     _gridManager->addObserver(Observer<GridLoader, Poco::TaskFinishedNotification>(*this, &GridLoader::gridUpdated));
 
-    for (Poco::UInt16 x = 0; x < MAX_X; x++)
-        for (Poco::UInt16 y = 0; y < MAX_Y; y++)
+    for (Poco::UInt16 x = 0; x < MAX_X; ++x)
+        for (Poco::UInt16 y = 0; y < MAX_Y; ++y)
             _isGridLoaded[x][y] = false;
 
     // Set LoS range
@@ -179,7 +179,7 @@ void GridLoader::update(Poco::UInt64 diff)
     for (GridsMap::const_iterator itr = grids.begin(); itr != grids.end(); )
     {
         Grid* grid = itr->second;
-        itr++;
+        ++itr;
 
         // Start a task to update the grid
         _gridManager->start(new GridTask(grid, diff));
@@ -188,9 +188,10 @@ void GridLoader::update(Poco::UInt64 diff)
     // Wait for all map updates to end
     _gridManager->wait();
 
-    for (GridsSet::iterator itr = _remove.begin(); itr != _remove.end(); itr++)
+    for (GridsSet::iterator itr = _remove.begin(); itr != _remove.end(); )
     {
         Grid* grid = *itr;
+        ++itr;
         sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
 
         _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;

@@ -26,7 +26,7 @@ Sector::JoinStruct::~JoinStruct()
 bool Sector::update(Poco::UInt64 diff)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
-    
+
     // Update all objects
     for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); )
     {
@@ -42,7 +42,11 @@ bool Sector::update(Poco::UInt64 diff)
             for (TypeJoinList::iterator joinEvent = _joinEvents.begin(); joinEvent != _joinEvents.end(); )
             {
                 JoinStruct* joiner = *joinEvent;
-                joinEvent++;
+                ++joinEvent;
+
+                // Avoid self spawning
+                if (object->GetGUID() == joiner->_object->GetGUID())
+                    continue;
 
                 // Send spawn of the visitor
                 if (object->GetHighGUID() & HIGH_GUID_PLAYER)
@@ -136,7 +140,7 @@ void Sector::remove_i(SharedPtr<Object> object)
 
 void Sector::join(SharedPtr<Object> who)
 {
-    // Join events must be (ideally) done at the next update
+    // Join events must (ideally) be done at the next update
     // As it reduces the amount of time and loops being done
     // Building the spawn packet is time expensive, do it now
     _joinEvents.push_back(new JoinStruct(who, sServer->buildSpawnPacket(who, false)));
@@ -153,7 +157,7 @@ void Sector::leave(SharedPtr<Object> who)
     {
         Poco::UInt64 GUID = itr->first;
         SharedPtr<Object> object = itr->second;
-        itr++;
+        ++itr;
 
         // Send despawn of the visitor
         if (HIGUID(GUID) & HIGH_GUID_PLAYER)
@@ -187,7 +191,7 @@ Grid::~Grid()
     for (TypeSectorsMap::iterator itr = _sectors.begin(); itr != _sectors.end(); )
     {
         Sector* sector = itr->second;
-        itr++;
+        ++itr;
 
         _sectors.erase(sector->hashCode());
         delete sector;
@@ -206,7 +210,7 @@ bool Grid::update(Poco::UInt64 diff)
     for (TypeSectorsMap::iterator itr = _sectors.begin(); itr != _sectors.end(); )
     {
         Sector* sector = itr->second;
-        itr++;
+        ++itr;
         
         // If updates fails, there are no objects, delete sector
         if (!sector->update(diff))
