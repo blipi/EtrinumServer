@@ -66,22 +66,31 @@ public:
         {
             Thread::sleep(5000);
 
-            for (int i = 0; i < 1000; ++i)
-            {
-                SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
-                plr->Relocate(Vector2D(std::min(i * 3, MAP_MAX_X), std::min(i * 2, MAP_MAX_Z)));
-                sGridLoader.addObject(plr);
-                MotionMaster::StartSimpleMovement(plr, Vector2D(2800, 1000), 100.5f);
+            int spawnLimit = 10000;
+            int playerMax = 2500;
+            float x = 0;
+            float z = 0;
 
-                Thread::sleep(10);
-            }
-        
-            for (int i = 0; i < 900; ++i)
+            for (int i = 0; i < spawnLimit; i++)
             {
-                SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
-                obj->Relocate(Vector2D(std::min(i * 3, MAP_MAX_X), std::min(i * 2, MAP_MAX_Z)));
-                sGridLoader.addObject(obj);
-                MotionMaster::StartSimpleMovement(obj, Vector2D(2800, 1000), 100.5f);
+                if (!(i % 3) && playerMax > 0)
+                {
+                    SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
+                    plr->Relocate(Vector2D(x, z));
+                    sGridLoader.addObject(plr);
+                    MotionMaster::StartSimpleMovement(plr, Vector2D(2800, 1000), 100.5f);
+                    playerMax--;
+                }
+                else
+                {
+                    SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
+                    obj->Relocate(Vector2D(x, z));
+                    sGridLoader.addObject(obj);
+                    MotionMaster::StartSimpleMovement(obj, Vector2D(x+20, z+20), 0.5f);
+                }
+                
+                x += MAP_MAX_X / spawnLimit;
+                z += MAP_MAX_Z / spawnLimit;
 
                 Thread::sleep(10);
             }
