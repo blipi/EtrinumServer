@@ -13,8 +13,6 @@ public:
     Player(std::string name, Client* client);
     virtual ~Player();
 
-    void UpdateLoS(TypeObjectsMap newObjectsInSight);
-
 private:
     
 };

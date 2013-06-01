@@ -93,22 +93,22 @@ int main(int argc, char** argv)
 
     #ifdef SERVER_FRAMEWORK_TEST_SUITE
 
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 1000; i++)
         {
             SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
-            plr->Relocate(Vector2D(i / 3, i / 3));
+            plr->Relocate(Vector2D(i * 3, i * 2));
             sGridLoader.addObject(plr);
-            MotionMaster::StartAngleMovement(plr, 0.5f, 0.5f);
+            MotionMaster::StartSimpleMovement(plr, Vector2D(2800, 1000), 100.5f);
         }
-        
-        for (int i = 0; i < 100; i++)
+        /*
+        for (int i = 0; i < 900; i++)
         {
             SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
             obj->Relocate(Vector2D(i / 3, i / 3));
             sGridLoader.addObject(obj);
-            MotionMaster::StartAngleMovement(obj, 0.5f, 0.5f);
+            MotionMaster::StartAngleMovement(obj, 0.5f, 5.5f);
         }
-
+        */
         //MotionMaster::StartSimpleMovement(plr, Vector2D(400.0f, 200.0f), 15.0f);
 
     #endif

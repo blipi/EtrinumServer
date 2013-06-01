@@ -6,6 +6,7 @@
 #include "Log.h"
 #include "Object.h"
 #include "Player.h"
+#include "Server.h"
 #include "Tools.h"
 
 Poco::UInt8 Grid::losRange;
@@ -21,11 +22,6 @@ bool Sector::update(Poco::UInt64 diff)
         SharedPtr<Object> object = itr->second;
         ++itr;
 
-        // For non players, update only if a player is near
-        if (!(object->GetHighGUID() & HIGH_GUID_PLAYER))
-            if (!object->hasNearPlayers())
-                continue;
-
         // Get last update time (in case the object switches grid)
         Poco::UInt64 objectDiff = object->getLastUpdate();
         if (objectDiff > diff)
@@ -36,14 +32,16 @@ bool Sector::update(Poco::UInt64 diff)
         Poco::UInt16 prevSector = Tools::GetSector(object->GetPosition(), Grid::losRange);
         bool updateResult = object->update(objectDiff);
         
+        /*
         if (Character* character = object->ToCharacter())
             character->UpdateLoS(_objects);
+        */
 
         // Change Grid if we have to
         if (!updateResult)
         {
             sGridLoader.addObject(object); // Add to the new Grid
-            remove_i(object->GetGUID()); // Delete from the Sector (and Grid)
+            remove_i(object); // Delete from the Sector (and Grid)
         }
         else if (object->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
         {
@@ -53,7 +51,7 @@ bool Sector::update(Poco::UInt64 diff)
             if (prevSector != actSector)
             {
                 _grid->getOrLoadSector_i(actSector)->add(object); // Add us to the new sector
-                remove_i(object->GetGUID()); // Remove from this sector
+                remove_i(object); // Remove from this sector
             }
         }
         
@@ -65,6 +63,8 @@ bool Sector::update(Poco::UInt64 diff)
 bool Sector::add(SharedPtr<Object> object)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
+
+    join(object);
     
     if (_objects.insert(rde::make_pair(object->GetGUID(), object)).second)
     {
@@ -77,18 +77,61 @@ bool Sector::add(SharedPtr<Object> object)
     return false;
 }
 
-void Sector::remove(Poco::UInt64 GUID)
+void Sector::remove(SharedPtr<Object> object)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
-    remove_i(GUID);
+    remove_i(object);
 }
 
-void Sector::remove_i(Poco::UInt64 GUID)
+void Sector::remove_i(SharedPtr<Object> object)
 {
-    _objects.erase(GUID);
-
-    if (HIGUID(GUID) & HIGH_GUID_PLAYER)
+    if (object->GetHighGUID() & HIGH_GUID_PLAYER)
         _grid->onPlayerErased();
+        
+    _objects.erase(object->GetGUID());
+
+    leave(object);
+}
+
+void Sector::join(SharedPtr<Object> who)
+{
+    for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); )
+    {
+        Poco::UInt64 GUID = itr->first;
+        SharedPtr<Object> object = itr->second;
+        itr++;
+
+        // Send spawn of the visitor
+        if (HIGUID(GUID) & HIGH_GUID_PLAYER)
+            sServer->UpdateVisibilityOf(who, object);
+
+        // Send spawn to the visitor
+        if (who->GetHighGUID() & HIGH_GUID_PLAYER)
+            sServer->UpdateVisibilityOf(object, who);
+    }
+}
+
+void Sector::visit(SharedPtr<Object> who)
+{
+
+}
+
+void Sector::leave(SharedPtr<Object> who)
+{
+    for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); )
+    {
+        Poco::UInt64 GUID = itr->first;
+        SharedPtr<Object> object = itr->second;
+        itr++;
+
+        // Send despawn of the visitor
+        if (HIGUID(GUID) & HIGH_GUID_PLAYER)
+            sServer->sendDespawnPacket(GUID, object);
+
+        // Send despawn to the visitor
+        if (who->GetHighGUID() & HIGH_GUID_PLAYER)
+            sServer->sendDespawnPacket(object->GetGUID(), who);
+    }
 }
 
 Poco::UInt16 Sector::hashCode()
@@ -267,7 +310,7 @@ bool Grid::addObject(SharedPtr<Object> object)
 void Grid::removeObject(SharedPtr<Object> object)
 {
     Poco::UInt16 hash = Tools::GetSector(object->GetPosition(), losRange);
-    getOrLoadSector(hash)->remove(object->GetGUID());
+    getOrLoadSector(hash)->remove(object);
 }
 
 

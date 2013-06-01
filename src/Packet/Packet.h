@@ -10,15 +10,6 @@ private:
 	Poco::UInt32 count;
 	bool _unknownLen;
 
-	template <typename T>
-	inline void append(T value){
-		*(T*)((Poco::UIntPtr)rawdata + count) = value;
-
-		count += sizeof(T);
-		if(_unknownLen)
-			len += sizeof(T);
-	}
-
 public:
 	Poco::UInt16 len;
 	Poco::UInt16 opcode;
@@ -35,9 +26,13 @@ public:
 	void operator << (std::string str);
 
 	template <typename T>
-	void operator << (T val)
+	inline void operator << (T value)
     {
-        append<T>(val);
+        *(T*)((Poco::UIntPtr)rawdata + count) = value;
+
+		count += sizeof(T);
+		if(_unknownLen)
+			len += sizeof(T);
     }
 
     void operator << (float val);

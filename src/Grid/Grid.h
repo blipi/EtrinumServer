@@ -41,8 +41,12 @@ public:
     }
 
     bool add(SharedPtr<Object> object);
-    void remove(Poco::UInt64 GUID);
-    void remove_i(Poco::UInt64 GUID);
+    void remove(SharedPtr<Object> object);
+    void remove_i(SharedPtr<Object> object);
+
+    void join(SharedPtr<Object> who);
+    void visit(SharedPtr<Object> who);
+    void leave(SharedPtr<Object> who);
 
     bool update(Poco::UInt64 diff);
 

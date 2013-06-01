@@ -11,8 +11,7 @@ public:
     Character(std::string name, Client* client = NULL);
     virtual ~Character();
 
-    virtual void UpdateLoS(TypeObjectsMap newObjectsInSight) = 0;
-    bool hasNearPlayers();
+    void onMoveInLOS(Object* who);
 
     inline std::string GetName()
     {

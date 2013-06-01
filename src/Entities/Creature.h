@@ -11,8 +11,7 @@ public:
     Creature();
     virtual ~Creature();
 
-    void UpdateLoS(TypeObjectsMap newObjectsInSight);
-    void addPlayerToLoS(SharedPtr<Object> object);
+    void onMoveInLOS(Object* who);
 
 private:
 

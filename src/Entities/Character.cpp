@@ -16,11 +16,8 @@ Character::~Character()
 {
 }
 
-bool Character::hasNearPlayers()
+void onMoveInLOS(Object* who)
 {
-    for (TypeObjectsMap::iterator it = _objectsInSight.begin(); it != _objectsInSight.end(); it++)
-        if (HIGUID(it->first) & HIGH_GUID_PLAYER)
-            return true;
 
-    return false;
 }
+

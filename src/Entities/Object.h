@@ -7,6 +7,8 @@
 #include "Poco/Poco.h"
 #include "Poco/SharedPtr.h"
 #include "Poco/Timestamp.h"
+#include "hash_map.h"
+#include "stack_allocator.h"
 
 #include "defines.h"
 #include "Grid.h"
@@ -32,6 +34,8 @@ class Character;
 class Grid;
 class Client;
 
+typedef rde::hash_map<Poco::UInt64, Poco::UInt8> TypeObjectsLosMap;
+
 class Object
 {
 public:
@@ -39,7 +43,6 @@ public:
     virtual ~Object();
     
     bool update(const Poco::UInt64 diff);
-    virtual bool hasNearPlayers() = 0;
 
     void SetGUID(Poco::UInt64 GUID);
     Poco::UInt64 GetGUID();
@@ -104,9 +107,6 @@ public:
     Creature* ToCreature();
     Character* ToCharacter();
     Object* ToObject();
-    
-protected:
-    TypeObjectsMap _objectsInSight;
 
 private:
     Poco::UInt64 _GUID;

@@ -41,14 +41,14 @@ void Packet::clear()
 		
 void Packet::operator << (std::string str)
 {
-	append<Poco::UInt16>((Poco::UInt16)str.length());
-	for (std::string::iterator it = str.begin(); it != str.end(); it++)
-		append<Poco::UInt8>((Poco::UInt8)*it);
+	*this << (Poco::UInt16)str.length();
+    for (int i = 0; i < str.length(); i++)
+		*this << (Poco::UInt8)str[i];
 }
 
 void Packet::operator << (float val)
 {
-    append<Poco::UInt32>(Tools::getU32(val));
+    *this << Tools::getU32(val);
 }
 
 void Packet::operator >> (std::string& value)

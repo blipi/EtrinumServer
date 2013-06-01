@@ -223,6 +223,8 @@ void Server::SendClientDisconnected(Client* client)
 
 void Server::UpdateVisibilityOf(Object* from, Object* to)
 {
+    //sLog.out(Message::PRIO_DEBUG, "Spawning %s to %s", Poco::NumberFormatter::formatHex(from->GetGUID()).c_str(), Poco::NumberFormatter::formatHex(to->GetGUID()).c_str());
+
     Packet* packet = new Packet(OPCODE_SC_SPAWN_OBJECT, 2048, true);
     *packet << from->GetLowGUID();
     *packet << from->GetHighGUID();
