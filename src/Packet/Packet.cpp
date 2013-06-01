@@ -42,7 +42,7 @@ void Packet::clear()
     rawdata = NULL;
     DeleteOnSend = true;
 }
-        
+
 void Packet::operator << (std::string str)
 {
     *this << (Poco::UInt16)str.length();
