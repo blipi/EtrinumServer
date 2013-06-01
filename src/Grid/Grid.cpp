@@ -11,9 +11,6 @@
 Poco::UInt8 Grid::losRange;
 Poco::UInt32 Grid::gridRemove;
 
-
-
-
 bool Sector::update(Poco::UInt64 diff)
 {
     Poco::Mutex::ScopedLock lock(_mutex);

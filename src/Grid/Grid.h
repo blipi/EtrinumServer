@@ -6,7 +6,6 @@
 //@ Poco includes
 #include "Poco/SharedPtr.h"
 #include "Poco/Timestamp.h"
-#include "Poco/RWLock.h"
 
 //@ List and Hash Map
 #include <list>

@@ -1,5 +1,6 @@
 #include "GridTask.h"
 #include "Grid.h"
+#include "Object.h"
 
 GridTask::GridTask(Grid* grid, Poco::UInt64 diff):
     Task(""),

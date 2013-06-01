@@ -89,13 +89,6 @@ public:
         return _movementTypeSpeed;
     }
 
-    inline bool doLoSUpdate()
-    {
-        bool update = _losTimer.elapsed() > 500;
-        _losTimer.update();
-        return update;
-    }
-
 private:
     std::string _name;
     Poco::UInt32 _maxhp;
@@ -105,8 +98,6 @@ private:
     Poco::UInt8 _lvl;
 
     float _angle;
-
-    Poco::Timestamp _losTimer;
 
     Poco::UInt8 _movementTypeSpeed;
     float _speed[2];
