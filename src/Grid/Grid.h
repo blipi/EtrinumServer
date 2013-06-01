@@ -20,6 +20,7 @@ class Object;
 typedef rde::hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object>> TypeObjectsMap;
 
 class Grid;
+class Packet;
 
 class Sector
 {
@@ -31,6 +32,17 @@ private:
         SECTOR_IDLE,
         SECTOR_INACTIVE
     };
+
+    struct JoinStruct
+    {
+        JoinStruct(SharedPtr<Object> object, Packet* spawnData);
+        ~JoinStruct();
+
+        SharedPtr<Object> _object;
+        Packet* _spawnData;
+    };
+
+    typedef std::list<JoinStruct*> TypeJoinList;
 
 public:
     Sector(Poco::UInt16 hash, Grid* grid):
@@ -57,6 +69,7 @@ private:
     Poco::UInt16 _hash;
     Poco::UInt8 _state;
     TypeObjectsMap _objects;
+    TypeJoinList _joinEvents;
     Poco::Mutex _mutex;
 };
 

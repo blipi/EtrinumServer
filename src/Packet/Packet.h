@@ -17,8 +17,10 @@ public:
 	Poco::UInt8 digest[20];
 	Poco::UInt8* rawdata;
 
+    bool DeleteOnSend;
+
 	Packet();
-	Packet(Poco::UInt16 _opcode, Poco::UInt16 size = 0, bool unknownLen = false);
+	Packet(Poco::UInt16 _opcode, Poco::UInt16 size = 0, bool unknownLen = false, bool deleteOnSend = true);
     ~Packet();
 
     void clear();

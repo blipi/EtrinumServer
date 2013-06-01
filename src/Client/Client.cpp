@@ -327,7 +327,8 @@ void Client::sendPacket(Packet* packet, bool encrypt, bool hmac)
     _reactor.addEventHandler(_socket, NObserver<Client, WritableNotification>(*this, &Client::onWritable));
 
     // Delete memory
-    delete packet;
+    if (packet->DeleteOnSend)
+        delete packet;
 }
 
 /**

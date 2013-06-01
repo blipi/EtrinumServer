@@ -45,7 +45,10 @@ public:
     // Server -> Client packets
     void SendPlayerEHLO(Client* client);
     void SendClientDisconnected(Client* client);
-    void UpdateVisibilityOf(Object* from, Object* to);
+
+    Packet* buildSpawnPacket(Object* object, bool deleteOnSend = true);
+    void sendPacketTo(Packet* packet, Object* to);
+
     void sendDespawnPacket(Poco::UInt64 GUID, Object* to);
 
     // Packet parsing function

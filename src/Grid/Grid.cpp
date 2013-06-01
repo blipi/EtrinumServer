@@ -5,6 +5,7 @@
 #include "Creature.h"
 #include "Log.h"
 #include "Object.h"
+#include "Packet.h"
 #include "Player.h"
 #include "Server.h"
 #include "Tools.h"
@@ -12,15 +13,48 @@
 Poco::UInt8 Grid::losRange;
 Poco::UInt32 Grid::gridRemove;
 
+Sector::JoinStruct::JoinStruct(SharedPtr<Object> object, Packet* spawnData):
+    _object(object),
+    _spawnData(spawnData)
+{}
+
+Sector::JoinStruct::~JoinStruct()
+{
+    delete _spawnData;
+}
+
 bool Sector::update(Poco::UInt64 diff)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
-
+    
     // Update all objects
     for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); )
     {
         SharedPtr<Object> object = itr->second;
         ++itr;
+
+        if (!_joinEvents.empty())
+        {
+            // Building the spawn packet is time expensive, do it now if we have to
+            Packet* objectSpawner = sServer->buildSpawnPacket(object, false);
+
+            // Process join events
+            for (TypeJoinList::iterator joinEvent = _joinEvents.begin(); joinEvent != _joinEvents.end(); )
+            {
+                JoinStruct* joiner = *joinEvent;
+                joinEvent++;
+
+                // Send spawn of the visitor
+                if (object->GetHighGUID() & HIGH_GUID_PLAYER)
+                    sServer->sendPacketTo(joiner->_spawnData, object);
+
+                // Send spawn to the visitor
+                if (joiner->_object->GetHighGUID() & HIGH_GUID_PLAYER)
+                    sServer->sendPacketTo(objectSpawner, joiner->_object);
+            }
+
+            delete objectSpawner;
+        }
 
         // Get last update time (in case the object switches grid)
         Poco::UInt64 objectDiff = object->getLastUpdate();
@@ -54,7 +88,14 @@ bool Sector::update(Poco::UInt64 diff)
                 remove_i(object); // Remove from this sector
             }
         }
-        
+    }
+
+    // Theorically, no join events can occure during the sector update, the mutex avoids it
+    // Delete them all
+    while (!_joinEvents.empty())
+    {
+        delete _joinEvents.front();
+        _joinEvents.pop_front();
     }
 
     return !_objects.empty();
@@ -63,13 +104,13 @@ bool Sector::update(Poco::UInt64 diff)
 bool Sector::add(SharedPtr<Object> object)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
-
-    join(object);
     
     if (_objects.insert(rde::make_pair(object->GetGUID(), object)).second)
     {
         if (object->GetHighGUID() & HIGH_GUID_PLAYER)
             _grid->onPlayerAdded();
+
+        join(object);
 
         return true;
     }
@@ -95,20 +136,10 @@ void Sector::remove_i(SharedPtr<Object> object)
 
 void Sector::join(SharedPtr<Object> who)
 {
-    for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); )
-    {
-        Poco::UInt64 GUID = itr->first;
-        SharedPtr<Object> object = itr->second;
-        itr++;
-
-        // Send spawn of the visitor
-        if (HIGUID(GUID) & HIGH_GUID_PLAYER)
-            sServer->UpdateVisibilityOf(who, object);
-
-        // Send spawn to the visitor
-        if (who->GetHighGUID() & HIGH_GUID_PLAYER)
-            sServer->UpdateVisibilityOf(object, who);
-    }
+    // Join events must be (ideally) done at the next update
+    // As it reduces the amount of time and loops being done
+    // Building the spawn packet is time expensive, do it now
+    _joinEvents.push_back(new JoinStruct(who, sServer->buildSpawnPacket(who, false)));
 }
 
 void Sector::visit(SharedPtr<Object> who)

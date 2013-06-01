@@ -11,13 +11,16 @@ Packet::Packet()
 	clear();
 }
 
-Packet::Packet(Poco::UInt16 _opcode, Poco::UInt16 size /*= 0*/, bool unknownLen /*= false*/)
+Packet::Packet(Poco::UInt16 _opcode, Poco::UInt16 size /*= 0*/, bool unknownLen /*= false*/, bool deleteOnSend /*= true*/)
 {
 	clear();
-	if (size > 0)
+	
+    if (size > 0)
 		resize(size);
+
 	opcode = _opcode;
 	_unknownLen = unknownLen;
+    DeleteOnSend = deleteOnSend;
 
 	if (!_unknownLen)
 		len = size;
@@ -37,6 +40,7 @@ void Packet::clear()
 	sec = 0;
 	memset(digest, 0, sizeof(digest));
 	rawdata = NULL;
+    DeleteOnSend = true;
 }
 		
 void Packet::operator << (std::string str)

@@ -52,6 +52,43 @@ public:
     }
 };
 
+#ifdef SERVER_FRAMEWORK_TEST_SUITE
+    class Spawner : public Poco::Runnable
+    {
+    public:
+        Spawner()
+        {}
+
+        ~Spawner()
+        {}
+
+        void run()
+        {
+            Thread::sleep(5000);
+
+            for (int i = 0; i < 1000; i++)
+            {
+                SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
+                plr->Relocate(Vector2D(std::min(i * 3, MAP_MAX_X), std::min(i * 2, MAP_MAX_Z)));
+                sGridLoader.addObject(plr);
+                MotionMaster::StartSimpleMovement(plr, Vector2D(2800, 1000), 100.5f);
+
+                Thread::sleep(10);
+            }
+        
+            for (int i = 0; i < 900; i++)
+            {
+                SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
+                obj->Relocate(Vector2D(std::min(i * 3, MAP_MAX_X), std::min(i * 2, MAP_MAX_Z)));
+                sGridLoader.addObject(obj);
+                MotionMaster::StartSimpleMovement(obj, Vector2D(2800, 1000), 100.5f);
+
+                Thread::sleep(10);
+            }
+        }
+    };
+#endif
+
 int main(int argc, char** argv)
 {
     // Read configuration file
@@ -92,25 +129,11 @@ int main(int argc, char** argv)
     }
 
     #ifdef SERVER_FRAMEWORK_TEST_SUITE
-
-        for (int i = 0; i < 1000; i++)
-        {
-            SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
-            plr->Relocate(Vector2D(i * 3, i * 2));
-            sGridLoader.addObject(plr);
-            MotionMaster::StartSimpleMovement(plr, Vector2D(2800, 1000), 100.5f);
-        }
-        /*
-        for (int i = 0; i < 900; i++)
-        {
-            SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
-            obj->Relocate(Vector2D(i / 3, i / 3));
-            sGridLoader.addObject(obj);
-            MotionMaster::StartAngleMovement(obj, 0.5f, 5.5f);
-        }
-        */
-        //MotionMaster::StartSimpleMovement(plr, Vector2D(400.0f, 200.0f), 15.0f);
-
+    
+        Poco::Thread spawnerThread;
+        Spawner spawner;
+        spawnerThread.start(spawner);
+        
     #endif
 
     // Will wait until the server stops

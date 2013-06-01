@@ -221,22 +221,20 @@ void Server::SendClientDisconnected(Client* client)
     client->sendPacket(packet);
 }
 
-void Server::UpdateVisibilityOf(Object* from, Object* to)
+Packet* Server::buildSpawnPacket(Object* object, bool deleteOnSend /*= true*/)
 {
-    //sLog.out(Message::PRIO_DEBUG, "Spawning %s to %s", Poco::NumberFormatter::formatHex(from->GetGUID()).c_str(), Poco::NumberFormatter::formatHex(to->GetGUID()).c_str());
+    Packet* packet = new Packet(OPCODE_SC_SPAWN_OBJECT, 2048, true, deleteOnSend);
+    *packet << object->GetLowGUID();
+    *packet << object->GetHighGUID();
+    *packet << object->GetPosition().x;
+    *packet << object->GetPosition().z;
 
-    Packet* packet = new Packet(OPCODE_SC_SPAWN_OBJECT, 2048, true);
-    *packet << from->GetLowGUID();
-    *packet << from->GetHighGUID();
-    *packet << from->GetPosition().x;
-    *packet << from->GetPosition().z;
-
-    switch (from->GetHighGUID())
+    switch (object->GetHighGUID())
     {
         case HIGH_GUID_CREATURE:
         case HIGH_GUID_PLAYER:
         {
-            Character* character = from->ToCharacter();
+            Character* character = object->ToCharacter();
 
             *packet << character->GetName();
             *packet << character->GetSpeed(MOVEMENT_RUN);
@@ -267,8 +265,15 @@ void Server::UpdateVisibilityOf(Object* from, Object* to)
         }
     }
 
+    return packet;
+}
+
+void Server::sendPacketTo(Packet* packet, Object* to)
+{
     if (Client* client = to->getClient())
         client->sendPacket(packet);
+    else if(packet->DeleteOnSend)
+        delete packet;
 }
 
 void Server::sendDespawnPacket(Poco::UInt64 GUID, Object* to)
@@ -277,8 +282,7 @@ void Server::sendDespawnPacket(Poco::UInt64 GUID, Object* to)
     *packet << LOGUID(GUID);
     *packet << HIGUID(GUID);
     
-    if (Client* client = to->getClient())
-        client->sendPacket(packet);
+    sendPacketTo(packet, to);
 }
 
 void Server::sendPlayerStats(Client* client, SharedPtr<Object> object)
@@ -527,7 +531,7 @@ void Server::OnEnterToWorld(Client* client, Poco::UInt32 characterID)
         sGridLoader.addObject(player);
 
         // Send an spawn packet of itself
-        UpdateVisibilityOf(player, player);
+        sendPacketTo(buildSpawnPacket(player), player);
     }
     else
     {
