@@ -3,6 +3,8 @@
 
 #include "Poco/Poco.h"
 
+struct Vector2D;
+
 namespace Tools
 {
     Poco::UInt32 getU32(float value);
@@ -13,6 +15,9 @@ namespace Tools
 
     Poco::UInt16 GetPositionInXCell(Poco::UInt16 cell, float x);
     Poco::UInt16 GetPositionInYCell(Poco::UInt16 cell, float z);
+
+    Poco::UInt16 GetSector(Poco::UInt16 cellX, Poco::UInt16 cellY, Poco::UInt8 losRange);
+    Poco::UInt16 GetSector(Vector2D position, Poco::UInt8 losRange);
 }
 
 /**

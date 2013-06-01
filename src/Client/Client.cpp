@@ -264,7 +264,7 @@ void Client::cleanupBeforeDelete()
         
         // If we are on a Grid (it is spawned), remove us
         if (_player->IsOnGrid())
-            _player->GetGrid()->removeObject(_player->GetGUID());
+            _player->GetGrid()->removeObject(_player);
         
         // Delete from the server object list
         sObjectManager.removeObject(_player->GetGUID());

@@ -9,12 +9,13 @@ Creature::~Creature()
 {
 }
 
-void Creature::UpdateLoS(GuidsSet newObjectsInSight)
+void Creature::UpdateLoS(TypeObjectsMap newObjectsInSight)
 {
     _objectsInSight = newObjectsInSight;
+    _objectsInSight.erase(GetGUID());
 }
 
-void Creature::addPlayerToLoS(Poco::UInt64 GUID)
+void Creature::addPlayerToLoS(SharedPtr<Object> object)
 {
-    _objectsInSight.insert(GUID);
+    _objectsInSight.insert(rde::make_pair(object->GetGUID(), object));
 }

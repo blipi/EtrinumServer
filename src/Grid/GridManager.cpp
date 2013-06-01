@@ -41,7 +41,7 @@ void GridManager::dequeue()
 void GridManager::wait()
 {
     while (_pendingThreads != _dequeuedThreads)
-        Poco::Thread::sleep(1);
+        Poco::Thread::sleep(2);
 
     _pendingThreads = 0;
     _dequeuedThreads = 0;

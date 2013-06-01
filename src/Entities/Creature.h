@@ -11,8 +11,8 @@ public:
     Creature();
     virtual ~Creature();
 
-    void UpdateLoS(GuidsSet newObjectsInSight);
-    void addPlayerToLoS(Poco::UInt64 GUID);
+    void UpdateLoS(TypeObjectsMap newObjectsInSight);
+    void addPlayerToLoS(SharedPtr<Object> object);
 
 private:
 

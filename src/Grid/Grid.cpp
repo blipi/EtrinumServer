@@ -14,39 +14,12 @@ Poco::UInt32 Grid::gridRemove;
 
 
 
-void Sector::update(Poco::UInt64 diff)
-{
-
-}
-
-
-
-/**
- * Initializes a Grid object
- *
- */
-Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
-    _x(x), _y(y),
-    _playersCount(0)
-{
-    forceLoad();
-}
-
-Grid::~Grid()
-{
-}
-
-/**
- * Updates the Grid and its objects
- *
- * @return false if the grid must be deleted, true otherwise
- */
-bool Grid::update(Poco::UInt64 diff)
+bool Sector::update(Poco::UInt64 diff)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
 
     // Update all objects
-    for (ObjectMap::iterator itr = _objects.begin(); itr != _objects.end(); )
+    for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); )
     {
         SharedPtr<Object> object = itr->second;
         ++itr;
@@ -63,33 +36,112 @@ bool Grid::update(Poco::UInt64 diff)
 
         // Update AI, movement, everything if there is any or we have to
         // If update returns false, that means the object is no longer in this grid!
+        Poco::UInt16 prevSector = Tools::GetSector(object->GetPosition(), Grid::losRange);
         bool updateResult = object->update(objectDiff);
+        
+        if (Character* character = object->ToCharacter())
+            character->UpdateLoS(_objects);
 
-        if (object->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
-        {
-            // Visit near objects as to update LoS
-            GuidsSet objects;
-            visit(object, objects);
-
-            /*
-            GridsList nearGrids = findNearGrids(object);
-
-            for (GridsList::iterator nGrid = nearGrids.begin(); nGrid != nearGrids.end(); nGrid++)
-                (*nGrid)->visit(object, objects);
-            */
-
-            // Object the object LoS if it's a player or a creature
-            if (Character* character = object->ToCharacter())
-                character->UpdateLoS(objects);
-        }
-
+        // Change Grid if we have to
         if (!updateResult)
         {
-            sGridLoader.addObject(object);
-            removeObject_i(object->GetGUID());
+            sGridLoader.addObject(object); // Add to the new Grid
+            remove_i(object->GetGUID()); // Delete from the Sector (and Grid)
+        }
+        else if (object->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
+        {
+            Poco::UInt16 actSector = Tools::GetSector(object->GetPosition(), Grid::losRange);
 
-            if (!hasPlayers())
-                forceLoad();
+            // Have we changed sector?
+            if (prevSector != actSector)
+            {
+                _grid->getOrLoadSector_i(actSector)->add(object); // Add us to the new sector
+                remove_i(object->GetGUID()); // Remove from this sector
+            }
+        }
+        
+    }
+
+    return !_objects.empty();
+}
+
+bool Sector::add(SharedPtr<Object> object)
+{
+    Poco::Mutex::ScopedLock lock(_mutex);
+    
+    if (_objects.insert(rde::make_pair(object->GetGUID(), object)).second)
+    {
+        if (object->GetHighGUID() & HIGH_GUID_PLAYER)
+            _grid->onPlayerAdded();
+
+        return true;
+    }
+
+    return false;
+}
+
+void Sector::remove(Poco::UInt64 GUID)
+{
+    Poco::Mutex::ScopedLock lock(_mutex);
+    remove_i(GUID);
+}
+
+void Sector::remove_i(Poco::UInt64 GUID)
+{
+    _objects.erase(GUID);
+
+    if (HIGUID(GUID) & HIGH_GUID_PLAYER)
+        _grid->onPlayerErased();
+}
+
+Poco::UInt16 Sector::hashCode()
+{
+    return _hash;
+}
+
+/**
+ * Initializes a Grid object
+ *
+ */
+Grid::Grid(Poco::UInt16 x, Poco::UInt16 y):
+    _x(x), _y(y),
+    _playersCount(0)
+{
+    forceLoad();
+}
+
+Grid::~Grid()
+{
+    // Delete all sectors
+    for (TypeSectorsMap::iterator itr = _sectors.begin(); itr != _sectors.end(); )
+    {
+        Sector* sector = itr->second;
+        itr++;
+
+        _sectors.erase(sector->hashCode());
+        delete sector;
+    }
+}
+
+/**
+ * Updates the Grid and its objects
+ *
+ * @return false if the grid must be deleted, true otherwise
+ */
+bool Grid::update(Poco::UInt64 diff)
+{
+    Poco::Mutex::ScopedLock lock(_mutex);
+
+    for (TypeSectorsMap::iterator itr = _sectors.begin(); itr != _sectors.end(); )
+    {
+        Sector* sector = itr->second;
+        itr++;
+        
+        // If updates fails, there are no objects, delete sector
+        if (!sector->update(diff))
+        {
+            _sectors.erase(sector->hashCode());
+            delete sector;
         }
     }
 
@@ -176,89 +228,21 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
     return nearGrids;
 }
 
-/**
- * Finds an object in radius in a Grid given a centre 
- *
- * @param it dense_hash_map element
- * @param c Position taken as centre
- * @return true if it's the searched object
- */
-static bool findObjectsIf(rde::pair<Poco::UInt64, SharedPtr<Object> > it, Vector2D c)
+Sector* Grid::getOrLoadSector(Poco::UInt16 hash)
 {
-    float x = it.second->GetPosition().x;
-    float z = it.second->GetPosition().z;
-
-    return (_max(x, Grid::losRange) - Grid::losRange <= c.x && c.x <= x + Grid::losRange && _max(z, Grid::losRange) - Grid::losRange <= c.z && c.z <= z + Grid::losRange);
+    Poco::Mutex::ScopedLock lock(_mutex);
+    return getOrLoadSector_i(hash);
 }
 
-/**
- * Enables a player to visit a grid, be it its grid or a nearby grid
- *
- * @param object Visiting object
- * @param objets List where near objects are included
- */
-void Grid::visit(SharedPtr<Object> object, GuidsSet& objects)
+Sector* Grid::getOrLoadSector_i(Poco::UInt16 hash)
 {
-    Vector2D c(object->GetPosition().x, object->GetPosition().z);
-    ObjectMap::iterator it = rde::find_if(_objects.begin(), _objects.end(), c, findObjectsIf);
-    while (it != _objects.end())
-    {
-        // Update the object, if it fails, it means it is in a new grid
-        SharedPtr<Object> obj = it->second;
-        // Find next near object now, avoid issues
-        it = rde::find_if(++it, _objects.end(), c, findObjectsIf);
+    TypeSectorsMap::iterator itr = _sectors.find(hash);
+    if (itr != _sectors.end())
+        return itr->second;
 
-        // Don't add the object to itself list
-        if (object->GetGUID() == obj->GetGUID())
-            continue;
-
-        // Add the object to the seen objects list
-        objects.insert(obj->GetGUID());
-
-        // If the visitor is a player and the object seen is a creature, tell the creature there is a player
-        if ((object->GetHighGUID() & HIGH_GUID_PLAYER) && (obj->GetHighGUID() & HIGH_GUID_CREATURE))
-            if (Creature* creature = obj->ToCreature())
-                creature->addPlayerToLoS(object->GetGUID());
-    }
-}
-
-/**
- * Returns a list of GUIDs
- *
- * @param highGUID object type to gather
- * @return the objects list
- */
-GuidsSet Grid::getObjects(Poco::UInt32 highGUID)
-{
-    GuidsSet objects;
-
-    for (ObjectMap::const_iterator itr = _objects.begin(); itr != _objects.end(); )
-    {
-        Poco::UInt64 GUID = itr->first;
-        itr++;
-
-        if (GUID & highGUID)
-            objects.insert(GUID);
-    }
-
-    return objects;
-}
-
-/**
- * Returns the object specified by its complete GUID
- *
- * @param GUID object's GUID
- * @return NULL SharedPtr if not found, the object otherwise
- */
-SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
-{
-    SharedPtr<Object> object = NULL;
-    
-    ObjectMap::iterator itr = _objects.find(GUID);
-    if (itr != _objects.end())
-        object = itr->second;
-
-    return object;
+    Sector* sector = new Sector(hash, this);
+    _sectors.insert(rde::make_pair(hash, sector));
+    return sector;
 }
 
 /**
@@ -269,35 +253,24 @@ SharedPtr<Object> Grid::getObject(Poco::UInt64 GUID)
  */
 bool Grid::addObject(SharedPtr<Object> object)
 {
-    Poco::Mutex::ScopedLock lock(_mutex);
-
-    bool inserted = _objects.insert(rde::make_pair(object->GetGUID(), object)).second;
-    if (inserted)
+    Poco::UInt16 hash = Tools::GetSector(object->GetPosition(), losRange);
+    if (getOrLoadSector(hash)->add(object))
     {
         object->SetGrid(this);
-        
-        if (object->GetHighGUID() & HIGH_GUID_PLAYER)
-            _playersCount++;
+        return true;
     }
 
-    return inserted;
+    return false;
 }
 
 /**
  * Removes an object from the Grid
  *
  */
-void Grid::removeObject(Poco::UInt64 GUID)
+void Grid::removeObject(SharedPtr<Object> object)
 {
-    Poco::Mutex::ScopedLock lock(_mutex);
-    removeObject_i(GUID);
-}
-
-void Grid::removeObject_i(Poco::UInt64 GUID)
-{
-    _objects.erase(GUID);
-    if (HIGUID(GUID) & HIGH_GUID_PLAYER)
-        _playersCount--;
+    Poco::UInt16 hash = Tools::GetSector(object->GetPosition(), losRange);
+    getOrLoadSector(hash)->remove(object->GetGUID());
 }
 
 

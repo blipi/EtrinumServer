@@ -6,6 +6,7 @@
 //@ Poco includes
 #include "Poco/SharedPtr.h"
 #include "Poco/Timestamp.h"
+#include "Poco/RWLock.h"
 
 //@ List and Hash Map
 #include <list>
@@ -17,11 +18,13 @@ using Poco::Timestamp;
 
 class Object;
 
+typedef rde::hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object>> TypeObjectsMap;
+
+class Grid;
+
 class Sector
 {
 private:
-    typedef rde::hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object>> ObjectsMap;
-
     enum SECTOR_STATES
     {
         SECTOR_NOT_INITIALIZED  = 0,
@@ -31,32 +34,35 @@ private:
     };
 
 public:
-    Sector(Poco::UInt16 hash):
+    Sector(Poco::UInt16 hash, Grid* grid):
         _hash(hash),
+        _grid(grid),
         _state(SECTOR_NOT_INITIALIZED)
     {
-
     }
 
-    void add(SharedPtr<Object> object)
-    {
-        Poco::Mutex::ScopedLock lock(_mutex);
-        _objects.insert(rde::make_pair(object->GetGUID(), object));
-    }
+    bool add(SharedPtr<Object> object);
+    void remove(Poco::UInt64 GUID);
+    void remove_i(Poco::UInt64 GUID);
 
-    void update(Poco::UInt64 diff);
+    bool update(Poco::UInt64 diff);
+
+    Poco::UInt16 hashCode();
 
 private:
+    Grid* _grid;
     Poco::UInt16 _hash;
     Poco::UInt8 _state;
-    ObjectsMap _objects;
+    TypeObjectsMap _objects;
     Poco::Mutex _mutex;
 };
 
 class Grid
 {
+    friend class Sector;
+
 private:
-    typedef rde::hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object>> ObjectMap;
+    typedef rde::hash_map<Poco::UInt16 /*hash*/, Sector*> TypeSectorsMap;
 
 public:
     typedef std::list<Grid*> GridsList;
@@ -65,14 +71,12 @@ public:
     ~Grid();
     bool update(Poco::UInt64 diff);
 
-    GuidsSet getObjects(Poco::UInt32 highGUID);
-    SharedPtr<Object> getObject(Poco::UInt64 GUID);
+    Sector* getOrLoadSector(Poco::UInt16 hash);
 
     bool addObject(SharedPtr<Object> object);
-    void removeObject(Poco::UInt64 GUID);
+    void removeObject(SharedPtr<Object> object);
 
     GridsList findNearGrids(SharedPtr<Object> object);
-    void visit(SharedPtr<Object> object, GuidsSet& objects);
     
     inline Poco::UInt16 GetPositionX()
     {
@@ -88,7 +92,7 @@ public:
     {
         return (_x << 16) |  _y;
     }
-    
+
     inline bool hasPlayers()
     {
         return _playersCount > 0;
@@ -98,14 +102,24 @@ public:
     bool isForceLoaded();
 
 private:
-    void removeObject_i(Poco::UInt64 GUID);
+    inline void onPlayerErased()
+    {
+        _playersCount--;
+    }
 
+    inline void onPlayerAdded()
+    {
+        _playersCount++;
+    }
+
+    Sector* getOrLoadSector_i(Poco::UInt16 hash);
+    
 public:
     static Poco::UInt8 losRange;
     static Poco::UInt32 gridRemove;
 
 private:
-    ObjectMap _objects;
+    TypeSectorsMap _sectors;
     Poco::UInt32 _playersCount;
     Poco::Mutex _mutex;
     Timestamp _forceLoad;

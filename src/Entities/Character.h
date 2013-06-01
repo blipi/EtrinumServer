@@ -11,7 +11,7 @@ public:
     Character(std::string name, Client* client = NULL);
     virtual ~Character();
 
-    virtual void UpdateLoS(GuidsSet newObjectsInSight) = 0;
+    virtual void UpdateLoS(TypeObjectsMap newObjectsInSight) = 0;
     bool hasNearPlayers();
 
     inline std::string GetName()
@@ -89,6 +89,13 @@ public:
         return _movementTypeSpeed;
     }
 
+    inline bool doLoSUpdate()
+    {
+        bool update = _losTimer.elapsed() > 500;
+        _losTimer.update();
+        return update;
+    }
+
 private:
     std::string _name;
     Poco::UInt32 _maxhp;
@@ -98,6 +105,8 @@ private:
     Poco::UInt8 _lvl;
 
     float _angle;
+
+    Poco::Timestamp _losTimer;
 
     Poco::UInt8 _movementTypeSpeed;
     float _speed[2];

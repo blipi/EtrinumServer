@@ -9,6 +9,7 @@
 #include "Poco/Timestamp.h"
 
 #include "defines.h"
+#include "Grid.h"
 #include "MotionMaster.h"
 
 using Poco::SharedPtr;
@@ -105,7 +106,7 @@ public:
     Object* ToObject();
     
 protected:
-    GuidsSet _objectsInSight;
+    TypeObjectsMap _objectsInSight;
 
 private:
     Poco::UInt64 _GUID;

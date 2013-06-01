@@ -158,7 +158,7 @@ bool GridLoader::removeObject(Object* object)
 
     if (Grid* grid = GetGrid(x, y))
     {
-        grid->removeObject(object->GetGUID());
+        grid->removeObject(object);
         object->SetGrid(NULL);
         return true;
     }

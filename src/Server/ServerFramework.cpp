@@ -98,7 +98,15 @@ int main(int argc, char** argv)
             SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
             plr->Relocate(Vector2D(i / 3, i / 3));
             sGridLoader.addObject(plr);
-            MotionMaster::StartAngleMovement(plr, 0.5f, 500.5f);
+            MotionMaster::StartAngleMovement(plr, 0.5f, 0.5f);
+        }
+        
+        for (int i = 0; i < 100; i++)
+        {
+            SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
+            obj->Relocate(Vector2D(i / 3, i / 3));
+            sGridLoader.addObject(obj);
+            MotionMaster::StartAngleMovement(obj, 0.5f, 0.5f);
         }
 
         //MotionMaster::StartSimpleMovement(plr, Vector2D(400.0f, 200.0f), 15.0f);

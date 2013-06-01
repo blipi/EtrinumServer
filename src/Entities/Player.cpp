@@ -4,6 +4,9 @@
 #include "Creature.h"
 #include "ObjectManager.h"
 
+// Update 5 players at most for each loop
+#define MAX_UPDATE_BLOCKS 5
+
 /**
  * Player constructor
  */
@@ -24,41 +27,49 @@ Player::~Player()
  *
  * @param newObjectsInSight A list containing the new objects in sight
  */
-void Player::UpdateLoS(GuidsSet newObjectsInSight)
+void Player::UpdateLoS(TypeObjectsMap newObjectsInSight)
 {
-    // Send spawn packets
-    for (GuidsSet::iterator itr = newObjectsInSight.begin(); itr != newObjectsInSight.end(); itr++)
+    int updates = 0;
+    for (TypeObjectsMap::iterator itr = _objectsInSight.begin(); itr != _objectsInSight.end(); itr++)
     {
-        // Is the object already in the LOS list? If not, send an update packet
-        if (_objectsInSight.find(*itr) == _objectsInSight.end())
+        if (newObjectsInSight.find(itr->first) == newObjectsInSight.end())
         {
-            SharedPtr<Object> object = sObjectManager.getObject(*itr);
-            if (object.isNull())
-                continue;
+            _objectsInSight.erase(itr->first);
             
-            // Send update packet to players only
-            if (object->GetHighGUID() != HIGH_GUID_PLAYER)
-                continue;
-            
-            sServer->UpdateVisibilityOf(object, ToObject());
+            switch (HIGUID(itr->first))
+            {
+                case HIGH_GUID_PLAYER:
+                    sServer->sendDespawnPacket(itr->first, ToObject());
+                    updates++;
+                    break;
+            }
         }
+        
+        if (updates >= MAX_UPDATE_BLOCKS)
+            return;
     }
 
-    // Send despawn packets
-    for (GuidsSet::iterator itr = _objectsInSight.begin(); itr != _objectsInSight.end(); itr++)
+    for (TypeObjectsMap::iterator itr = newObjectsInSight.begin(); itr != newObjectsInSight.end(); itr++)
     {
-        // Is the object no longer in sight? Send Despawn packet
-        if (newObjectsInSight.find(*itr) == newObjectsInSight.end())
+        if (_objectsInSight.find(itr->first) == _objectsInSight.end())
         {
-            // Send update packet to players only
-            // Even if we don't find the object, we should notify its despawn
-            // Not finding it means it is not longer in the server!
-            if (HIGUID(*itr) != HIGH_GUID_PLAYER)
-                continue;
+            _objectsInSight.insert(rde::make_pair(itr->first, itr->second));
             
-            sServer->sendDespawnPacket(*itr, ToObject());
-        }
-    }
+            switch (HIGUID(itr->first))
+            {
+                case HIGH_GUID_PLAYER:
+                    sServer->UpdateVisibilityOf(itr->second, ToObject());
+                    updates++;
+                    break;                
 
-    _objectsInSight = newObjectsInSight;
+                case HIGH_GUID_CREATURE:
+                    if (Creature* creature = itr->second->ToCreature())
+                        creature->addPlayerToLoS(sObjectManager.getObject(GetGUID()));
+                    break;
+            }
+        }
+        
+        if (updates >= MAX_UPDATE_BLOCKS)
+            return;
+    }
 }
