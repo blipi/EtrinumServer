@@ -172,11 +172,13 @@ void Server::run()
         // Microseconds to miliseconds, as we have no usleep function
         Timestamp::TimeDiff diff = lastUpdate.elapsed() / 1000;
         lastUpdate.update();
+        
+        //sLog.out(Message::PRIO_DEBUG, "Diff time: %d", diff);
+        if (diff > 125)
+            ASSERT(false);
 
         // Update all grids now
         sGridLoader.update(diff);
-        
-        sLog.out(Message::PRIO_DEBUG, "Diff time: %d", diff);
 
         // Wait for a constant update time
         if (diff <= WORLD_HEART_BEAT + prevSleepTime)

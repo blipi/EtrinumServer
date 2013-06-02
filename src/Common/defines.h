@@ -16,7 +16,7 @@ enum HIGH_GUID
 
 #define MAX_X           256
 #define MAX_Y           256
-#define UNITS_PER_CELL  100
+#define UNITS_PER_CELL  500
 
 #define MAP_MIN_X       -637
 #define MAP_MAX_X       2837

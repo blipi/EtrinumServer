@@ -10,8 +10,9 @@
 #include "Server.h"
 #include "Tools.h"
 
-Poco::UInt8 Grid::losRange;
-Poco::UInt32 Grid::gridRemove;
+Poco::UInt8 Grid::LOSRange;
+Poco::UInt8 Grid::AggroRange;
+Poco::UInt32 Grid::GridRemove;
 
 Sector::JoinStruct::JoinStruct(SharedPtr<Object> object, Packet* spawnData):
     _object(object),
@@ -21,6 +22,18 @@ Sector::JoinStruct::JoinStruct(SharedPtr<Object> object, Packet* spawnData):
 Sector::JoinStruct::~JoinStruct()
 {
     delete _spawnData;
+}
+
+Sector::Sector(Poco::UInt16 hash, Grid* grid):
+    _hash(hash),
+    _grid(grid),
+    _state(SECTOR_NOT_INITIALIZED)
+{
+}
+
+Sector::~Sector()
+{
+    clearJoinEvents();
 }
 
 bool Sector::update(Poco::UInt64 diff)
@@ -67,13 +80,13 @@ bool Sector::update(Poco::UInt64 diff)
 
         // Update AI, movement, everything if there is any or we have to
         // If update returns false, that means the object is no longer in this grid!
-        Poco::UInt16 prevSector = Tools::GetSector(object->GetPosition(), Grid::losRange);
+        Poco::UInt16 prevSector = Tools::GetSector(object->GetPosition(), Grid::LOSRange);
         bool updateResult = object->update(objectDiff);
         
-        /*
-        if (Character* character = object->ToCharacter())
-            character->UpdateLoS(_objects);
-        */
+        // Right now there's no reason for players to update LOS
+        if (object->GetHighGUID() & HIGH_GUID_CREATURE)
+            if(object->checkLOS())
+                visit(object);
 
         // Change Grid if we have to
         if (!updateResult)
@@ -83,7 +96,7 @@ bool Sector::update(Poco::UInt64 diff)
         }
         else if (object->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
         {
-            Poco::UInt16 actSector = Tools::GetSector(object->GetPosition(), Grid::losRange);
+            Poco::UInt16 actSector = Tools::GetSector(object->GetPosition(), Grid::LOSRange);
 
             // Have we changed sector?
             if (prevSector != actSector)
@@ -96,11 +109,7 @@ bool Sector::update(Poco::UInt64 diff)
 
     // Theorically, no join events can occure during the sector update, the mutex avoids it
     // Delete them all
-    while (!_joinEvents.empty())
-    {
-        delete _joinEvents.front();
-        _joinEvents.pop_front();
-    }
+    clearJoinEvents();
 
     return !_objects.empty();
 }
@@ -115,7 +124,19 @@ bool Sector::add(SharedPtr<Object> object)
             _grid->onPlayerAdded();
 
         join(object);
+        // Join all near sectors
+        /*
+        std::set<Poco::UInt16> sectors = Tools::GetNearSectors(object->GetPosition(), Grid::LOSRange);
+        std::set<Poco::UInt16>::iterator itr = sectors.begin();
+        std::set<Poco::UInt16>::iterator end = sectors.end();
 
+        while (itr != end)
+        {
+            _grid->getOrLoadSector_i(*itr)->join(object);
+            ++itr;
+        }
+        */
+        
         return true;
     }
 
@@ -148,7 +169,9 @@ void Sector::join(SharedPtr<Object> who)
 
 void Sector::visit(SharedPtr<Object> who)
 {
-
+    if (Creature* creature = who->ToCreature())
+        for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); ++itr)
+            creature->onMoveInLOS(itr->second);
 }
 
 void Sector::leave(SharedPtr<Object> who)
@@ -166,6 +189,15 @@ void Sector::leave(SharedPtr<Object> who)
         // Send despawn to the visitor
         if (who->GetHighGUID() & HIGH_GUID_PLAYER)
             sServer->sendDespawnPacket(object->GetGUID(), who);
+    }
+}
+
+void Sector::clearJoinEvents()
+{
+    while (!_joinEvents.empty())
+    {
+        delete _joinEvents.front();
+        _joinEvents.pop_front();
     }
 }
 
@@ -206,8 +238,10 @@ Grid::~Grid()
 bool Grid::update(Poco::UInt64 diff)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
-
-    for (TypeSectorsMap::iterator itr = _sectors.begin(); itr != _sectors.end(); )
+    
+    // Iterate a safe list
+    TypeSectorsMap sectors = _sectors;
+    for (TypeSectorsMap::iterator itr = sectors.begin(); itr != sectors.end(); )
     {
         Sector* sector = itr->second;
         ++itr;
@@ -237,14 +271,14 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
 
     std::list<Grid*> nearGrids;
     // Near at left
-    if (gridX < losRange && GetPositionX() > 1)
+    if (gridX < LOSRange && GetPositionX() > 1)
     {
         Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() - 1, GetPositionY());
         grid->forceLoad();
         nearGrids.push_back(grid);
 
         // Near at left top corner
-        if (gridY < losRange && GetPositionY() > 1)
+        if (gridY < LOSRange && GetPositionY() > 1)
         {
             Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() - 1, GetPositionY() - 1);
             grid->forceLoad();
@@ -252,7 +286,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
         }
 
         // Near at left bottom corner
-        if (gridY > UNITS_PER_CELL - losRange && GetPositionY() < 0xFF)
+        if (gridY > UNITS_PER_CELL - LOSRange && GetPositionY() < 0xFF)
         {
             Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() - 1, GetPositionY() + 1);
             grid->forceLoad();
@@ -261,7 +295,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
     }
 
     // Near at top
-    if (gridY < losRange && GetPositionY() > 1)
+    if (gridY < LOSRange && GetPositionY() > 1)
     {
         Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX(), GetPositionY() - 1);
         grid->forceLoad();
@@ -269,14 +303,14 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
     }
 
     // Near at right
-    if (gridX > UNITS_PER_CELL - losRange && GetPositionX() < 0xFF)
+    if (gridX > UNITS_PER_CELL - LOSRange && GetPositionX() < 0xFF)
     {
         Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() + 1, GetPositionY());
         grid->forceLoad();
         nearGrids.push_back(grid);
 
         // Near at right top corner
-        if (gridY < losRange && GetPositionY() > 1)
+        if (gridY < LOSRange && GetPositionY() > 1)
         {
             Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() + 1, GetPositionY() - 1);
             grid->forceLoad();
@@ -284,7 +318,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
         }
 
         // Near at right bottom corner
-        if (gridY > UNITS_PER_CELL - losRange && GetPositionY() < 0xFF)
+        if (gridY > UNITS_PER_CELL - LOSRange && GetPositionY() < 0xFF)
         {
             Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX() + 1, GetPositionY() + 1);
             grid->forceLoad();
@@ -293,7 +327,7 @@ Grid::GridsList Grid::findNearGrids(SharedPtr<Object> object)
     }
 
     // Near at bottom
-    if (gridY > UNITS_PER_CELL - losRange && GetPositionY() < 0xFF)
+    if (gridY > UNITS_PER_CELL - LOSRange && GetPositionY() < 0xFF)
     {
         Grid* grid = sGridLoader.GetGridOrLoad(GetPositionX(), GetPositionY() + 1);
         grid->forceLoad();
@@ -328,7 +362,7 @@ Sector* Grid::getOrLoadSector_i(Poco::UInt16 hash)
  */
 bool Grid::addObject(SharedPtr<Object> object)
 {
-    Poco::UInt16 hash = Tools::GetSector(object->GetPosition(), losRange);
+    Poco::UInt16 hash = Tools::GetSector(object->GetPosition(), LOSRange);
     if (getOrLoadSector(hash)->add(object))
     {
         object->SetGrid(this);
@@ -344,7 +378,7 @@ bool Grid::addObject(SharedPtr<Object> object)
  */
 void Grid::removeObject(SharedPtr<Object> object)
 {
-    Poco::UInt16 hash = Tools::GetSector(object->GetPosition(), losRange);
+    Poco::UInt16 hash = Tools::GetSector(object->GetPosition(), LOSRange);
     getOrLoadSector(hash)->remove(object);
 }
 
@@ -365,5 +399,5 @@ void Grid::forceLoad()
  */
 bool Grid::isForceLoaded()
 {
-    return (_forceLoad.elapsed() / 1000) < 5000;
+    return (_forceLoad.elapsed() / 1000) < GridRemove;
 }

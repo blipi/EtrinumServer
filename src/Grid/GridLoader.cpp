@@ -32,10 +32,12 @@ GridLoader::GridLoader()
             _isGridLoaded[x][y] = false;
 
     // Set LoS range
-    Grid::losRange = sConfig.getDefaultInt("LoSRange", 35);
-    Grid::gridRemove = sConfig.getDefaultInt("GridRemove", 15000);
-    sLog.out(Message::PRIO_TRACE, "\t[OK] LoS Range set to: %d", Grid::gridRemove);
-    sLog.out(Message::PRIO_TRACE, "\t[OK] Grid Remove interval set to: %d", Grid::losRange);
+    Grid::LOSRange = sConfig.getDefaultInt("LOSRange", 35);
+    Grid::AggroRange = sConfig.getDefaultInt("AggroRange", 15);
+    Grid::GridRemove = sConfig.getDefaultInt("GridRemove", 15000);
+    sLog.out(Message::PRIO_TRACE, "\t[OK] LoS Range set to: %d", Grid::GridRemove);
+    sLog.out(Message::PRIO_TRACE, "\t[OK] Aggro Range set to: %d", Grid::AggroRange);
+    sLog.out(Message::PRIO_TRACE, "\t[OK] Grid Remove interval set to: %d", Grid::LOSRange);
     sLog.out(Message::PRIO_TRACE, "\t[OK] Map threads set to: %d", _gridManager->getMaxThreads());
 
     // Check for correct grid size
@@ -69,11 +71,19 @@ bool GridLoader::checkAndLoad(Poco::UInt16 x, Poco::UInt16 y)
         return true;
 
     Grid* grid = new Grid(x, y);
-    bool inserted = _grids.insert(rde::make_pair(grid->hashCode(), grid)).second;
-    _isGridLoaded[x][y] = inserted;
+    if (_grids.insert(rde::make_pair(grid->hashCode(), grid)).second)
+    {
+        _isGridLoaded[x][y] = true;
+        sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been created", x, y);
+        return true;
+    }
+    else
+    {
+        delete grid;
+        ASSERT(false);
+    }
 
-    sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been created (%d)", x, y, inserted);
-    return inserted;
+    return false;
 }
 
 /**
@@ -172,10 +182,8 @@ bool GridLoader::removeObject(Object* object)
  */
 void GridLoader::update(Poco::UInt64 diff)
 {
-    // Do NOT, never, iterate the list, iterate a safe copy!
+    // Iterate a safe list
     GridsMap grids = _grids;
-    
-    _gridManager->queue(grids.size());
     for (GridsMap::const_iterator itr = grids.begin(); itr != grids.end(); )
     {
         Grid* grid = itr->second;
@@ -187,12 +195,13 @@ void GridLoader::update(Poco::UInt64 diff)
 
     // Wait for all map updates to end
     _gridManager->wait();
-
+    
+    // Remove grids
     for (GridsSet::iterator itr = _remove.begin(); itr != _remove.end(); )
     {
         Grid* grid = *itr;
         ++itr;
-        sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been deleted (%d %d)", grid->GetPositionX(), grid->GetPositionY(), grid->hasPlayers(), grid->isForceLoaded());
+        sLog.out(Message::PRIO_DEBUG, "Grid (%d, %d) has been deleted", grid->GetPositionX(), grid->GetPositionY());
 
         _isGridLoaded[grid->GetPositionX()][grid->GetPositionY()] = false;
         _grids.erase(grid->hashCode());
@@ -208,6 +217,7 @@ void GridLoader::gridUpdated(Poco::TaskFinishedNotification* nf)
 
     // If update fails, something went really wrong, delete this grid
     // If the grid has no players in it, check for nearby grids, if they are not loaded or have no players, remove it
+    // Removal must be done later, in case another grid is accessing this grid
     if (!task->getResult())
     {
         Grid* grid = task->getGrid();

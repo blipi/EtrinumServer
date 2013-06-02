@@ -50,7 +50,7 @@ bool Object::update(const Poco::UInt64 diff)
         Vector2D newPos;
         if (motionMaster.evaluate(diff, newPos))
         {
-            sLog.out(Message::PRIO_TRACE, "\t\tObject finished movement (%.2f, %.2f)", GetPosition().x, GetPosition().z);
+            //sLog.out(Message::PRIO_TRACE, "\t\tObject finished movement (%.2f, %.2f)", GetPosition().x, GetPosition().z);
             clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
         }
 
@@ -103,6 +103,11 @@ Poco::UInt32 Object::GetHighGUID()
 Poco::UInt32 Object::GetLowGUID()
 {
     return (Poco::UInt32)(_GUID & 0xFFFFFFFF);
+}
+
+float Object::distanceTo(Object* to)
+{
+    return Tools::Distance2D(GetPosition(), to->GetPosition());
 }
 
 /**

@@ -13,7 +13,6 @@ public:
     GridManager(Poco::UInt8 maxThreads);
 
     void start(Poco::Task* task);
-    void queue(Poco::UInt32 pending);
     void dequeue();
     void wait();
 

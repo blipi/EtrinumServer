@@ -11,6 +11,8 @@ GridManager::GridManager(Poco::UInt8 maxThreads):
 
 void GridManager::start(Poco::Task* task)
 {
+    _pendingThreads++;
+
     if (count() < _maxThreads)
         TaskManager::start(task);
     else
@@ -18,11 +20,6 @@ void GridManager::start(Poco::Task* task)
         Poco::Mutex::ScopedLock lock(_mutex);
         _queue.push(task);
     }
-}
-
-void GridManager::queue(Poco::UInt32 queue)
-{
-    _pendingThreads = queue;
 }
 
 void GridManager::dequeue()

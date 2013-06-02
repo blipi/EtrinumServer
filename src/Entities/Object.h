@@ -9,7 +9,6 @@
 #include "Poco/Timestamp.h"
 
 #include "defines.h"
-#include "Grid.h"
 #include "MotionMaster.h"
 
 using Poco::SharedPtr;
@@ -97,6 +96,19 @@ public:
         return elapsed;
     }
 
+    inline bool checkLOS()
+    {
+        if (_losTrigger.elapsed() / 1000 >= 1000)
+        {
+            _losTrigger.update();
+            return true;
+        }
+
+        return false;
+    }
+
+    float distanceTo(Object* to);
+
     MotionMaster motionMaster;
 
     Player* ToPlayer();
@@ -108,6 +120,7 @@ private:
     Poco::UInt64 _GUID;
     Poco::UInt64 _flags[MAX_FLAGS_TYPES];
     Poco::Timestamp _lastUpdate;
+    Poco::Timestamp _losTrigger;
     Vector2D _position;
     Grid* _grid;
     Client* _client;

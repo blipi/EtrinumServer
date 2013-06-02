@@ -66,31 +66,31 @@ public:
         {
             Thread::sleep(5000);
 
-            int spawnLimit = 10000;
-            int playerMax = 2500;
+            int spawnLimit = 2000;
+            int playerMax = 1000;
             float x = 0;
             float z = 0;
 
             for (int i = 0; i < spawnLimit; i++)
             {
-                if (!(i % 3) && playerMax > 0)
+                if ((i % 3 != 0) && playerMax > 0)
                 {
                     SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
                     plr->Relocate(Vector2D(x, z));
                     sGridLoader.addObject(plr);
-                    MotionMaster::StartSimpleMovement(plr, Vector2D(2800, 1000), 100.5f);
+                    MotionMaster::StartSimpleMovement(plr, Vector2D(2800, 1000), SPEED_RUN);
                     playerMax--;
+                
+                    x += MAP_MAX_X / spawnLimit;
+                    z += MAP_MAX_Z / spawnLimit;
                 }
                 else
                 {
                     SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
                     obj->Relocate(Vector2D(x, z));
                     sGridLoader.addObject(obj);
-                    MotionMaster::StartSimpleMovement(obj, Vector2D(x+20, z+20), 0.5f);
+                    MotionMaster::StartSimpleMovement(obj, Vector2D(2800, 1000), SPEED_WALK);
                 }
-                
-                x += MAP_MAX_X / spawnLimit;
-                z += MAP_MAX_Z / spawnLimit;
 
                 Thread::sleep(10);
             }
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
     // Initialize GridLoader //
     // --------------------- //
     {
-        sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing GridLoader");
+        sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing Grid System");
         sGridLoader.instance();
         sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
     }

@@ -24,6 +24,8 @@ class Packet;
 
 class Sector
 {
+    friend class Sector;
+
 private:
     enum SECTOR_STATES
     {
@@ -45,24 +47,23 @@ private:
     typedef std::list<JoinStruct*> TypeJoinList;
 
 public:
-    Sector(Poco::UInt16 hash, Grid* grid):
-        _hash(hash),
-        _grid(grid),
-        _state(SECTOR_NOT_INITIALIZED)
-    {
-    }
+    Sector(Poco::UInt16 hash, Grid* grid);
+    ~Sector();
 
     bool add(SharedPtr<Object> object);
     void remove(SharedPtr<Object> object);
     void remove_i(SharedPtr<Object> object);
 
-    void join(SharedPtr<Object> who);
-    void visit(SharedPtr<Object> who);
-    void leave(SharedPtr<Object> who);
-
     bool update(Poco::UInt64 diff);
 
     Poco::UInt16 hashCode();
+
+private:
+    void leave(SharedPtr<Object> who);
+    void join(SharedPtr<Object> who);
+    void visit(SharedPtr<Object> who);
+
+    void clearJoinEvents();
 
 private:
     Grid* _grid;
@@ -131,8 +132,9 @@ private:
     Sector* getOrLoadSector_i(Poco::UInt16 hash);
     
 public:
-    static Poco::UInt8 losRange;
-    static Poco::UInt32 gridRemove;
+    static Poco::UInt8 LOSRange;
+    static Poco::UInt8 AggroRange;
+    static Poco::UInt32 GridRemove;
 
 private:
     TypeSectorsMap _sectors;
