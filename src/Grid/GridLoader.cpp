@@ -183,15 +183,17 @@ bool GridLoader::removeObject(Object* object)
 void GridLoader::update(Poco::UInt64 diff)
 {
     // Iterate a safe list
-    GridsMap grids = _grids;
-    for (GridsMap::const_iterator itr = grids.begin(); itr != grids.end(); )
+    for (GridsMap::const_iterator itr = _grids.begin(); itr != _grids.end(); )
     {
         Grid* grid = itr->second;
         ++itr;
 
-        // Start a task to update the grid
-        _gridManager->start(new GridTask(grid, diff));
+        // Queue a task to update the grid
+        _gridManager->queue(new GridTask(grid, diff));
     }
+
+    // Start all threads
+    _gridManager->start();
 
     // Wait for all map updates to end
     _gridManager->wait();

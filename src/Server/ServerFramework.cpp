@@ -52,52 +52,6 @@ public:
     }
 };
 
-#ifdef SERVER_FRAMEWORK_TEST_SUITE
-    class Spawner : public Poco::Runnable
-    {
-    public:
-        Spawner()
-        {}
-
-        ~Spawner()
-        {}
-
-        void run()
-        {
-            Thread::sleep(5000);
-
-            int spawnLimit = 2000;
-            int playerMax = 1000;
-            float x = 0;
-            float z = 0;
-
-            for (int i = 0; i < spawnLimit; i++)
-            {
-                if ((i % 3 != 0) && playerMax > 0)
-                {
-                    SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
-                    plr->Relocate(Vector2D(x, z));
-                    sGridLoader.addObject(plr);
-                    MotionMaster::StartSimpleMovement(plr, Vector2D(2800, 1000), SPEED_RUN);
-                    playerMax--;
-                
-                    x += MAP_MAX_X / spawnLimit;
-                    z += MAP_MAX_Z / spawnLimit;
-                }
-                else
-                {
-                    SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
-                    obj->Relocate(Vector2D(x, z));
-                    sGridLoader.addObject(obj);
-                    MotionMaster::StartSimpleMovement(obj, Vector2D(2800, 1000), SPEED_WALK);
-                }
-
-                Thread::sleep(10);
-            }
-        }
-    };
-#endif
-
 int main(int argc, char** argv)
 {
     // Read configuration file
@@ -116,7 +70,7 @@ int main(int argc, char** argv)
     MySQL::Connector::registerConnector();
     
     // Read database configuration
-    Config::StringConfigsMap connectionStrings = sConfig.getDatabaseInformation();
+    ServerConfig::StringConfigsMap connectionStrings = sConfig.getDatabaseInformation();
 
     // Databases
     AuthDatabase.Open(connectionStrings["auth"]);
@@ -136,14 +90,6 @@ int main(int argc, char** argv)
         sGridLoader.instance();
         sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
     }
-
-    #ifdef SERVER_FRAMEWORK_TEST_SUITE
-    
-        Poco::Thread spawnerThread;
-        Spawner spawner;
-        spawnerThread.start(spawner);
-        
-    #endif
 
     // Will wait until the server stops
     sServer->start(sConfig.getDefaultInt("ServerPort", 1616));

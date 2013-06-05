@@ -10,7 +10,7 @@
 #include "Poco/DOM/NamedNodeMap.h"
 #include "Poco/SAX/InputSource.h"
 
-Config::Config()
+ServerConfig::ServerConfig()
 {
     std::ifstream in("Config.xml");
     Poco::XML::InputSource src(in);
@@ -18,12 +18,12 @@ Config::Config()
     _doc = parser.parse(&src);
 }
 
-Config::StringConfigsMap Config::getDatabaseInformation()
+ServerConfig::StringConfigsMap ServerConfig::getDatabaseInformation()
 {
     return _connectionStrings;
 }
 
-void Config::readConfiguration()
+void ServerConfig::readConfiguration()
 {
     Poco::XML::Node* baseNode = firstChild(firstChild(_doc));
 
@@ -72,24 +72,24 @@ void Config::readConfiguration()
     }
 }
 
-int Config::getIntConfig(std::string configName)
+int ServerConfig::getIntConfig(std::string configName)
 {
     return getDefaultInt(configName, 0);
 }
 
-bool Config::getBoolConfig(std::string configName)
+bool ServerConfig::getBoolConfig(std::string configName)
 {
     return getDefaultBool(configName, false);
 }
 
-int Config::getDefaultInt(std::string configName, int _default)
+int ServerConfig::getDefaultInt(std::string configName, int _default)
 {
     if (_intConfigs.find(configName) != _intConfigs.end())
         return _intConfigs[configName];
     return _default;
 }
     
-bool Config::getDefaultBool(std::string configName, bool _default)
+bool ServerConfig::getDefaultBool(std::string configName, bool _default)
 {
     if (_boolConfigs.find(configName) != _boolConfigs.end())
         return _boolConfigs[configName];
@@ -97,7 +97,7 @@ bool Config::getDefaultBool(std::string configName, bool _default)
 }
 
 
-Poco::XML::Node* Config::firstChild(Poco::XML::Node* node)
+Poco::XML::Node* ServerConfig::firstChild(Poco::XML::Node* node)
 {
     if (!node)
         return NULL;
@@ -109,7 +109,7 @@ Poco::XML::Node* Config::firstChild(Poco::XML::Node* node)
     return key;
 }
 
-Poco::XML::Node* Config::nextNode(Poco::XML::Node* node)
+Poco::XML::Node* ServerConfig::nextNode(Poco::XML::Node* node)
 {
     if (!node)
         return NULL;

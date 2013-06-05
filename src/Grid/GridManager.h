@@ -12,14 +12,18 @@ class GridManager: public Poco::TaskManager
 public:
     GridManager(Poco::UInt8 maxThreads);
 
-    void start(Poco::Task* task);
+    void queue(Poco::Task* task);
     void dequeue();
+    void start();
     void wait();
 
     inline Poco::UInt8 getMaxThreads()
     {
         return _maxThreads;
     }
+
+private:
+    Poco::Task* getQueuedTask();
 
 private:
     Poco::UInt8 _maxThreads;

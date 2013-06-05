@@ -3,6 +3,8 @@
 
 #include <algorithm>
 #include <list>
+#include "hash_map.h"
+#include "stack_allocator.h"
 
 #include "Poco/Poco.h"
 #include "Poco/SharedPtr.h"

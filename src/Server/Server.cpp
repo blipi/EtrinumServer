@@ -163,8 +163,63 @@ void Server::start(Poco::UInt16 port)
     reactorThread.join();
 }
 
+#ifdef SERVER_FRAMEWORK_TEST_SUITE
+    class Spawner
+    {
+    public:
+        Spawner()
+        {
+            spawnLimit = 2000;
+            playerMax = 1000;
+            x = 0;
+            z = 0;
+        }
+
+        ~Spawner()
+        {}
+
+        // Spawn 5 entities per tick
+        // Avoid overload
+        void spawn()
+        {
+            for (int i = 0; i < 50 && spawnLimit > 0; i++, spawnLimit--)
+            {
+                if ((i % 3 != 0) && playerMax > 0)
+                {
+                    SharedPtr<Player> plr = sObjectManager.createPlayer("ASD", NULL);
+                    plr->Relocate(Vector2D(x, z));
+                    sGridLoader.addObject(plr);
+                    MotionMaster::StartSimpleMovement(plr, Vector2D(2800, 1000), SPEED_RUN);
+                    playerMax--;
+                }
+                else
+                {
+                    SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
+                    obj->Relocate(Vector2D(x, z));
+                    sGridLoader.addObject(obj);
+                    MotionMaster::StartSimpleMovement(obj, Vector2D(2800, 1000), SPEED_WALK);
+                }
+                
+                x += MAP_MAX_X / spawnLimit;
+                z += MAP_MAX_Z / spawnLimit;
+            }
+        }
+
+    private:
+        Poco::UInt32 spawnLimit;
+        Poco::UInt32 playerMax;
+        float x;
+        float z;
+    };
+#endif
+
 void Server::run()
 {
+    #ifdef SERVER_FRAMEWORK_TEST_SUITE
+        Spawner spawner;
+    #endif
+
+
     Timestamp lastUpdate;
     Poco::UInt32 prevSleepTime = 0;
     while (_serverRunning)
@@ -173,12 +228,17 @@ void Server::run()
         Timestamp::TimeDiff diff = lastUpdate.elapsed() / 1000;
         lastUpdate.update();
         
-        //sLog.out(Message::PRIO_DEBUG, "Diff time: %d", diff);
+        sLog.out(Message::PRIO_DEBUG, "Diff time: %d", diff);
         if (diff > 125)
-            ASSERT(false);
+            ;//ASSERT(false);
 
         // Update all grids now
         sGridLoader.update(diff);
+
+        // Spawn mobs
+        #ifdef SERVER_FRAMEWORK_TEST_SUITE
+            spawner.spawn();
+        #endif
 
         // Wait for a constant update time
         if (diff <= WORLD_HEART_BEAT + prevSleepTime)

@@ -10,17 +10,17 @@
 #include <map>
 #include <string>
 
-class Config
+class ServerConfig
 {
 public:
     typedef std::map<std::string, std::string> StringConfigsMap;
     typedef std::map<std::string, int> IntConfigsMap;
     typedef std::map<std::string, bool> BoolConfigsMap;
 
-    Config();
-    static Config& instance()
+    ServerConfig();
+    static ServerConfig& instance()
     {
-        static Poco::SingletonHolder<Config> sh;
+        static Poco::SingletonHolder<ServerConfig> sh;
         return *sh.get();
     }
 
@@ -45,6 +45,6 @@ private:
     BoolConfigsMap _boolConfigs;
 };
 
-#define sConfig Config::instance()
+#define sConfig ServerConfig::instance()
 
 #endif

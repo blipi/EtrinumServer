@@ -14,14 +14,15 @@ Poco::UInt8 Grid::LOSRange;
 Poco::UInt8 Grid::AggroRange;
 Poco::UInt32 Grid::GridRemove;
 
-Sector::JoinStruct::JoinStruct(SharedPtr<Object> object, Packet* spawnData):
-    _object(object),
-    _spawnData(spawnData)
-{}
-
-Sector::JoinStruct::~JoinStruct()
+Sector::JoinEvent::JoinEvent(SharedPtr<Object> object, SharedPtr<Packet> packet)
 {
-    delete _spawnData;
+    Who = object;
+    SpawnPacket = packet;
+}
+
+Sector::JoinEvent::~JoinEvent()
+{
+    Who = NULL;
 }
 
 Sector::Sector(Poco::UInt16 hash, Grid* grid):
@@ -39,74 +40,17 @@ Sector::~Sector()
 bool Sector::update(Poco::UInt64 diff)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
-
-    // Update all objects
+    
+    // Update all players
     for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); )
     {
         SharedPtr<Object> object = itr->second;
         ++itr;
 
-        if (!_joinEvents.empty())
-        {
-            // Building the spawn packet is time expensive, do it now if we have to
-            Packet* objectSpawner = sServer->buildSpawnPacket(object, false);
-
-            // Process join events
-            for (TypeJoinList::iterator joinEvent = _joinEvents.begin(); joinEvent != _joinEvents.end(); )
-            {
-                JoinStruct* joiner = *joinEvent;
-                ++joinEvent;
-
-                // Avoid self spawning
-                if (object->GetGUID() == joiner->_object->GetGUID())
-                    continue;
-
-                // Send spawn of the visitor
-                if (object->GetHighGUID() & HIGH_GUID_PLAYER)
-                    sServer->sendPacketTo(joiner->_spawnData, object);
-
-                // Send spawn to the visitor
-                if (joiner->_object->GetHighGUID() & HIGH_GUID_PLAYER)
-                    sServer->sendPacketTo(objectSpawner, joiner->_object);
-            }
-
-            delete objectSpawner;
-        }
-
-        // Get last update time (in case the object switches grid)
-        Poco::UInt64 objectDiff = object->getLastUpdate();
-        if (objectDiff > diff)
-            objectDiff = diff;
-
-        // Update AI, movement, everything if there is any or we have to
-        // If update returns false, that means the object is no longer in this grid!
-        Poco::UInt16 prevSector = Tools::GetSector(object->GetPosition(), Grid::LOSRange);
-        bool updateResult = object->update(objectDiff);
-        
-        // Right now there's no reason for players to update LOS
-        if (object->GetHighGUID() & HIGH_GUID_CREATURE)
-            if(object->checkLOS())
-                visit(object);
-
-        // Change Grid if we have to
-        if (!updateResult)
-        {
-            sGridLoader.addObject(object); // Add to the new Grid
-            remove_i(object); // Delete from the Sector (and Grid)
-        }
-        else if (object->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
-        {
-            Poco::UInt16 actSector = Tools::GetSector(object->GetPosition(), Grid::LOSRange);
-
-            // Have we changed sector?
-            if (prevSector != actSector)
-            {
-                _grid->getOrLoadSector_i(actSector)->add(object); // Add us to the new sector
-                remove_i(object); // Remove from this sector
-            }
-        }
+        doJoinEvents(object);        
+        processUpdate(object, diff);
     }
-
+    
     // Theorically, no join events can occure during the sector update, the mutex avoids it
     // Delete them all
     clearJoinEvents();
@@ -114,29 +58,87 @@ bool Sector::update(Poco::UInt64 diff)
     return !_objects.empty();
 }
 
+void Sector::doJoinEvents(SharedPtr<Object> who)
+{
+    if (!_joinEvents.empty())
+    {
+        Packet* spawnData = sServer->buildSpawnPacket(who, false);
+
+        for (TypeJoinEvents::iterator itr = _joinEvents.begin(); itr != _joinEvents.end();)
+        {
+            JoinEvent* joinEvent = *itr;
+            ++itr;
+
+            // Avoid self spawning
+            if (who->GetGUID() == joinEvent->Who->GetGUID())
+                continue;
+
+            // Send spawn of the visitor
+            if (joinEvent->Who->GetHighGUID() & HIGH_GUID_PLAYER)
+                sServer->sendPacketTo(spawnData, joinEvent->Who);
+
+            // Send spawn to the visitor
+            if (who->GetHighGUID() & HIGH_GUID_PLAYER)
+                sServer->sendPacketTo(joinEvent->SpawnPacket, who);
+        }
+
+        delete spawnData;
+    }
+}
+
+void Sector::processUpdate(SharedPtr<Object> object, Poco::UInt64 diff)
+{
+    // Get last update time (in case the object switches grid)
+    Poco::UInt64 objectDiff = object->getLastUpdate();
+    if (objectDiff > diff)
+        objectDiff = diff;
+
+    // Update AI, movement, everything if there is any or we have to
+    // If update returns false, that means the object is no longer in this grid!
+    Poco::UInt16 prevSector = Tools::GetSector(object->GetPosition(), Grid::LOSRange);
+    bool updateResult = object->update(objectDiff);
+
+    // Change Grid if we have to
+    if (!updateResult)
+    {
+        sGridLoader.addObject(object); // Add to the new Grid
+        remove_i(object); // Delete from the Sector (and Grid)
+    }
+    else if (object->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
+    {
+        Poco::UInt16 actSector = Tools::GetSector(object->GetPosition(), Grid::LOSRange);
+
+        // Have we changed sector?
+        if (prevSector != actSector)
+        {
+            _grid->getOrLoadSector_i(actSector)->add(object); // Add us to the new sector
+            remove_i(object); // Remove from this sector
+        }
+    }
+}
+
 bool Sector::add(SharedPtr<Object> object)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
-    
+
     if (_objects.insert(rde::make_pair(object->GetGUID(), object)).second)
     {
         if (object->GetHighGUID() & HIGH_GUID_PLAYER)
             _grid->onPlayerAdded();
+        
+        SharedPtr<Packet> packet = sServer->buildSpawnPacket(object, false);
 
-        join(object);
         // Join all near sectors
-        /*
         std::set<Poco::UInt16> sectors = Tools::GetNearSectors(object->GetPosition(), Grid::LOSRange);
         std::set<Poco::UInt16>::iterator itr = sectors.begin();
         std::set<Poco::UInt16>::iterator end = sectors.end();
 
         while (itr != end)
         {
-            _grid->getOrLoadSector_i(*itr)->join(object);
+            _grid->getOrLoadSector_i(*itr)->join(object, packet);
             ++itr;
         }
-        */
-        
+
         return true;
     }
 
@@ -153,18 +155,18 @@ void Sector::remove_i(SharedPtr<Object> object)
 {
     if (object->GetHighGUID() & HIGH_GUID_PLAYER)
         _grid->onPlayerErased();
-        
+
     _objects.erase(object->GetGUID());
 
     leave(object);
 }
 
-void Sector::join(SharedPtr<Object> who)
+void Sector::join(SharedPtr<Object> who, SharedPtr<Packet> packet)
 {
     // Join events must (ideally) be done at the next update
     // As it reduces the amount of time and loops being done
     // Building the spawn packet is time expensive, do it now
-    _joinEvents.push_back(new JoinStruct(who, sServer->buildSpawnPacket(who, false)));
+    _joinEvents.push_back(new JoinEvent(who, packet));
 }
 
 void Sector::visit(SharedPtr<Object> who)
@@ -238,6 +240,8 @@ Grid::~Grid()
 bool Grid::update(Poco::UInt64 diff)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
+
+    _maxLOSChecks = 50;
     
     // Iterate a safe list
     TypeSectorsMap sectors = _sectors;
@@ -400,4 +404,15 @@ void Grid::forceLoad()
 bool Grid::isForceLoaded()
 {
     return (_forceLoad.elapsed() / 1000) < GridRemove;
+}
+
+bool Grid::canLOSCheck()
+{
+    if (_maxLOSChecks > 0)
+    {
+        _maxLOSChecks--;
+        return true;
+    }
+
+    return false;
 }

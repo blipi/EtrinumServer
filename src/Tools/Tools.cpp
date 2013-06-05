@@ -95,4 +95,14 @@ namespace Tools
 
         return list;
     }
+
+    int GetIntXPosition(float x)
+    {
+        return (int)x - MAP_MIN_X + 1;
+    }
+
+    int GetIntZPosition(float z)
+    {
+        return (int)z - MAP_MIN_Z + 1;
+    }
 }

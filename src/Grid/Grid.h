@@ -34,17 +34,17 @@ private:
         SECTOR_IDLE,
         SECTOR_INACTIVE
     };
-
-    struct JoinStruct
+    
+    struct JoinEvent
     {
-        JoinStruct(SharedPtr<Object> object, Packet* spawnData);
-        ~JoinStruct();
+        JoinEvent(SharedPtr<Object> object, SharedPtr<Packet> packet);
+        ~JoinEvent();
 
-        SharedPtr<Object> _object;
-        Packet* _spawnData;
+        SharedPtr<Object> Who;
+        SharedPtr<Packet> SpawnPacket;
     };
 
-    typedef std::list<JoinStruct*> TypeJoinList;
+    typedef std::list<JoinEvent*> TypeJoinEvents;
 
 public:
     Sector(Poco::UInt16 hash, Grid* grid);
@@ -59,8 +59,11 @@ public:
     Poco::UInt16 hashCode();
 
 private:
+    void doJoinEvents(SharedPtr<Object> who);
+    void processUpdate(SharedPtr<Object> who, Poco::UInt64 diff);
+
     void leave(SharedPtr<Object> who);
-    void join(SharedPtr<Object> who);
+    void join(SharedPtr<Object> who, SharedPtr<Packet> packet);
     void visit(SharedPtr<Object> who);
 
     void clearJoinEvents();
@@ -70,7 +73,7 @@ private:
     Poco::UInt16 _hash;
     Poco::UInt8 _state;
     TypeObjectsMap _objects;
-    TypeJoinList _joinEvents;
+    TypeJoinEvents _joinEvents;
     Poco::Mutex _mutex;
 };
 
@@ -130,6 +133,7 @@ private:
     }
 
     Sector* getOrLoadSector_i(Poco::UInt16 hash);
+    bool canLOSCheck();
     
 public:
     static Poco::UInt8 LOSRange;
@@ -139,6 +143,7 @@ public:
 private:
     TypeSectorsMap _sectors;
     Poco::UInt32 _playersCount;
+    Poco::UInt16 _maxLOSChecks;
     Poco::Mutex _mutex;
     Timestamp _forceLoad;
     Poco::UInt16 _x;

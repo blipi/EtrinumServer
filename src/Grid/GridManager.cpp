@@ -9,30 +9,29 @@ GridManager::GridManager(Poco::UInt8 maxThreads):
 {
 }
 
-void GridManager::start(Poco::Task* task)
+void GridManager::queue(Poco::Task* task)
 {
     _pendingThreads++;
+    _queue.push(task);
+}
 
-    if (count() < _maxThreads)
-        TaskManager::start(task);
-    else
+void GridManager::start()
+{
+    while (count() < _maxThreads)
     {
-        Poco::Mutex::ScopedLock lock(_mutex);
-        _queue.push(task);
+        if (Poco::Task* task = getQueuedTask())
+            TaskManager::start(task);
+        else
+            break;
     }
 }
 
 void GridManager::dequeue()
 {
     ++_dequeuedThreads;
-    Poco::Mutex::ScopedLock lock(_mutex);
-
-    if (!_queue.empty())
-    {
-        Poco::Task* task = _queue.front();
-        _queue.pop();
+    
+    if (Poco::Task* task = getQueuedTask())
         TaskManager::start(task);
-    }
 }
 
 void GridManager::wait()
@@ -42,4 +41,16 @@ void GridManager::wait()
 
     _pendingThreads = 0;
     _dequeuedThreads = 0;
+}
+
+Poco::Task* GridManager::getQueuedTask()
+{
+    Poco::Mutex::ScopedLock lock(_mutex);
+
+    if (_queue.empty())
+        return NULL;
+
+    Poco::Task* task = _queue.front();
+    _queue.pop();
+    return task;
 }
