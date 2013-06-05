@@ -23,9 +23,6 @@ namespace Tools
     Poco::UInt16 GetSector(Vector2D position, Poco::UInt8 losRange);
 
     std::set<Poco::UInt16> GetNearSectors(Vector2D position, Poco::UInt8 losRange);
-
-    int GetIntXPosition(float x);
-    int GetIntZPosition(float z);
 }
 
 /**
