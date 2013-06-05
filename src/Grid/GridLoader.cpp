@@ -51,8 +51,15 @@ GridLoader::GridLoader()
  */
 GridLoader::~GridLoader()
 {
-    _gridManager->joinAll();
     delete _gridManager;
+
+    for (GridsMap::const_iterator itr = _grids.begin(); itr != _grids.end(); )
+    {
+        Grid* grid = itr->second;
+        ++itr;
+
+        delete grid;
+    }
 }
 
 /**

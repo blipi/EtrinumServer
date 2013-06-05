@@ -28,6 +28,7 @@ private:
 public:
     GridLoader();
     ~GridLoader();
+
     static GridLoader& instance()
     {
         static Poco::SingletonHolder<GridLoader> sh;

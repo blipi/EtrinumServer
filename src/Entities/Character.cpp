@@ -16,7 +16,7 @@ Character::~Character()
 {
 }
 
-void onMoveInLOS(Object* who)
+void Character::onMoveInLOS(Object* who)
 {
 
 }

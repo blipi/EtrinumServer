@@ -16,66 +16,7 @@ using Poco::SharedPtr;
 using Poco::Timestamp;
 
 class Object;
-
-typedef rde::hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object>> TypeObjectsMap;
-
-class Grid;
-class Packet;
-
-class Sector
-{
-    friend class Sector;
-
-private:
-    enum SECTOR_STATES
-    {
-        SECTOR_NOT_INITIALIZED  = 0,
-        SECTOR_ACTIVE,
-        SECTOR_IDLE,
-        SECTOR_INACTIVE
-    };
-    
-    struct JoinEvent
-    {
-        JoinEvent(SharedPtr<Object> object, SharedPtr<Packet> packet);
-        ~JoinEvent();
-
-        SharedPtr<Object> Who;
-        SharedPtr<Packet> SpawnPacket;
-    };
-
-    typedef std::list<JoinEvent*> TypeJoinEvents;
-
-public:
-    Sector(Poco::UInt16 hash, Grid* grid);
-    ~Sector();
-
-    bool add(SharedPtr<Object> object);
-    void remove(SharedPtr<Object> object);
-    void remove_i(SharedPtr<Object> object);
-
-    bool update(Poco::UInt64 diff);
-
-    Poco::UInt16 hashCode();
-
-private:
-    void doJoinEvents(SharedPtr<Object> who);
-    void processUpdate(SharedPtr<Object> who, Poco::UInt64 diff);
-
-    void leave(SharedPtr<Object> who);
-    void join(SharedPtr<Object> who, SharedPtr<Packet> packet);
-    void visit(SharedPtr<Object> who);
-
-    void clearJoinEvents();
-
-private:
-    Grid* _grid;
-    Poco::UInt16 _hash;
-    Poco::UInt8 _state;
-    TypeObjectsMap _objects;
-    TypeJoinEvents _joinEvents;
-    Poco::Mutex _mutex;
-};
+class Sector;
 
 class Grid
 {
@@ -83,6 +24,7 @@ class Grid
 
 private:
     typedef rde::hash_map<Poco::UInt16 /*hash*/, Sector*> TypeSectorsMap;
+    typedef std::list<Poco::UInt16> TypeHashList;
 
 public:
     typedef std::list<Grid*> GridsList;

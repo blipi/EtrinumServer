@@ -13,6 +13,8 @@ public:
     Player(std::string name, Client* client);
     virtual ~Player();
 
+    bool update(const Poco::UInt64 diff);
+
 private:
     
 };

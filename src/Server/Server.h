@@ -37,9 +37,15 @@ public:
     {
         return _serverRunning;
     }
+
     inline void setRunning(bool running)
     {
         _serverRunning = running;
+    }
+
+    inline Poco::UInt64 getDiff()
+    {
+        return _diff;
     }
 
     // Server -> Client packets
@@ -71,6 +77,7 @@ private:
 
 private:
     bool _serverRunning;
+    Poco::UInt64 _diff;
 
     static const OpcodeHandleType OpcodeTable[];
 };

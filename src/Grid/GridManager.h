@@ -11,6 +11,7 @@ class GridManager: public Poco::TaskManager
 {
 public:
     GridManager(Poco::UInt8 maxThreads);
+    ~GridManager();
 
     void queue(Poco::Task* task);
     void dequeue();

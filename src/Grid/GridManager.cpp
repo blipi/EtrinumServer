@@ -1,4 +1,5 @@
 #include "GridManager.h"
+#include "debugging.h"
 
 #include "Poco/Thread.h"
 
@@ -7,6 +8,11 @@ GridManager::GridManager(Poco::UInt8 maxThreads):
     _maxThreads(maxThreads),
     _pendingThreads(0), _dequeuedThreads(0)
 {
+}
+
+GridManager::~GridManager()
+{
+    ASSERT(count() == 0);
 }
 
 void GridManager::queue(Poco::Task* task)

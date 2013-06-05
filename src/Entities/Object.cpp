@@ -32,7 +32,7 @@ Object::Object(Client* client):
  */
 Object::~Object()
 {
-    sLog.out(Message::PRIO_TRACE, "Object %s deleted", Poco::NumberFormatter::formatHex(GetGUID()).c_str());
+    //sLog.out(Message::PRIO_TRACE, "Object %s deleted", Poco::NumberFormatter::formatHex(GetGUID()).c_str());
 }
 
 /**

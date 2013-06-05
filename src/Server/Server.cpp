@@ -10,6 +10,7 @@
 #include "AuthDatabase.h"
 #include "debugging.h"
 #include "CharactersDatabase.h"
+#include "Cli.h"
 #include "Client.h"
 #include "defines.h"
 #include "GridLoader.h"
@@ -156,7 +157,15 @@ void Server::start(Poco::UInt16 port)
     // Create a processor thread and wait for it
     Thread updater;
     updater.start(*this);
-    updater.join();
+
+    CLI Cli;
+    while (updater.isRunning())
+    {
+        if (!Cli.getCLI())
+            _serverRunning = false;
+
+        Thread::sleep(200);
+    }
 
     // Close network acceptors
     reactor.stop();
@@ -169,7 +178,7 @@ void Server::start(Poco::UInt16 port)
     public:
         Spawner()
         {
-            spawnLimit = 2000;
+            spawnLimit = 5000;
             playerMax = 1000;
             x = 0;
             z = 0;
@@ -197,7 +206,7 @@ void Server::start(Poco::UInt16 port)
                     SharedPtr<Object> obj = sObjectManager.create(HIGH_GUID_CREATURE);
                     obj->Relocate(Vector2D(x, z));
                     sGridLoader.addObject(obj);
-                    MotionMaster::StartSimpleMovement(obj, Vector2D(2800, 1000), SPEED_WALK);
+                    MotionMaster::StartAngleMovement(obj, 0.5f, SPEED_WALK);
                 }
                 
                 x += MAP_MAX_X / spawnLimit;
@@ -219,21 +228,20 @@ void Server::run()
         Spawner spawner;
     #endif
 
-
     Timestamp lastUpdate;
     Poco::UInt32 prevSleepTime = 0;
     while (_serverRunning)
     {
         // Microseconds to miliseconds, as we have no usleep function
-        Timestamp::TimeDiff diff = lastUpdate.elapsed() / 1000;
+        _diff = lastUpdate.elapsed() / 1000;
         lastUpdate.update();
-        
-        sLog.out(Message::PRIO_DEBUG, "Diff time: %d", diff);
-        if (diff > 125)
-            ;//ASSERT(false);
+
+        //sLog.out(Message::PRIO_DEBUG, "Diff time: %d", diff);
+        //if (diff > 125)
+            //ASSERT(false);
 
         // Update all grids now
-        sGridLoader.update(diff);
+        sGridLoader.update(_diff);
 
         // Spawn mobs
         #ifdef SERVER_FRAMEWORK_TEST_SUITE
@@ -241,9 +249,9 @@ void Server::run()
         #endif
 
         // Wait for a constant update time
-        if (diff <= WORLD_HEART_BEAT + prevSleepTime)
+        if (_diff <= WORLD_HEART_BEAT + prevSleepTime)
         {   
-            prevSleepTime = WORLD_HEART_BEAT + prevSleepTime - (Poco::UInt32)diff;
+            prevSleepTime = WORLD_HEART_BEAT + prevSleepTime - (Poco::UInt32)_diff;
             Thread::sleep(prevSleepTime);
         }
         else

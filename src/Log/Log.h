@@ -14,6 +14,7 @@ class Log
 {
 public:
     Log();
+    ~Log();
     static Log& instance()
     {
         static Poco::SingletonHolder<Log> sh;
@@ -25,11 +26,11 @@ public:
 
     inline void setLogLevel(Message::Priority prio)
     {
-        _logger->setLevel(prio);
+        _logger.setLevel(prio);
     }
 
 private:
-    Logger* _logger;
+    Logger& _logger;
 };
 
 #define sLog Log::instance()

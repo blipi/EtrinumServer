@@ -14,10 +14,10 @@ using Poco::AsyncChannel;
 using Poco::SplitterChannel;
 using Poco::AutoPtr;
 
-Log::Log()
+Log::Log():
+    _logger(Logger::get("Server"))
 {
-    _logger = &Logger::get("Server");
-    _logger->setLevel(Message::PRIO_INFORMATION);
+    _logger.setLevel(Message::PRIO_INFORMATION);
 
     AutoPtr<FileChannel> channel(new FileChannel);
     AutoPtr<ConsoleChannel> cons(new ConsoleChannel);
@@ -35,12 +35,16 @@ Log::Log()
     splitter->addChannel(asyncFile);
     splitter->addChannel(asyncConsole);
 
-    _logger->setChannel(splitter);
+    _logger.setChannel(splitter);
+}
+
+Log::~Log()
+{
 }
 
 void Log::out(Message::Priority prio, const char* fmt, ...)
 {
-    if (prio > _logger->getLevel())
+    if (prio > _logger.getLevel())
         return;
 
     int n, size=100;
@@ -62,41 +66,41 @@ void Log::out(Message::Priority prio, const char* fmt, ...)
 
 void Log::out(Message::Priority prio, std::string msg)
 {
-    if (prio > _logger->getLevel())
+    if (prio > _logger.getLevel())
         return;
 
     switch (prio)
     {
         case Message::PRIO_CRITICAL:
-            _logger->critical(msg);
+            _logger.critical(msg);
             break;
 
         case Message::PRIO_DEBUG:
-            _logger->debug(msg);
+            _logger.debug(msg);
             break;
 
         case Message::PRIO_ERROR:
-            _logger->error(msg);
+            _logger.error(msg);
             break;
 
         case Message::PRIO_FATAL:
-            _logger->fatal(msg);
+            _logger.fatal(msg);
             break;
 
         case Message::PRIO_INFORMATION:
-            _logger->information(msg);
+            _logger.information(msg);
             break;
 
         case Message::PRIO_NOTICE:
-            _logger->notice(msg);
+            _logger.notice(msg);
             break;
 
         case Message::PRIO_TRACE:
-            _logger->trace(msg);
+            _logger.trace(msg);
             break;
 
         case Message::PRIO_WARNING:
-            _logger->trace(msg);
+            _logger.trace(msg);
             break;
     }
 }

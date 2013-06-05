@@ -27,11 +27,12 @@ enum OBJECT_MOVEMENT_FLAGS
     FLAG_FLYING = 2,
 };
 
-class Player;
-class Creature;
 class Character;
-class Grid;
 class Client;
+class Creature;
+class Grid;
+class Player;
+class Sector;
 
 class Object
 {
@@ -81,6 +82,16 @@ public:
         _grid = grid;
     }
 
+    Sector* getSector()
+    {
+        return _sector;
+    }
+
+    void setSector(Sector* sector)
+    {
+        _sector = sector;
+    }
+
     inline bool IsOnGrid()
     {
         return _grid != NULL;
@@ -125,6 +136,7 @@ private:
     Poco::Timestamp _losTrigger;
     Vector2D _position;
     Grid* _grid;
+    Sector* _sector;
     Client* _client;
 };
 

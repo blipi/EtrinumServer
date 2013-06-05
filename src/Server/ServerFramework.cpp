@@ -93,12 +93,11 @@ int main(int argc, char** argv)
 
     // Will wait until the server stops
     sServer->start(sConfig.getDefaultInt("ServerPort", 1616));
-
+    
     delete sServer;
 
     MySQL::Connector::unregisterConnector();
     Poco::ErrorHandler::set(oldErrorHandler);
-
-    system("pause");
+    
     return 0;
 }
