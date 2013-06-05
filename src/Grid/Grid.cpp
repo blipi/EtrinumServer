@@ -240,8 +240,6 @@ Grid::~Grid()
 bool Grid::update(Poco::UInt64 diff)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
-
-    _maxLOSChecks = 50;
     
     // Iterate a safe list
     TypeSectorsMap sectors = _sectors;
@@ -404,15 +402,4 @@ void Grid::forceLoad()
 bool Grid::isForceLoaded()
 {
     return (_forceLoad.elapsed() / 1000) < GridRemove;
-}
-
-bool Grid::canLOSCheck()
-{
-    if (_maxLOSChecks > 0)
-    {
-        _maxLOSChecks--;
-        return true;
-    }
-
-    return false;
 }

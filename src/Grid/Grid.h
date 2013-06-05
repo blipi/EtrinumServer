@@ -133,7 +133,6 @@ private:
     }
 
     Sector* getOrLoadSector_i(Poco::UInt16 hash);
-    bool canLOSCheck();
     
 public:
     static Poco::UInt8 LOSRange;
@@ -143,7 +142,6 @@ public:
 private:
     TypeSectorsMap _sectors;
     Poco::UInt32 _playersCount;
-    Poco::UInt16 _maxLOSChecks;
     Poco::Mutex _mutex;
     Timestamp _forceLoad;
     Poco::UInt16 _x;
