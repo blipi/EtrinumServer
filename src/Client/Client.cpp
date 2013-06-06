@@ -1,14 +1,15 @@
 #include "Client.h"
-#include "Server.h"
-#include "Player.h"
-#include "Packet.h"
-#include "Grid.h"
-#include "Tools.h"
-#include "ObjectManager.h"
+
 #include "AuthDatabase.h"
 #include "CharactersDatabase.h"
+#include "Grid.h"
 #include "Log.h"
-
+#include "ObjectManager.h"
+#include "Packet.h"
+#include "Player.h"
+#include "Position.h"
+#include "Server.h"
+#include "Tools.h"
 
 // Packet reading steps
 enum PACKET_READING_STEPS

@@ -12,6 +12,7 @@
 
 #include "defines.h"
 #include "MotionMaster.h"
+#include "Position.h"
 
 using Poco::SharedPtr;
 
@@ -62,15 +63,8 @@ public:
         _flags[flagType] &= ~flag;
     }
 
-    inline Vector2D& GetPosition()
-    {
-        return _position;
-    }
-
-    inline void Relocate(Vector2D position)
-    {
-        _position = position;
-    }
+    Vector2D GetPosition();
+    void Relocate(Vector2D position);
 
     inline Grid* GetGrid()
     {

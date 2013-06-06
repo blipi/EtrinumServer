@@ -1,8 +1,10 @@
 #include "MotionMaster.h"
-#include "Object.h"
+
 #include "Character.h"
-#include "Log.h"
 #include "debugging.h"
+#include "Log.h"
+#include "Object.h"
+#include "Position.h"
 
 #include <cmath>
 

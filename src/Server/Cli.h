@@ -1,3 +1,6 @@
+#ifndef GAMESERVER_CLI_H
+#define GAMESERVER_CLI_H
+
 #include <iostream>
 #include <string>
 #include <string>
@@ -12,3 +15,5 @@ public:
 private:
     bool parseCLI(std::string cmd);
 };
+
+#endif

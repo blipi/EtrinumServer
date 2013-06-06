@@ -10,6 +10,8 @@
 #include "hash_map.h"
 #include "stack_allocator.h"
 
+#include "Position.h"
+
 using Poco::SharedPtr;
 using Poco::Timestamp;
 
@@ -47,6 +49,8 @@ public:
     Sector(Poco::UInt16 hash, Grid* grid);
     ~Sector();
 
+    static Poco::UInt16 hash(Poco::UInt8 x, Poco::UInt8 y);
+
     bool add(SharedPtr<Object> object);
     void remove(SharedPtr<Object> object);
     void remove_i(SharedPtr<Object> object);
@@ -64,6 +68,8 @@ private:
     void visit(SharedPtr<Object> who);
 
     void clearJoinEvents();
+
+    std::set<Poco::UInt16> getNearSectors(Vector2D position, Poco::UInt8 losRange);
 
 private:
     Grid* _grid;

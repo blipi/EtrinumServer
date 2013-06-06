@@ -54,12 +54,15 @@ bool Object::update(const Poco::UInt64 diff)
             clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
         }
 
-        // Update grid if we have to
-        Vector2D currentPos = GetPosition();
-        updateGrid = (Tools::GetXCellFromPos(newPos.x) != Tools::GetXCellFromPos(currentPos.x) || Tools::GetYCellFromPos(newPos.z) != Tools::GetYCellFromPos(currentPos.z));
+        // Save the previous grid
+        Poco::UInt8 gridX = GetPosition().gridX;
+        Poco::UInt8 gridY = GetPosition().gridY;
 
-        // We must relocate the object before doing anything else
+        // Relocate to the new position
         Relocate(newPos);
+
+        // Return if grid has changed
+        return gridX == GetPosition().gridX && gridY == GetPosition().gridY;
     }
 
     return !updateGrid;
@@ -105,9 +108,19 @@ Poco::UInt32 Object::GetLowGUID()
     return (Poco::UInt32)(_GUID & 0xFFFFFFFF);
 }
 
+Vector2D Object::GetPosition()
+{
+    return _position;
+}
+
+void Object::Relocate(Vector2D position)
+{
+    _position.Relocate(position);
+}
+
 float Object::distanceTo(Object* to)
 {
-    return Tools::Distance2D(GetPosition(), to->GetPosition());
+    return GetPosition().Distance(to->GetPosition());
 }
 
 /**

@@ -4,14 +4,12 @@
 #include "Poco/Poco.h"
 #include <set>
 
-struct Vector2D;
+#include "Position.h"
 
 namespace Tools
 {
     Poco::UInt32 getU32(float value);
     float u32tof(Poco::UInt32 value);
-
-    float Distance2D(Vector2D from, Vector2D to);
 
     Poco::UInt16 GetXCellFromPos(double x);
     Poco::UInt16 GetYCellFromPos(double z);
@@ -19,10 +17,7 @@ namespace Tools
     Poco::UInt16 GetPositionInXCell(Poco::UInt16 cell, float x);
     Poco::UInt16 GetPositionInYCell(Poco::UInt16 cell, float z);
 
-    Poco::UInt16 GetSector(Poco::UInt16 cellX, Poco::UInt16 cellY, Poco::UInt8 losRange);
-    Poco::UInt16 GetSector(Vector2D position, Poco::UInt8 losRange);
-
-    std::set<Poco::UInt16> GetNearSectors(Vector2D position, Poco::UInt8 losRange);
+    Poco::UInt16 GetSector(Poco::UInt16 cellX, Poco::UInt16 cellY, Poco::UInt8 sectorSize);
 }
 
 /**

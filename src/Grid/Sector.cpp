@@ -32,6 +32,11 @@ Sector::~Sector()
     clearJoinEvents();
 }
 
+Poco::UInt16 Sector::hash(Poco::UInt8 x, Poco::UInt8 y)
+{
+    return ((Poco::UInt16)x << 8) | y;
+}
+
 bool Sector::update(Poco::UInt64 diff)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
@@ -49,7 +54,7 @@ bool Sector::update(Poco::UInt64 diff)
 
         // Update AI, movement, everything if there is any or we have to
         // If update returns false, that means the object is no longer in this grid!
-        Poco::UInt16 prevSector = Tools::GetSector(object->GetPosition(), Grid::LOSRange);
+        Poco::UInt16 prevSector = object->GetPosition().sector;
         bool updateResult = false;
     
         switch (object->GetHighGUID())
@@ -72,10 +77,10 @@ bool Sector::update(Poco::UInt64 diff)
         }
         else if (object->hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
         {
-            Poco::UInt16 actSector = Tools::GetSector(object->GetPosition(), Grid::LOSRange);
+            Poco::UInt16 actSector = object->GetPosition().sector;
 
             // Have we changed sector?
-            if (prevSector != actSector)
+            if (prevSector != object->GetPosition().sector)
             {
                 _grid->getOrLoadSector_i(actSector)->add(object); // Add us to the new sector
                 remove_i(object); // Remove from this sector
@@ -103,7 +108,7 @@ bool Sector::add(SharedPtr<Object> object)
         SharedPtr<Packet> packet = sServer->buildSpawnPacket(object, false);
 
         // Join all near sectors
-        std::set<Poco::UInt16> sectors = Tools::GetNearSectors(object->GetPosition(), Grid::LOSRange);
+        std::set<Poco::UInt16> sectors = getNearSectors(object->GetPosition(), Grid::LOSRange);
         std::set<Poco::UInt16>::iterator itr = sectors.begin();
         std::set<Poco::UInt16>::iterator end = sectors.end();
 
@@ -191,3 +196,43 @@ Poco::UInt16 Sector::hashCode()
 {
     return _hash;
 }
+
+std::set<Poco::UInt16> Sector::getNearSectors(Vector2D position, Poco::UInt8 losRange)
+{
+    Poco::UInt8 x = position.sector >> 8;
+    Poco::UInt8 y = position.sector & 0xFF;
+        
+    std::set<Poco::UInt16> list;
+    list.insert(hash(x, y));
+
+    if (x > losRange)
+    {
+        list.insert(hash(x - 1, y));
+
+        if (y > losRange)
+            list.insert(hash(x - 1, y - 1));
+            
+        if (y < UNITS_PER_CELL - losRange)
+            list.insert(hash(x - 1, y + 1));
+    }
+
+    if (x < UNITS_PER_CELL - losRange)
+    {
+        list.insert(hash(x + 1, y));
+
+        if (y > losRange)
+            list.insert(hash(x + 1, y - 1));
+            
+        if (y < UNITS_PER_CELL - losRange)
+            list.insert(hash(x + 1, y + 1));
+    }
+
+    if (y > losRange)
+        list.insert(hash(x, y - 1));
+
+    if (y < UNITS_PER_CELL - losRange)
+        list.insert(hash(x, y + 1));
+
+    return list;
+}
+

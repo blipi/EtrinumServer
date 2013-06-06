@@ -29,6 +29,8 @@ enum MOVEMENT_TYPE
 
 class Object;
 
+struct Vector2D;
+
 class MotionMaster
 {
 public:

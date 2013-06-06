@@ -178,8 +178,7 @@ Sector* Grid::getOrLoadSector_i(Poco::UInt16 hash)
  */
 bool Grid::addObject(SharedPtr<Object> object)
 {
-    Poco::UInt16 hash = Tools::GetSector(object->GetPosition(), LOSRange);
-    if (getOrLoadSector(hash)->add(object))
+    if (getOrLoadSector(object->GetPosition().sector)->add(object))
     {
         object->SetGrid(this);
         return true;
@@ -194,8 +193,7 @@ bool Grid::addObject(SharedPtr<Object> object)
  */
 void Grid::removeObject(SharedPtr<Object> object)
 {
-    Poco::UInt16 hash = Tools::GetSector(object->GetPosition(), LOSRange);
-    getOrLoadSector(hash)->remove(object);
+    getOrLoadSector(object->GetPosition().sector)->remove(object);
 }
 
 

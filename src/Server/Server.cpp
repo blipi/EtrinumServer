@@ -236,8 +236,8 @@ void Server::run()
         _diff = lastUpdate.elapsed() / 1000;
         lastUpdate.update();
 
-        //sLog.out(Message::PRIO_DEBUG, "Diff time: %d", diff);
-        //if (diff > 125)
+        //sLog.out(Message::PRIO_DEBUG, "Diff time: %d", _diff);
+        //if (_diff > 125)
             //ASSERT(false);
 
         // Update all grids now

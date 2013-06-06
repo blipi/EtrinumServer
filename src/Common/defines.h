@@ -23,22 +23,6 @@ enum HIGH_GUID
 #define MAP_MIN_Z       -816
 #define MAP_MAX_Z       2000
 
-struct Vector2D
-{
-    Vector2D()
-    {
-    }
-
-    Vector2D(float x, float z)
-    {
-        this->x = x;
-        this->z = z;
-    }
-
-    float x;
-    float z;
-};
-
 //@ Avoid MSV defining max/min and overriding numeric_limits
 #if defined(_WIN32) || defined(_WIN64)
     #define NOMINMAX
