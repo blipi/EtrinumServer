@@ -9,22 +9,23 @@
 #include "Server.h"
 #include "Tools.h"
 
-Sector::JoinEvent::JoinEvent(SharedPtr<Object> object, SharedPtr<Packet> packet)
+Sector::SectorEvent::SectorEvent(SharedPtr<Object> object, SharedPtr<Packet> packet, Poco::UInt8 eventType)
 {
-    Who = object;
-    SpawnPacket = packet;
+    Who.assign(object);
+    EventPacket.assign(packet);
+    EventType = eventType;
 }
 
-Sector::JoinEvent::~JoinEvent()
+Sector::SectorEvent::~SectorEvent()
 {
     Who = NULL;
 }
 
 Sector::Sector(Poco::UInt16 hash, Grid* grid):
     _hash(hash),
-    _grid(grid),
-    _state(SECTOR_NOT_INITIALIZED)
+    _grid(grid)
 {
+        _sectors = getNearSectors();
 }
 
 Sector::~Sector()
@@ -108,10 +109,8 @@ bool Sector::add(SharedPtr<Object> object)
         SharedPtr<Packet> packet = sServer->buildSpawnPacket(object, false);
 
         // Join all near sectors
-        std::set<Poco::UInt16> sectors = getNearSectors(object->GetPosition(), Grid::LOSRange);
-        std::set<Poco::UInt16>::iterator itr = sectors.begin();
-        std::set<Poco::UInt16>::iterator end = sectors.end();
-
+        TypeHashList::iterator itr = _sectors.begin();
+        TypeHashList::iterator end = _sectors.end();
         while (itr != end)
         {
             _grid->getOrLoadSector_i(*itr)->join(object, packet);
@@ -137,7 +136,8 @@ void Sector::remove_i(SharedPtr<Object> object)
 
     _objects.erase(object->GetGUID());
 
-    leave(object);
+    SharedPtr<Packet> packet = sServer->buildDespawnPacket(object->GetGUID());
+    leave(object, packet);
 }
 
 void Sector::join(SharedPtr<Object> who, SharedPtr<Packet> packet)
@@ -145,7 +145,7 @@ void Sector::join(SharedPtr<Object> who, SharedPtr<Packet> packet)
     // Join events must (ideally) be done at the next update
     // As it reduces the amount of time and loops being done
     // Building the spawn packet is time expensive, do it now
-    _joinEvents.push_back(new JoinEvent(who, packet));
+    _sectorEvents.push_back(new SectorEvent(who, packet, EVENT_BROADCAST_JOIN));
 }
 
 void Sector::visit(SharedPtr<Object> who)
@@ -155,41 +155,28 @@ void Sector::visit(SharedPtr<Object> who)
             creature->onMoveInLOS(itr->second);
 }
 
-void Sector::leave(SharedPtr<Object> who)
+void Sector::leave(SharedPtr<Object> who, SharedPtr<Packet> packet)
 {
-    for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); )
-    {
-        Poco::UInt64 GUID = itr->first;
-        SharedPtr<Object> object = itr->second;
-        ++itr;
-
-        // Send despawn of the visitor
-        if (HIGUID(GUID) & HIGH_GUID_PLAYER)
-            sServer->sendDespawnPacket(GUID, object);
-
-        // Send despawn to the visitor
-        if (who->GetHighGUID() & HIGH_GUID_PLAYER)
-            sServer->sendDespawnPacket(object->GetGUID(), who);
-    }
+    _sectorEvents.push_back(new SectorEvent(who, packet, EVENT_BROADCAST_LEAVE));
 }
 
 void Sector::clearJoinEvents()
 {
-    while (!_joinEvents.empty())
+    while (!_sectorEvents.empty())
     {
-        delete _joinEvents.front();
-        _joinEvents.pop_front();
+        delete _sectorEvents.back();
+        _sectorEvents.pop_back();
     }
 }
 
-bool Sector::hasJoinEvents()
+bool Sector::hasEvents()
 {
-    return !_joinEvents.empty();
+    return !_sectorEvents.empty();
 }
 
-Sector::TypeJoinEvents* Sector::getJoinEvents()
+Sector::TypeSectorEvents* Sector::getEvents()
 {
-    return &_joinEvents;
+    return &_sectorEvents;
 }
 
 Poco::UInt16 Sector::hashCode()
@@ -197,41 +184,41 @@ Poco::UInt16 Sector::hashCode()
     return _hash;
 }
 
-std::set<Poco::UInt16> Sector::getNearSectors(Vector2D position, Poco::UInt8 losRange)
+TypeHashList Sector::getNearSectors()
 {
-    Poco::UInt8 x = position.sector >> 8;
-    Poco::UInt8 y = position.sector & 0xFF;
+    Poco::UInt8 x = _hash >> 8;
+    Poco::UInt8 y = _hash & 0xFF;
         
-    std::set<Poco::UInt16> list;
-    list.insert(hash(x, y));
+    TypeHashList list;
+    list.push_back(hash(x, y));
 
-    if (x > losRange)
+    if (x > 1)
     {
-        list.insert(hash(x - 1, y));
+        list.push_back(hash(x - 1, y));
 
-        if (y > losRange)
-            list.insert(hash(x - 1, y - 1));
+        if (y > 1)
+            list.push_back(hash(x - 1, y - 1));
             
-        if (y < UNITS_PER_CELL - losRange)
-            list.insert(hash(x - 1, y + 1));
+        if (y < 0xFF)
+            list.push_back(hash(x - 1, y + 1));
     }
 
-    if (x < UNITS_PER_CELL - losRange)
+    if (x < 0xFF)
     {
-        list.insert(hash(x + 1, y));
+        list.push_back(hash(x + 1, y));
 
-        if (y > losRange)
-            list.insert(hash(x + 1, y - 1));
+        if (y > 1)
+            list.push_back(hash(x + 1, y - 1));
             
-        if (y < UNITS_PER_CELL - losRange)
-            list.insert(hash(x + 1, y + 1));
+        if (y < 0xFF)
+            list.push_back(hash(x + 1, y + 1));
     }
 
-    if (y > losRange)
-        list.insert(hash(x, y - 1));
+    if (y > 1)
+        list.push_back(hash(x, y - 1));
 
-    if (y < UNITS_PER_CELL - losRange)
-        list.insert(hash(x, y + 1));
+    if (y < 0xFF)
+        list.push_back(hash(x, y + 1));
 
     return list;
 }

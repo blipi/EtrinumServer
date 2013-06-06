@@ -7,6 +7,7 @@
 #include "Poco/Timestamp.h"
 
 #include <list>
+#include <vector>
 #include "hash_map.h"
 #include "stack_allocator.h"
 
@@ -20,31 +21,32 @@ class Grid;
 class Packet;
 
 typedef rde::hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object>> TypeObjectsMap;
+typedef std::vector<Poco::UInt16> TypeHashList;
 
 class Sector
 {
     friend class Sector;
 
 private:
-    enum SECTOR_STATES
+    enum SECTOR_EVENTS
     {
-        SECTOR_NOT_INITIALIZED  = 0,
-        SECTOR_ACTIVE,
-        SECTOR_IDLE,
-        SECTOR_INACTIVE
+        EVENT_BROADCAST_JOIN,
+        EVENT_BROADCAST_LEAVE,
+        EVENT_BROADCAST_WALK
     };
 
 public:    
-    struct JoinEvent
+    struct SectorEvent
     {
-        JoinEvent(SharedPtr<Object> object, SharedPtr<Packet> packet);
-        ~JoinEvent();
+        SectorEvent(SharedPtr<Object> object, SharedPtr<Packet> packet, Poco::UInt8 eventType);
+        ~SectorEvent();
 
         SharedPtr<Object> Who;
-        SharedPtr<Packet> SpawnPacket;
+        SharedPtr<Packet> EventPacket;
+        Poco::UInt8 EventType;
     };
 
-    typedef std::list<JoinEvent*> TypeJoinEvents;
+    typedef std::vector<SectorEvent*> TypeSectorEvents;
 
     Sector(Poco::UInt16 hash, Grid* grid);
     ~Sector();
@@ -57,26 +59,26 @@ public:
 
     bool update(Poco::UInt64 diff);
 
-    bool hasJoinEvents();
-    TypeJoinEvents* getJoinEvents();
+    bool hasEvents();
+    TypeSectorEvents* getEvents();
 
     Poco::UInt16 hashCode();
 
 private:
-    void leave(SharedPtr<Object> who);
     void join(SharedPtr<Object> who, SharedPtr<Packet> packet);
+    void leave(SharedPtr<Object> who, SharedPtr<Packet> packet);
     void visit(SharedPtr<Object> who);
 
     void clearJoinEvents();
 
-    std::set<Poco::UInt16> getNearSectors(Vector2D position, Poco::UInt8 losRange);
+    TypeHashList getNearSectors();
 
 private:
     Grid* _grid;
     Poco::UInt16 _hash;
-    Poco::UInt8 _state;
+    TypeHashList _sectors;
     TypeObjectsMap _objects;
-    TypeJoinEvents _joinEvents;
+    TypeSectorEvents _sectorEvents;
     Poco::Mutex _mutex;
 };
 

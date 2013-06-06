@@ -108,14 +108,10 @@ Poco::UInt32 Object::GetLowGUID()
     return (Poco::UInt32)(_GUID & 0xFFFFFFFF);
 }
 
-Vector2D Object::GetPosition()
-{
-    return _position;
-}
-
 void Object::Relocate(Vector2D position)
 {
     _position.Relocate(position);
+    _position.Process();
 }
 
 float Object::distanceTo(Object* to)

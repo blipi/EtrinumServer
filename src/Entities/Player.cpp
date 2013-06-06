@@ -31,28 +31,28 @@ bool Player::update(const Poco::UInt64 diff)
     // Process join events on the grid
     if (Sector* sector = getSector())
     {
-        if (sector->hasJoinEvents())
+        if (sector->hasEvents())
         {
             // Get all the join events
-            Sector::TypeJoinEvents* joinEvents = sector->getJoinEvents();
+            Sector::TypeSectorEvents* sectorEvents = sector->getEvents();
 
             Packet* spawnData = sServer->buildSpawnPacket(this, false);
 
-            for (Sector::TypeJoinEvents::iterator itr = joinEvents->begin(); itr != joinEvents->end();)
+            for (Sector::TypeSectorEvents::iterator itr = sectorEvents->begin(); itr != sectorEvents->end();)
             {
-                Sector::JoinEvent* joinEvent = *itr;
+                Sector::SectorEvent* sectorEvent = *itr;
                 ++itr;
 
                 // Avoid self spawning
-                if (GetGUID() == joinEvent->Who->GetGUID())
+                if (GetGUID() == sectorEvent->Who->GetGUID())
                     continue;
 
                 // Send spawn of the visitor
-                if (joinEvent->Who->GetHighGUID() & HIGH_GUID_PLAYER)
-                    sServer->sendPacketTo(spawnData, joinEvent->Who);
+                if (sectorEvent->Who->GetHighGUID() & HIGH_GUID_PLAYER)
+                    sServer->sendPacketTo(spawnData, sectorEvent->Who);
 
                 // Send spawn to the visitor
-                sServer->sendPacketTo(joinEvent->SpawnPacket, this);
+                sServer->sendPacketTo(sectorEvent->EventPacket, this);
             }
 
             delete spawnData;

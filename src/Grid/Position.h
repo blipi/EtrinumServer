@@ -19,11 +19,9 @@ struct Vector2D
 
     void Relocate(Vector2D vector2D);
     float Distance(Vector2D to);
+    void Process();
 
 private:
-    void calculateGrid();
-    void calculateSector();
-
     Poco::UInt16 _inCellX;
     Poco::UInt16 _inCellY;
 };

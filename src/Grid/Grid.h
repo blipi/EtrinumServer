@@ -24,7 +24,6 @@ class Grid
 
 private:
     typedef rde::hash_map<Poco::UInt16 /*hash*/, Sector*> TypeSectorsMap;
-    typedef std::list<Poco::UInt16> TypeHashList;
 
 public:
     typedef std::list<Grid*> GridsList;

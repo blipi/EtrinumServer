@@ -53,9 +53,8 @@ public:
     void SendClientDisconnected(Client* client);
 
     Packet* buildSpawnPacket(Object* object, bool deleteOnSend = true);
+    Packet* buildDespawnPacket(Poco::UInt64 GUID);
     void sendPacketTo(Packet* packet, Object* to);
-
-    void sendDespawnPacket(Poco::UInt64 GUID, Object* to);
 
     // Packet parsing function
     bool parsePacket(Client* client, Packet* packet, Poco::UInt8 securityByte);

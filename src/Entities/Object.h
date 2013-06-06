@@ -63,7 +63,11 @@ public:
         _flags[flagType] &= ~flag;
     }
 
-    Vector2D GetPosition();
+    Vector2D GetPosition()
+    {
+        return _position;
+    }
+
     void Relocate(Vector2D position);
 
     inline Grid* GetGrid()

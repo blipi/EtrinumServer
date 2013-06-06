@@ -346,13 +346,13 @@ void Server::sendPacketTo(Packet* packet, Object* to)
         delete packet;
 }
 
-void Server::sendDespawnPacket(Poco::UInt64 GUID, Object* to)
+Packet* Server::buildDespawnPacket(Poco::UInt64 GUID)
 {
-    Packet* packet = new Packet(OPCODE_SC_DESPAWN_OBJECT, 8);
+    Packet* packet = new Packet(OPCODE_SC_DESPAWN_OBJECT, 8, false, false);
     *packet << LOGUID(GUID);
     *packet << HIGUID(GUID);
-    
-    sendPacketTo(packet, to);
+
+    return packet;
 }
 
 void Server::sendPlayerStats(Client* client, SharedPtr<Object> object)
