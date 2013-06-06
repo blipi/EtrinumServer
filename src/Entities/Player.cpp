@@ -36,26 +36,57 @@ bool Player::update(const Poco::UInt64 diff)
             // Get all the join events
             Sector::TypeSectorEvents* sectorEvents = sector->getEvents();
 
-            Packet* spawnData = sServer->buildSpawnPacket(this, false);
+            Packet* spawnPacket = NULL;
+            Packet* despawnPacket = NULL;
 
             for (Sector::TypeSectorEvents::iterator itr = sectorEvents->begin(); itr != sectorEvents->end();)
             {
                 Sector::SectorEvent* sectorEvent = *itr;
                 ++itr;
 
-                // Avoid self spawning
+                // Avoid self sending
                 if (GetGUID() == sectorEvent->Who->GetGUID())
                     continue;
 
-                // Send spawn of the visitor
-                if (sectorEvent->Who->GetHighGUID() & HIGH_GUID_PLAYER)
-                    sServer->sendPacketTo(spawnData, sectorEvent->Who);
+                switch (sectorEvent->EventType)
+                {
+                    case EVENT_BROADCAST_JOIN:
+                    {
+                        if (spawnPacket == NULL)
+                            spawnPacket = sServer->buildSpawnPacket(this, false);
 
-                // Send spawn to the visitor
-                sServer->sendPacketTo(sectorEvent->EventPacket, this);
+                        // Send spawn of the visitor
+                        if (sectorEvent->Who->GetHighGUID() & HIGH_GUID_PLAYER)
+                            sServer->sendPacketTo(spawnPacket, sectorEvent->Who);
+
+                        // Send spawn to the visitor
+                        sServer->sendPacketTo(sectorEvent->EventPacket, this);
+
+                        break;
+                    }
+
+                    case EVENT_BROADCAST_LEAVE:
+                    {
+                        if (despawnPacket == NULL)
+                            despawnPacket = sServer->buildDespawnPacket(GetGUID());
+
+                        // Send spawn of the visitor
+                        if (sectorEvent->Who->GetHighGUID() & HIGH_GUID_PLAYER)
+                            sServer->sendPacketTo(despawnPacket, sectorEvent->Who);
+
+                        // Send spawn to the visitor
+                        sServer->sendPacketTo(sectorEvent->EventPacket, this);
+
+                        break;
+                    }
+                }
             }
 
-            delete spawnData;
+            if (spawnPacket)
+                delete spawnPacket;
+
+            if (despawnPacket)
+                delete despawnPacket;
         }
     }
 

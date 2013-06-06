@@ -23,17 +23,16 @@ class Packet;
 typedef rde::hash_map<Poco::UInt64 /*guid*/, Poco::SharedPtr<Object>> TypeObjectsMap;
 typedef std::vector<Poco::UInt16> TypeHashList;
 
+enum SECTOR_EVENTS
+{
+    EVENT_BROADCAST_JOIN,
+    EVENT_BROADCAST_LEAVE,
+    EVENT_BROADCAST_WALK
+};
+
 class Sector
 {
     friend class Sector;
-
-private:
-    enum SECTOR_EVENTS
-    {
-        EVENT_BROADCAST_JOIN,
-        EVENT_BROADCAST_LEAVE,
-        EVENT_BROADCAST_WALK
-    };
 
 public:    
     struct SectorEvent
