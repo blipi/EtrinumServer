@@ -155,8 +155,7 @@ Grid* GridLoader::addObjectTo(Poco::UInt16 x, Poco::UInt16 y, SharedPtr<Object> 
  */
 Grid* GridLoader::addObject(SharedPtr<Object> object)
 {
-    Vector2D pos = object->GetPosition();
-    return addObjectTo(Tools::GetXCellFromPos(pos.x), Tools::GetYCellFromPos(pos.z), object);
+    return addObjectTo(object->GetPosition().gridX, object->GetPosition().gridY, object);
 }
 
 /**

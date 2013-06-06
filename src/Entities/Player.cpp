@@ -26,8 +26,6 @@ Player::~Player()
 
 bool Player::update(const Poco::UInt64 diff)
 {
-    bool result = Object::update(diff);
-
     // Process join events on the grid
     if (Sector* sector = getSector())
     {
@@ -90,7 +88,7 @@ bool Player::update(const Poco::UInt64 diff)
         }
     }
 
-    return result;
+    return Object::update(diff);
 }
 
 

@@ -65,9 +65,14 @@ bool Grid::update(Poco::UInt64 diff)
     {
         Poco::UInt16 hash = *itr;
         ++itr;
+        
+        Sector* sector = _sectors[hash];
 
-        delete _sectors[hash];
-        _sectors.erase(hash);
+        if (!sector->hasObjects())
+        {
+            delete _sectors[hash];
+            _sectors.erase(hash);
+        }
     }
 
     return true;

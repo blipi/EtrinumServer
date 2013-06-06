@@ -43,9 +43,12 @@ Object::~Object()
  */
 bool Object::update(const Poco::UInt64 diff)
 {
-    bool updateGrid = false;
     if (hasFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING))
     {
+        // Save the previous grid
+        Poco::UInt8 gridX = GetPosition().gridX;
+        Poco::UInt8 gridY = GetPosition().gridY;
+
         // Check if movement has finalized, in which case, remove flag
         Vector2D newPos;
         if (motionMaster.evaluate(diff, newPos))
@@ -54,10 +57,6 @@ bool Object::update(const Poco::UInt64 diff)
             clearFlag(FLAGS_TYPE_MOVEMENT, FLAG_MOVING);
         }
 
-        // Save the previous grid
-        Poco::UInt8 gridX = GetPosition().gridX;
-        Poco::UInt8 gridY = GetPosition().gridY;
-
         // Relocate to the new position
         Relocate(newPos);
 
@@ -65,7 +64,7 @@ bool Object::update(const Poco::UInt64 diff)
         return gridX == GetPosition().gridX && gridY == GetPosition().gridY;
     }
 
-    return !updateGrid;
+    return true;
 }
 
 /**

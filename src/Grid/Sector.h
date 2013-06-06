@@ -58,6 +58,7 @@ public:
 
     bool update(Poco::UInt64 diff);
 
+    bool hasObjects();
     bool hasEvents();
     TypeSectorEvents* getEvents();
 

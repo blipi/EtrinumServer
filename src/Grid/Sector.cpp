@@ -81,7 +81,7 @@ bool Sector::update(Poco::UInt64 diff)
             Poco::UInt16 actSector = object->GetPosition().sector;
 
             // Have we changed sector?
-            if (prevSector != object->GetPosition().sector)
+            if (prevSector != actSector)
             {
                 _grid->getOrLoadSector_i(actSector)->add(object); // Add us to the new sector
                 remove_i(object); // Remove from this sector
@@ -93,7 +93,7 @@ bool Sector::update(Poco::UInt64 diff)
     // Delete them all
     clearJoinEvents();
 
-    return !_objects.empty();
+    return hasObjects();
 }
 
 bool Sector::add(SharedPtr<Object> object)
@@ -167,6 +167,11 @@ void Sector::clearJoinEvents()
         delete _sectorEvents.back();
         _sectorEvents.pop_back();
     }
+}
+
+bool Sector::hasObjects()
+{
+    return !_objects.empty();
 }
 
 bool Sector::hasEvents()

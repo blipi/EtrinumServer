@@ -236,7 +236,7 @@ void Server::run()
         _diff = lastUpdate.elapsed() / 1000;
         lastUpdate.update();
 
-        //sLog.out(Message::PRIO_DEBUG, "Diff time: %d", _diff);
+        sLog.out(Message::PRIO_DEBUG, "Diff time: %d", _diff);
         //if (_diff > 125)
             //ASSERT(false);
 
