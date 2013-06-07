@@ -52,9 +52,9 @@ public:
 
     static Poco::UInt16 hash(Poco::UInt8 x, Poco::UInt8 y);
 
-    bool add(SharedPtr<Object> object);
+    bool add(SharedPtr<Object> object, Poco::UInt8* aX = NULL, Poco::UInt8* aY = NULL);
     void remove(SharedPtr<Object> object);
-    void remove_i(SharedPtr<Object> object);
+    void remove_i(SharedPtr<Object> object, Poco::UInt8* aX = NULL, Poco::UInt8* aY = NULL);
 
     bool update(Poco::UInt64 diff);
 
@@ -76,6 +76,8 @@ private:
 private:
     Grid* _grid;
     Poco::UInt16 _hash;
+    Poco::UInt8 _x;
+    Poco::UInt8 _y;
     TypeHashList _sectors;
     TypeObjectsMap _objects;
     TypeSectorEvents _sectorEvents;
