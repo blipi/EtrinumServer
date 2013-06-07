@@ -30,5 +30,5 @@ void Vector2D::Process()
     _inCellX = Tools::GetPositionInXCell(gridX, x);
     _inCellY = Tools::GetPositionInYCell(gridX, z);
 
-    sector = Tools::GetSector(_inCellX, _inCellY, Grid::LOSRange / 3);
+    sector = Tools::GetSector(_inCellX, _inCellY, Grid::LOSRange / 2);
 }
