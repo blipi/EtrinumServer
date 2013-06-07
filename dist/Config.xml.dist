@@ -9,7 +9,7 @@
             <port>3306</port>
             <db>characters</db>
         </characters>
-    
+
         <auth>
             <host>127.0.0.1</host>
             <user>root</user>
@@ -26,7 +26,7 @@
                 Default: 1616
         -->
         <ServerPort type="int">1616</ServerPort>
-        
+
         <!-- 
             LogLevel
             Minim priority to add to the logs files
@@ -40,14 +40,21 @@
                 8 - TRACE
         -->
         <LogLevel type="int">8</LogLevel>
-        
+
         <!--
             LoSRange
             Range by which objects can be seen each other
                 Default: 35
         -->
-        <LoSRange type="int">35</LoSRange>
-        
+        <LOSRange type="int">35</LOSRange>
+
+        <!--
+            AggroRange
+            Range at which creatures aggro players
+                Default: 15
+        -->
+        <AggroRange type="int">15</AggroRange>
+
         <!--
             GridRemove
             Time interval for a grid to be removed when no players are
@@ -56,15 +63,15 @@
                 Recommended: 5000+
         -->
         <GridRemove type="int">15000</GridRemove>
-        
+
         <!--
             MapThreads
             Number of threads updating maps
-                Default: 2
+                Default: 1
                 Recommended: Core threads (1+)
         -->
         <MapThreads type="int">2</MapThreads>
-        
+
         <!--
             StrictPlayerNames
             Whether the core must check the validity of new players names
@@ -72,7 +79,7 @@
                 Default: 1
         -->
         <StrictPlayerNames type="bool">1</StrictPlayerNames>
-        
+
     </coreconfig>
-    
+
 </configuration>
