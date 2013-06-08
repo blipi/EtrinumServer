@@ -178,7 +178,7 @@ void Server::start(Poco::UInt16 port)
     public:
         Spawner()
         {
-            spawnLimit = 5000;
+            spawnLimit = count = 5000;
             playerMax = 1000;
             x = 0;
             z = 0;
@@ -191,7 +191,7 @@ void Server::start(Poco::UInt16 port)
         // Avoid overload
         void spawn()
         {
-            for (int i = 0; i < 50 && spawnLimit > 0; i++, spawnLimit--)
+            for (int i = 0; i < 50 && count > 0; i++, count--)
             {
                 if ((i % 3 != 0) && playerMax > 0)
                 {
@@ -209,13 +209,14 @@ void Server::start(Poco::UInt16 port)
                     MotionMaster::StartAngleMovement(obj, 0.5f, SPEED_WALK);
                 }
                 
-                x += MAP_MAX_X / spawnLimit;
-                z += MAP_MAX_Z / spawnLimit;
+                x += ((MAP_MAX_X - MAP_MIN_X) / (float)spawnLimit);
+                z += ((MAP_MAX_Z - MAP_MIN_Z) / (float)spawnLimit);
             }
         }
 
     private:
         Poco::UInt32 spawnLimit;
+        Poco::UInt32 count;
         Poco::UInt32 playerMax;
         float x;
         float z;
