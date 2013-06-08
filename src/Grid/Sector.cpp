@@ -23,7 +23,8 @@ Sector::SectorEvent::~SectorEvent()
 
 Sector::Sector(Poco::UInt16 hash, Grid* grid):
     _hash(hash),
-    _grid(grid)
+    _grid(grid),
+    _playersInSector(0)
 {
     _x = hash >> 8;
     _y = hash & 0xFF;
@@ -67,6 +68,9 @@ bool Sector::update(Poco::UInt64 diff)
                 break;
 
             case HIGH_GUID_CREATURE:
+                updateResult = object->ToCreature()->update(objectDiff);
+                break;
+
             default:
                 updateResult = object->update(objectDiff);
                 break;
@@ -101,6 +105,26 @@ bool Sector::update(Poco::UInt64 diff)
     return hasObjects();
 }
 
+SharedPtr<Object> Sector::selectTargetInAggroRange()
+{
+    // If there are no players, simply return
+    if (!_playersInSector)
+        return NULL;
+
+    // All the sector is in aggro range ;)
+    for (TypeObjectsMap::iterator itr = _objects.begin(), end = _objects.end(); itr != end; ++itr)
+    {
+        SharedPtr<Object> object = itr->second;
+
+        if (object->GetHighGUID() & HIGH_GUID_PLAYER)
+            return object;
+    }
+
+    // Nothing found, should never happen as the first if avoids it
+    // Just to avoid compiler warnings
+    return NULL;
+}
+
 bool Sector::add(SharedPtr<Object> object, Poco::UInt8* aX /*= NULL*/, Poco::UInt8* aY /*= NULL*/)
 {
     Poco::Mutex::ScopedLock lock(_mutex);
@@ -109,7 +133,10 @@ bool Sector::add(SharedPtr<Object> object, Poco::UInt8* aX /*= NULL*/, Poco::UIn
     {
         object->setSector(this);
         if (object->GetHighGUID() & HIGH_GUID_PLAYER)
+        {
+            _playersInSector++;
             _grid->onPlayerAdded();
+        }
         
         SharedPtr<Packet> packet = sServer->buildSpawnPacket(object, false);
 
@@ -160,7 +187,10 @@ void Sector::remove(SharedPtr<Object> object)
 void Sector::remove_i(SharedPtr<Object> object, Poco::UInt8* aX /*= NULL*/, Poco::UInt8* aY /*= NULL*/)
 {
     if (object->GetHighGUID() & HIGH_GUID_PLAYER)
+    {
+        _playersInSector--;
         _grid->onPlayerErased();
+    }
 
     _objects.erase(object->GetGUID());
 
@@ -205,13 +235,6 @@ void Sector::join(SharedPtr<Object> who, SharedPtr<Packet> packet)
     // As it reduces the amount of time and loops being done
     // Building the spawn packet is time expensive, do it now
     _sectorEvents.push_back(new SectorEvent(who, packet, EVENT_BROADCAST_JOIN));
-}
-
-void Sector::visit(SharedPtr<Object> who)
-{
-    if (Creature* creature = who->ToCreature())
-        for (TypeObjectsMap::iterator itr = _objects.begin(); itr != _objects.end(); ++itr)
-            creature->onMoveInLOS(itr->second);
 }
 
 void Sector::leave(SharedPtr<Object> who, SharedPtr<Packet> packet)

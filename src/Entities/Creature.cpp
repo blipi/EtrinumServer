@@ -1,5 +1,5 @@
 #include "Creature.h"
-#include "Grid.h"
+#include "Sector.h"
 
 Creature::Creature():
     Character("")
@@ -10,10 +10,17 @@ Creature::~Creature()
 {
 }
 
-void Creature::onMoveInLOS(Object* who)
+bool Creature::update(const Poco::UInt64 diff)
 {
-    if (distanceTo(who) <= Grid::AggroRange)
+    if (checkLOS())
     {
-        // AttackStart
+        SharedPtr<Object> target = getSector()->selectTargetInAggroRange();
+
+        if (!target.isNull())
+        {
+            // attackStart(target);
+        }
     }
+
+    return Object::update(diff);
 }

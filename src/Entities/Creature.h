@@ -11,7 +11,7 @@ public:
     Creature();
     virtual ~Creature();
 
-    void onMoveInLOS(Object* who);
+    bool update(const Poco::UInt64 diff);
 
 private:
 

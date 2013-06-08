@@ -16,8 +16,3 @@ Character::~Character()
 {
 }
 
-void Character::onMoveInLOS(Object* who)
-{
-
-}
-

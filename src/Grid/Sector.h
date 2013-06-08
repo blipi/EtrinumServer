@@ -57,6 +57,7 @@ public:
     void remove_i(SharedPtr<Object> object, Poco::UInt8* aX = NULL, Poco::UInt8* aY = NULL);
 
     bool update(Poco::UInt64 diff);
+    SharedPtr<Object> selectTargetInAggroRange();
 
     bool hasObjects();
     bool hasEvents();
@@ -67,7 +68,6 @@ public:
 private:
     void join(SharedPtr<Object> who, SharedPtr<Packet> packet);
     void leave(SharedPtr<Object> who, SharedPtr<Packet> packet);
-    void visit(SharedPtr<Object> who);
 
     void clearJoinEvents();
 
@@ -81,6 +81,7 @@ private:
     TypeHashList _sectors;
     TypeObjectsMap _objects;
     TypeSectorEvents _sectorEvents;
+    Poco::UInt32 _playersInSector;
     Poco::Mutex _mutex;
 };
 
