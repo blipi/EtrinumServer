@@ -11,6 +11,7 @@
 file(GLOB_RECURSE sources_Client Client/*.cpp Client/*.h)
 file(GLOB_RECURSE sources_Common Common/*.cpp Common/*.h)
 file(GLOB_RECURSE sources_Database Database/*.cpp Database/*.h)
+file(GLOB_RECURSE sources_DataStores DataStores/*.cpp DataStores/*.h)
 file(GLOB_RECURSE sources_Entities Entities/*.cpp Entities/*.h)
 file(GLOB_RECURSE sources_Grid Grid/*.cpp Grid/*.h)
 file(GLOB_RECURSE sources_Log Log/*.cpp Log/*.h)
@@ -24,6 +25,7 @@ set(EPS_SRCS
   ${sources_Client}
   ${sources_Common}
   ${sources_Database}
+  ${sources_DataStores}
   ${sources_Entities}
   ${sources_Grid}
   ${sources_Log}
@@ -47,6 +49,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/Client
   ${CMAKE_CURRENT_SOURCE_DIR}/Common
   ${CMAKE_CURRENT_SOURCE_DIR}/Database
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataStores
   ${CMAKE_CURRENT_SOURCE_DIR}/Entities
   ${CMAKE_CURRENT_SOURCE_DIR}/Grid
   ${CMAKE_CURRENT_SOURCE_DIR}/Log

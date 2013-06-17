@@ -231,9 +231,6 @@ void Sector::remove_i(SharedPtr<Object> object, Poco::UInt8* aX /*= NULL*/, Poco
 
 void Sector::join(SharedPtr<Object> who, SharedPtr<Packet> packet)
 {
-    // Join events must (ideally) be done at the next update
-    // As it reduces the amount of time and loops being done
-    // Building the spawn packet is time expensive, do it now
     _sectorEvents.push_back(new SectorEvent(who, packet, EVENT_BROADCAST_JOIN));
 }
 
