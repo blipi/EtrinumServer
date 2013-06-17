@@ -2,6 +2,7 @@
 
 #include "AuthDatabase.h"
 #include "CharactersDatabase.h"
+#include "DataStore.h"
 #include "debugging.h"
 #include "defines.h"
 #include "GridLoader.h"
@@ -89,6 +90,13 @@ int main(int argc, char** argv)
         sLog.out(Message::PRIO_INFORMATION, "\n[*] Initializing Grid System");
         sGridLoader.instance();
         sLog.out(Message::PRIO_INFORMATION, "\t[OK] Done");
+    }
+
+    // ------------------- //
+    // Read all DataStores //
+    // ------------------- //
+    {
+        sItemStore.read("Items.ds");
     }
 
     // Will wait until the server stops

@@ -32,8 +32,6 @@ enum SECTOR_EVENTS
 
 class Sector
 {
-    friend class Sector;
-
 public:    
     struct SectorEvent
     {
