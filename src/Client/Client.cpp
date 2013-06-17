@@ -126,7 +126,7 @@ void Client::onReadable(const AutoPtr<ReadableNotification>& nf)
 {
     nf->release();
 
-    // If we have to desconnect, do it now
+    // If we have to disconnect, do it now
     if (_logicFlags & DISCONNECT_SEND_FLAGS)
     {
         // Remove flag and do cleanups
@@ -310,8 +310,6 @@ void Client::sendPacket(Packet* packet, bool encrypt, bool hmac)
         delete [] packet->rawdata;
         packet->rawdata = new Poco::UInt8[(Poco::UInt32)enc.MaxRetrievable()];
         enc.Get(packet->rawdata, (size_t)enc.MaxRetrievable());
-
-        packet->len |= 0xA000;
     }
     
     // Set HMAC Hash
@@ -354,7 +352,7 @@ void Client::ClearCharacters()
 }
 
 /**
- * Uppon load from DB, stores the client character
+ * Upon load from DB, stores the client character
  *
  * @param character Character to be stored to the list
  */
@@ -391,7 +389,7 @@ Characters* Client::FindCharacter(Poco::UInt32 ID)
 }
 
 /**
- * Sets the security byte when a connection and handshake packet is stablished
+ * Sets the security byte when a connection and handshake packet is established
  *
  * @param sec Security DWORD, only a BYTE is stored
  */
@@ -423,7 +421,7 @@ void Client::SetHMACKeyHigh(Poco::UInt8* high)
 }
 
 /**
- * Sets the security handlers once the whole authentification has been done
+ * Sets the security handlers once the whole authentication has been done
  */
 void Client::SetupSecurity()
 {

@@ -1,5 +1,5 @@
-#ifndef BASIC_SERVER_GRID_MOTION_MASTER_H
-#define BASIC_SERVER_GRID_MOTION_MASTER_H
+#ifndef GAMESERVER_MOTION_MASTER_H
+#define GAMESERVER_MOTION_MASTER_H
 
 #include "Poco/Poco.h"
 #include <vector>

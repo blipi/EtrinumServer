@@ -1,5 +1,5 @@
-#ifndef BASIC_SERVER_SERVER_H
-#define BASIC_SERVER_SERVER_H
+#ifndef GAMESERVER_SERVER_H
+#define GAMESERVER_SERVER_H
 
 #include <map>
 #include <list>

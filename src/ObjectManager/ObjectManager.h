@@ -1,5 +1,5 @@
-#ifndef BASIC_SERVER_PULLER_H
-#define BASIC_SERVER_PULLER_H
+#ifndef GAMESERVER_OBJECTMANAGER_H
+#define GAMESERVER_OBJECTMANAGER_H
 
 //@ Avoid MSV defining max/min and overriding numeric_limits
 #if defined(_WIN32) || defined(_WIN64)

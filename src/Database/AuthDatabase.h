@@ -1,5 +1,5 @@
-#ifndef _SERVERFRAMEWORK_DATABASE_AUTH_H
-#define _SERVERFRAMEWORK_DATABASE_AUTH_H
+#ifndef GAMESERVER_DATABASE_AUTH_H
+#define GAMESERVER_DATABASE_AUTH_H
 
 #include "Poco/Data/Column.h"
 #include "Poco/Data/SessionPool.h"

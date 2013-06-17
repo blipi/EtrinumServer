@@ -1,5 +1,5 @@
-#ifndef _SERVERFRAMEWORK_DATABASE_H
-#define _SERVERFRAMEWORK_DATABASE_H
+#ifndef GAMESERVER_DATABASE_H
+#define GAMESERVER_DATABASE_H
 
 #include "Poco/Poco.h"
 #include "Poco/Data/Column.h"

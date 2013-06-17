@@ -1,5 +1,5 @@
-#ifndef BASIC_SERVER_DEFINES_H
-#define BASIC_SERVER_DEFINES_H
+#ifndef GAMESERVER_DEFINES_H
+#define GAMESERVER_DEFINES_H
 
 #include "Poco/Poco.h"
 

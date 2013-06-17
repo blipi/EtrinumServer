@@ -1,5 +1,5 @@
-#ifndef BASIC_SERVER_ENTITIES_CLIENT_H
-#define BASIC_SERVER_ENTITIES_CLIENT_H
+#ifndef GAMESERVER_CLIENT_H
+#define GAMESERVER_CLIENT_H
 
 #include <limits>
 #include <list>
@@ -71,8 +71,6 @@ public:
     void onShutdown(const AutoPtr<ShutdownNotification>& pNf);
     void onTimeout(const AutoPtr<TimeoutNotification>& pNf);
     void onWritable(const AutoPtr<WritableNotification>& pNf);
-    void onWriteOut(bool& b);
-    //void onWriteIn(bool& b);
     void cleanupBeforeDelete();
 
     SharedPtr<Player> onEnterToWorld(Poco::UInt32 characterID);

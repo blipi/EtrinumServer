@@ -1,5 +1,5 @@
-#ifndef BASIC_SERVER_TOOLS_H
-#define BASIC_SERVER_TOOLS_H
+#ifndef GAMESERVER_TOOLS_H
+#define GAMESERVER_TOOLS_H
 
 #include "Poco/Poco.h"
 #include <set>

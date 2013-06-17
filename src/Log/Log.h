@@ -1,5 +1,5 @@
-#ifndef EPS_LOG_H
-#define EPS_LOG_H
+#ifndef GAMESERVER_LOG_H
+#define GAMESERVER_LOG_H
 
 #include "Poco/Poco.h"
 #include "Poco/SingletonHolder.h"

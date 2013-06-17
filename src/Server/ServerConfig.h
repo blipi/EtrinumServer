@@ -1,5 +1,5 @@
-#ifndef _SERVERFRAMEWORK_CONFIG_H
-#define _SERVERFRAMEWORK_CONFIG_H
+#ifndef GAMESERVER_SERVERCONFIG_H
+#define GAMESERVER_SERVERCONFIG_H
 
 #include "Poco/Poco.h"
 #include "Poco/SingletonHolder.h"

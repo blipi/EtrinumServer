@@ -1,5 +1,5 @@
-#ifndef BASIC_SERVER_DEBUGGING_H
-#define BASIC_SERVER_DEBUGGING_H
+#ifndef GAMESERVER_DEBUGGING_H
+#define GAMESERVER_DEBUGGING_H
 
 #include <iostream>
 #include "Poco/NestedDiagnosticContext.h"

@@ -1,5 +1,5 @@
-#ifndef BASIC_SERVER_ENTITIES_OBJECT_H
-#define BASIC_SERVER_ENTITIES_OBJECT_H
+#ifndef GAMESERVER_ENTITIES_OBJECT_H
+#define GAMESERVER_ENTITIES_OBJECT_H
 
 #include <algorithm>
 #include <list>
