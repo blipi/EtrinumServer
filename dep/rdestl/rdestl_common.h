@@ -5,6 +5,10 @@
 #	define RDESTL_STANDALONE	1
 #endif
 
+#if __GNUC__
+	#include <cstdint>
+#endif
+
 #if RDESTL_STANDALONE
 #  ifdef _MSC_VER
 #	include <cassert>
