@@ -13,9 +13,9 @@
 class ServerConfig
 {
 public:
-    typedef std::map<std::string, std::string> StringConfigsMap;
     typedef std::map<std::string, int> IntConfigsMap;
     typedef std::map<std::string, bool> BoolConfigsMap;
+    typedef std::map<std::string, std::string> StringConfigsMap;
 
     ServerConfig();
     static ServerConfig& instance()
@@ -29,10 +29,12 @@ public:
 
     int getIntConfig(std::string configName);
     bool getBoolConfig(std::string configName);
+	std::string getStringConfig(std::string configName);
 
     int getDefaultInt(std::string configName, int _default);
     bool getDefaultBool(std::string configName, bool _default);
-
+	std::string getDefaultString(std::string configName, std::string _default);
+	
 private:
     Poco::XML::Node* firstChild(Poco::XML::Node* node);
     Poco::XML::Node* nextNode(Poco::XML::Node* node);
@@ -43,6 +45,7 @@ private:
     
     IntConfigsMap _intConfigs;
     BoolConfigsMap _boolConfigs;
+	StringConfigsMap _stringConfigs;
 };
 
 #define sConfig ServerConfig::instance()

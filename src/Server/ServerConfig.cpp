@@ -1,4 +1,5 @@
 #include "ServerConfig.h"
+#include "debugging.h"
 
 //@ XML reading
 #include <fstream>
@@ -9,10 +10,21 @@
 #include "Poco/DOM/NodeList.h"
 #include "Poco/DOM/NamedNodeMap.h"
 #include "Poco/SAX/InputSource.h"
+#include "Poco/Path.h"
+#include "Poco/File.h"
 
 ServerConfig::ServerConfig()
 {
-    std::ifstream in("Config.xml");
+	Poco::Path path("Config.xml");
+	Poco::File file(path);
+	
+	if (!file.exists())
+	{
+		// Log it out
+		ASSERT(false);
+	}
+	
+    std::ifstream in(path.toString());
     Poco::XML::InputSource src(in);
     Poco::XML::DOMParser parser;
     _doc = parser.parse(&src);
@@ -59,10 +71,12 @@ void ServerConfig::readConfiguration()
             {
                 Poco::XML::NamedNodeMap* atribs = configNode->attributes();
                 
-                if(atribs->getNamedItem("type")->nodeValue().compare("int") == 0)
+                if (atribs->getNamedItem("type")->nodeValue().compare("int") == 0)
                     _intConfigs[configNode->nodeName()] = std::atoi(configNode->innerText().c_str());
-                else if(atribs->getNamedItem("type")->nodeValue().compare("bool") == 0)
+                else if (atribs->getNamedItem("type")->nodeValue().compare("bool") == 0)
                     _boolConfigs[configNode->nodeName()] = std::atoi(configNode->innerText().c_str()) != 0;
+				else if (atribs->getNamedItem("type")->nodeValue().compare("string") == 0)
+					__stringConfigs[configNode->nodeName()] = configNode->innerText();
 
                 configNode = nextNode(configNode);
             }
@@ -82,20 +96,34 @@ bool ServerConfig::getBoolConfig(std::string configName)
     return getDefaultBool(configName, false);
 }
 
+std::string ServerConfig::getStringConfig(std::string configName)
+{
+	return getDefaultString(configName, "");
+}
+
 int ServerConfig::getDefaultInt(std::string configName, int _default)
 {
-    if (_intConfigs.find(configName) != _intConfigs.end())
+	IntConfigsMap::iterator itr = _intConfigs.find(configName);
+    if (itr != _intConfigs.end())
         return _intConfigs[configName];
     return _default;
 }
     
 bool ServerConfig::getDefaultBool(std::string configName, bool _default)
 {
-    if (_boolConfigs.find(configName) != _boolConfigs.end())
-        return _boolConfigs[configName];
+	BoolConfigsMap::iterator itr = _boolConfigs.find(configName);
+    if (itr != _boolConfigs.end())
+        return *itr;
     return _default;
 }
 
+std::string ServerConfig::getDefaultString(std::string configName, bool _default)
+{
+	StringConfigsMap::iterator itr = _stringConfigs.find(configName);
+	if (itr != _stringConfigs.end())
+		return *itr;
+	return _default;
+}
 
 Poco::XML::Node* ServerConfig::firstChild(Poco::XML::Node* node)
 {
