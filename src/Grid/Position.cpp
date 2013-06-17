@@ -1,6 +1,7 @@
 #include "Position.h"
-
 #include "Grid.h"
+
+#include <cmath>
 
 Vector2D::Vector2D()
 {
