@@ -41,7 +41,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/poco/Net/include
   ${CMAKE_SOURCE_DIR}/dep/poco/Foundation/include
   ${CMAKE_SOURCE_DIR}/dep/poco/Data/include
-  ${CMAKE_SOURCE_DIR}/dep/poco/Data/MySQL/include
+  ${CMAKE_SOURCE_DIR}/dep/poco/MongoDB/include
   ${CMAKE_SOURCE_DIR}/dep/poco/XML/include
   ${CMAKE_SOURCE_DIR}/dep/cryptocpp
   ${CMAKE_SOURCE_DIR}/dep/rdestl
@@ -66,7 +66,7 @@ add_executable(EtrinumProjectServer
   ${EPS_SRCS}
 )
 
-# TODO: Poco and crypt should automatically be added!
+# TODO: crypt should automatically be added!
 target_link_libraries(EtrinumProjectServer
   cryptlib
   ${POCO_LIBRARIES}
