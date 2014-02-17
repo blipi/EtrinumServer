@@ -163,7 +163,7 @@ else ()
     if( CMAKE_CONFIGURATION_TYPES OR CMAKE_BUILD_TYPE )
       set( POCO_LIBRARIES
         optimized ${LIB_DATA_RELEASE} optimized ${LIB_MONGODB_RELEASE} optimized ${LIB_FOUNDATION_RELEASE} optimized ${LIB_NET_RELEASE} optimized ${LIB_XML_RELEASE}
-        debug ${LIB_DATA_DEBUG} debug ${LIB_MONGODB_RELEASE} debug ${LIB_FOUNDATION_DEBUG} debug ${LIB_NET_DEBUG} debug ${LIB_XML_DEBUG}
+        debug ${LIB_DATA_DEBUG} debug ${LIB_MONGODB_DEBUG} debug ${LIB_FOUNDATION_DEBUG} debug ${LIB_NET_DEBUG} debug ${LIB_XML_DEBUG}
       )
     else()
       set( POCO_LIBRARIES
